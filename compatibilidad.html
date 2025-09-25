@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compatibilidad de tuberías a través de tanques · Norma cerrada</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-soft: #1e293b;
+    --bg-card: rgba(15, 23, 42, 0.82);
+    --surface: rgba(15, 23, 42, 0.6);
+    --ink: #e2e8f0;
+    --ink-soft: rgba(226, 232, 240, 0.76);
+    --mut: rgba(148, 163, 184, 0.7);
+    --border: rgba(148, 163, 184, 0.18);
+    --accent: #38bdf8;
+    --accent-2: #a855f7;
+    --ok: #22c55e;
+    --bad: #f43f5e;
+    --warn: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(circle at top, #1e293b 0%, #0f172a 55%, #020617 100%);
+    color: var(--ink);
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  }
+  a { color: inherit; }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+  nav { margin-bottom: 28px; }
+  nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+  }
+  nav a:hover { color: #7dd3fc; }
+  h1 {
+    font-size: clamp(26px, 4vw, 38px);
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .small {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 0 24px;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 26px;
+    align-items: start;
+  }
+  .card {
+    background: var(--bg-card);
+    border-radius: 26px;
+    border: 1px solid var(--border);
+    padding: 28px;
+    box-shadow: 0 20px 45px rgba(2, 6, 23, 0.55);
+    backdrop-filter: blur(16px);
+  }
+  .card.result { position: sticky; top: 32px; }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .row.row--spaced { margin-top: 18px; }
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(226, 232, 240, 0.78);
+    margin-bottom: 8px;
+    display: block;
+  }
+  select, input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 15px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  select:focus, input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+    outline: none;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--mut);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .advanced-toggle {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .advanced-toggle label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 0;
+  }
+  .advanced-toggle input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--accent);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .pill.ok { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.45); }
+  .pill.bad { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); }
+  .pill.warn { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .result-meta { margin-top: 18px; }
+  .result-meta h2 { margin-top: 0; }
+  .svgbox {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background: radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.14), transparent 55%),
+                linear-gradient(160deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.55));
+    overflow: hidden;
+  }
+  h2 { font-size: 22px; margin: 18px 0 10px; letter-spacing: -0.01em; }
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 18px;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
+  }
+  .tbl th, .tbl td { padding: 12px 14px; text-align: left; }
+  .tbl th {
+    background: rgba(148, 163, 184, 0.14);
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+  .tbl td {
+    background: rgba(15, 23, 42, 0.45);
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+    color: var(--ink-soft);
+  }
+  .tbl tr:first-child td { border-top: none; }
+  .small strong { color: #fff; }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(168, 85, 247, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  details {
+    margin-top: 16px;
+    background: rgba(15, 23, 42, 0.55);
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    overflow: hidden;
+  }
+  summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-weight: 600;
+  }
+  details[open] summary { border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+  details > div {
+    padding: 16px 18px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .tests { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+  .tests b { color: #fff; }
+  footer {
+    margin-top: 32px;
+    font-size: 13px;
+    color: var(--mut);
+    line-height: 1.6;
+  }
+  @media (max-width: 940px) {
+    .grid { grid-template-columns: 1fr; }
+    .card.result { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="index.html">← Volver al inicio</a></nav>
+  <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
+  <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+
+  <div class="grid">
+    <!-- Controles -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Sistema / fluido de la tubería</label>
+          <select id="system"></select>
+        </div>
+        <div>
+          <label>Ubicación (espacio o tanque)</label>
+          <select id="location"></select>
+        </div>
+      </div>
+
+      <div class="row row--spaced">
+        <div>
+          <label>Material</label>
+          <select id="material">
+            <option value="steel">Steel (Tabla 11.6)</option>
+            <option value="stainless">Austenitic stainless steel (Tabla 11.7)</option>
+            <option value="copper">Copper (Tabla 11.8)</option>
+            <option value="copper_alloy">Copper alloys (Tabla 11.8)</option>
+          </select>
+          <div id="groupBox" class="hint">Grupo (solo steel): <b id="groupHint">—</b></div>
+        </div>
+        <div>
+          <label>Diámetro exterior d<sub>a</sub> [mm]</label>
+          <input id="da" type="number" step="0.1" min="1" value="60"/>
+          <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
+        </div>
+      </div>
+
+      <div class="advanced-toggle">
+        <label>
+          <input type="checkbox" id="allowDash"/> Permitir casos “–” (acuerdo especial) <span class="badge">avanzado</span>
+        </label>
+      </div>
+
+      <details>
+        <summary><strong>Autoverificación de lógica (tests unitarios)</strong></summary>
+        <div id="tests" class="tests"></div>
+      </details>
+    </div>
+
+    <!-- Vista / resultado -->
+    <div class="card result">
+      <div class="svgbox" id="viz"></div>
+      <div class="legend">
+        <span class="pill ok">Compatible</span>
+        <span class="pill bad">No compatible</span>
+        <span class="pill warn">Especial (–)</span>
+        <span class="badge">Visual: tanque + tubo</span>
+      </div>
+      <div class="result-meta">
+        <h2 id="headline">—</h2>
+        <div id="explain" class="small">—</div>
+      </div>
+
+      <table class="tbl" id="outTbl" style="display:none">
+        <thead>
+          <tr><th>Parámetro</th><th>Valor</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>Leyenda</strong>: N/M/D = grupo para steel (espesor por Tabla 11.6). X = no instalar. “–” = solo con acuerdo especial de la Sociedad de Clasificación (por defecto tratado como no permitido).</p>
+  </footer>
+</div>
+
+<script>
+// ==============================
+// MATRIZ NORMATIVA (todas las ubicaciones) – valores: 'N','M','D','X','-'
+// ==============================
+const SPACES = [
+  'Machinery spaces','Cofferdams / void spaces','Cargo holds','Ballast water tanks',
+  'Fuel and changeover tanks','Fresh cooling water tanks','Lubricating oil tanks','Hydraulic oil tanks',
+  'Drinking water tanks','Thermal oil tanks','Condensate and feedwater tanks','Accommodation',
+  'Cargo tanks, tank ships','Cofferdams, tank ships','Cargo pump rooms','Weather deck',
+];
+
+const SYSTEMS = [
+  'Bilge lines','Ballast lines','Seawater lines','Fuel lines','Lubricating lines',
+  'Thermal oil lines','Steam lines','Condensate lines','Feedwater lines',
+  'Drinking water lines','Fresh cooling water lines','Compressed air lines','Hydraulic lines'
+];
+
+const MATRIX = {
+  'Bilge lines': {
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'D','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'M','Cargo pump rooms':'M','Weather deck':'-'
+  },
+  'Ballast lines': {
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'M','Cargo tanks, tank ships':'-','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
+  },
+  'Seawater lines': {
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
+  },
+  'Fuel lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'D','Fuel and changeover tanks':'N','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'-','Weather deck':'N'
+  },
+  'Lubricating lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'-','Ballast water tanks':'X','Fuel and changeover tanks':'X','Fresh cooling water tanks':'X','Lubricating oil tanks':'N','Hydraulic oil tanks':'-','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'-','Weather deck':'N'
+  },
+  'Thermal oil lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'-','Drinking water tanks':'X','Thermal oil tanks':'N','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'M','Cofferdams, tank ships':'-','Cargo pump rooms':'N','Weather deck':'N'
+  },
+  'Steam lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'-','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'N','Accommodation':'N','Cargo tanks, tank ships':'M','Cofferdams, tank ships':'-','Cargo pump rooms':'N','Weather deck':'N'
+  },
+  'Condensate lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'-','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'N','Accommodation':'N','Cargo tanks, tank ships':'M','Cofferdams, tank ships':'-','Cargo pump rooms':'N','Weather deck':'N'
+  },
+  'Feedwater lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'X','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'N','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'X','Weather deck':'N'
+  },
+  'Drinking water lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'X','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'N','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'N','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'X','Weather deck':'N'
+  },
+  'Fresh cooling water lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'D','Fresh cooling water tanks':'N','Lubricating oil tanks':'D','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'-','Weather deck':'N'
+  },
+  'Compressed air lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'N','Condensate and feedwater tanks':'X','Accommodation':'N','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'N','Weather deck':'N'
+  },
+  'Hydraulic lines': {
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'N','Cofferdams, tank ships':'N','Cargo pump rooms':'N','Weather deck':'N'
+  },
+};
+
+// ==============================
+// Tablas 11.6–11.8 como INTERVALOS [min,max]
+// ==============================
+const STEEL = {
+  'N': [[10.2,13.5,1.6],[13.5,20.0,1.8],[20.0,48.3,2.0],[48.3,70.0,2.3],[70.0,88.9,2.6],[88.9,114.3,2.9],[114.3,133.0,3.2],[133.0,152.4,3.6],[152.4,177.8,4.0],[177.8,244.5,4.5],[244.5,323.9,5.0],[323.9,Infinity,5.6]],
+  'M': [[21.3,38.0,3.2],[38.0,51.0,3.6],[51.0,76.1,4.0],[76.1,177.8,4.5],[177.8,193.7,5.0],[193.7,219.1,5.4],[219.1,244.5,5.9],[244.5,406.4,6.3],[406.4,660.4,6.3],[660.4,762.0,7.1],[762.0,863.6,8.0],[863.6,914.4,8.8],[914.4,Infinity,10.0]],
+  'D': [[38.0,88.9,6.3],[88.9,114.3,7.1],[114.3,152.4,8.0],[152.4,Infinity,8.8]]
+};
+const INOX = [[0,17.2,1.0],[17.2,48.3,1.6],[48.3,88.9,2.0],[88.9,168.3,2.3],[168.3,219.1,2.6],[219.1,273.0,2.9],[273.0,406.0,3.6],[406.0,Infinity,4.0]];
+const COPPER = [[8.0,10.0,1.0,0.8],[12.0,20.0,1.2,1.0],[25.0,44.5,1.5,1.2],[50.0,76.1,2.0,1.5],[88.9,108.0,2.5,2.0],[133.0,159.0,3.0,2.5],[193.7,267.0,3.5,3.0],[273.0,457.2,4.0,3.5],[470.0,508.0,4.5,4.0]];
+
+function inRangeClosedOpen(x,a,b){return x>=a && x<b;}
+function inRangeClosed(x,a,b){return x>=a && x<=b;}
+function tSteel(group,da){const arr=STEEL[group]||[];for(const[lo,hi,s]of arr){if(inRangeClosedOpen(da,lo,hi))return s;}return null;}
+function tInox(da){for(const[lo,hi,s]of INOX){if(inRangeClosedOpen(da,lo,hi))return s;}return null;}
+function tCopper(da,alloy){for(const[lo,hi,scu,sall]of COPPER){if(inRangeClosed(da,lo,hi))return alloy?sall:scu;}return null;}
+
+// ==============================
+// UI helpers
+// ==============================
+function fill(id,arr){const el=document.getElementById(id);el.innerHTML='';arr.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;el.appendChild(o);});}
+
+function drawViz({status,place,system,s}){
+  const svg=document.getElementById('viz');
+  const w=svg.clientWidth||560;
+  const h=svg.clientHeight||420;
+  const pad=28;
+  const tankX=pad,tankY=pad,tankW=w-pad*2,tankH=h-pad*2;
+  const pipeH=Math.max(28,tankH*0.16);
+  const pipeY=tankY+tankH*0.58;
+  const color=status==='ok'?'var(--ok)':status==='warn'?'var(--warn)':'var(--bad)';
+  const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
+  const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
+  const icon=status==='ok'?'✔':status==='warn'?'!':'✖';
+  const note=status==='warn'?'Requiere acuerdo especial':status==='bad'?'Paso bloqueado':'Paso permitido';
+  const pipeStroke=status==='warn'?'stroke-dasharray="20 12" stroke-width="4"':'stroke-width="2.4"';
+  const filterId=status==='bad'?'glowBad':status==='warn'?'glowWarn':'glowOk';
+  svg.innerHTML=`
+  <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${system} → ${place}">
+    <defs>
+      <linearGradient id="tankGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${tankTop}" />
+        <stop offset="100%" stop-color="${tankBottom}" />
+      </linearGradient>
+      <linearGradient id="pipeGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.55" />
+        <stop offset="50%" stop-color="${color}" stop-opacity="1" />
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.55" />
+      </linearGradient>
+      <filter id="glowOk" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#22c55e" flood-opacity="0.65"/>
+      </filter>
+      <filter id="glowWarn" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#f59e0b" flood-opacity="0.6"/>
+      </filter>
+      <filter id="glowBad" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#f43f5e" flood-opacity="0.7"/>
+      </filter>
+    </defs>
+    <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
+    <text x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)">${place}</text>
+    <g filter="url(#${filterId})">
+      <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
+    </g>
+    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${system}</text>
+    ${s&&status==='ok'?`<text x="${tankX+tankW/2}" y="${pipeY+pipeH/2+24}" text-anchor="middle" font-size="14" fill="#4ade80">s = ${s.toFixed(1)} mm</text>`:''}
+    <g transform="translate(${tankX+tankW-58}, ${tankY+22})">
+      <circle cx="18" cy="18" r="18" fill="rgba(15,23,42,0.7)" stroke="${color}" stroke-width="2"/>
+      <text x="18" y="23" text-anchor="middle" font-size="18" fill="${color}" font-weight="700">${icon}</text>
+    </g>
+    <text x="${tankX+36}" y="${tankY+tankH-28}" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
+    ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
+    ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
+  </svg>`;
+}
+
+function calc(){
+  const system=document.getElementById('system').value;
+  const locationSel=document.getElementById('location').value;
+  const mat=document.getElementById('material').value;
+  const da=parseFloat(document.getElementById('da').value);
+  const allowDash=document.getElementById('allowDash').checked;
+
+  const cell=(MATRIX[system]||{})[locationSel];
+  let symbol=cell||'X';
+  let group=null;
+
+  if(symbol==='-' && !allowDash){
+    drawViz({status:'warn',place:locationSel,system});
+    document.getElementById('headline').innerHTML='<span class="pill warn">Especial (–)</span>';
+    document.getElementById('explain').innerHTML='Esta combinación requiere acuerdo especial de la Sociedad de Clasificación. Por defecto se trata como no permitida; marca la casilla “Permitir casos –” para forzar el cálculo bajo tu responsabilidad.';
+    document.getElementById('groupHint').textContent='—';
+    document.getElementById('outTbl').style.display='none';
+    return;
+  }
+
+  if(symbol==='X'){
+    drawViz({status:'bad',place:locationSel,system});
+    document.getElementById('headline').innerHTML='<span class="pill bad">No compatible</span>';
+    document.getElementById('explain').innerHTML='La tabla normativa (11.5) marca “X”: la tubería no debe instalarse en esta ubicación.';
+    document.getElementById('groupHint').textContent='—';
+    document.getElementById('outTbl').style.display='none';
+    return;
+  }
+
+  let s=null; let rule='';
+  if(mat==='steel'){
+    group=symbol;
+    document.getElementById('groupHint').textContent=group;
+    s=tSteel(group,da);
+    if(s==null){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
+      document.getElementById('explain').innerHTML='El diámetro ingresado no cae en ningún intervalo de la Tabla 11.6 para el grupo '+group+'. Ajusta dₐ o consulta a clase.';
+      document.getElementById('outTbl').style.display='none'; return;
+    }
+    rule=`Steel grupo <b>${group}</b> · Tabla 11.6 · intervalo válido para d<sub>a</sub> = ${da} mm.`;
+  } else if(mat==='stainless'){
+    document.getElementById('groupHint').textContent='—';
+    s=tInox(da);
+    if(s==null){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
+      document.getElementById('explain').innerHTML='El diámetro no cae en los intervalos de la Tabla 11.7.';
+      document.getElementById('outTbl').style.display='none'; return;
+    }
+    rule='Austenitic stainless steel · Tabla 11.7 · intervalo válido.';
+  } else {
+    document.getElementById('groupHint').textContent='—';
+    s=tCopper(da,mat==='copper_alloy');
+    if(s==null){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (cobre)</span>';
+      document.getElementById('explain').innerHTML='El diámetro no coincide con ningún rango de la Tabla 11.8 (tiene huecos entre tramos).';
+      document.getElementById('outTbl').style.display='none'; return;
+    }
+    rule=`${mat==='copper'?'Copper':'Copper alloy'} · Tabla 11.8 · rango válido.`;
+  }
+
+  drawViz({status:'ok',place:locationSel,system,s});
+  document.getElementById('headline').innerHTML='<span class="pill ok">Compatible</span>';
+  document.getElementById('explain').innerHTML=`Espesor mínimo <b>s = ${s.toFixed(1)} mm</b>. ${rule}`;
+
+  const tbody=document.querySelector('#outTbl tbody');
+  tbody.innerHTML='';
+  const rows=[
+    ['Sistema',system],['Ubicación',locationSel],['Material',document.getElementById('material').options[document.getElementById('material').selectedIndex].text],
+    ['Símbolo (Tabla 11.5)',symbol],['Grupo (si steel)',group||'—'],['dₐ [mm]',da],['Espesor s [mm]',s.toFixed(1)],
+  ];
+  for(const[k,v]of rows){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=k;tr.appendChild(a);const b=document.createElement('td');b.innerHTML=String(v);tr.appendChild(b);tbody.appendChild(tr);}
+  document.getElementById('outTbl').style.display='table';
+}
+
+function runTests(){
+  const cases=[];
+  cases.push(['Fuel lines en Fuel&changeover = N',MATRIX['Fuel lines']['Fuel and changeover tanks']==='N']);
+  cases.push(['Bilge lines en Ballast = D',MATRIX['Bilge lines']['Ballast water tanks']==='D']);
+  cases.push(['Fresh cooling line en Fresh cooling tank = N',MATRIX['Fresh cooling water lines']['Fresh cooling water tanks']==='N']);
+  cases.push(['Hydraulic lines en Hydraulic oil tank = N',MATRIX['Hydraulic lines']['Hydraulic oil tanks']==='N']);
+  cases.push(['Drinking water line en Drinking water tank = N',MATRIX['Drinking water lines']['Drinking water tanks']==='N']);
+  cases.push(['Fuel lines en Machinery spaces = N',MATRIX['Fuel lines']['Machinery spaces']==='N']);
+  cases.push(['Bilge en Cofferdams/void = M',MATRIX['Bilge lines']['Cofferdams / void spaces']==='M']);
+  cases.push(['Steam en Accommodation = N',MATRIX['Steam lines']['Accommodation']==='N']);
+  cases.push(['Compressed air en Thermal oil tanks = N',MATRIX['Compressed air lines']['Thermal oil tanks']==='N']);
+  cases.push(['Hydraulic lines en Cargo tanks (tank ships) = N',MATRIX['Hydraulic lines']['Cargo tanks, tank ships']==='N']);
+  cases.push(['Fresh cooling line en Cargo pump rooms = –',MATRIX['Fresh cooling water lines']['Cargo pump rooms']==='-']);
+  cases.push(['Steel M, dₐ=21.3 ⇒ s=3.2',Math.abs(tSteel('M',21.3)-3.2)<1e-9]);
+  cases.push(['Steel D, dₐ=160 ⇒ s=8.8',Math.abs(tSteel('D',160)-8.8)<1e-9]);
+  cases.push(['Inox, dₐ=21.3 ⇒ s=1.6',Math.abs(tInox(21.3)-1.6)<1e-9]);
+  cases.push(['Copper, dₐ=25 ⇒ s=1.5',Math.abs(tCopper(25,false)-1.5)<1e-9]);
+  cases.push(['Copper, dₐ=21 ⇒ fuera de tabla',tCopper(21,false)===null]);
+
+  const ok=cases.every(([_,p])=>p);
+  document.getElementById('tests').innerHTML=(ok?'✅ Lógica verificada':'❌ Falla en pruebas')+'<br>'+cases.map(([n,p])=>(p?'✔️ ':'❌ ')+n).join('<br>');
+}
+
+// INIT
+fill('system',SYSTEMS); fill('location',SPACES);
+['system','location','material','da','allowDash'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',calc);
+  document.getElementById(id).addEventListener('input',calc);
+});
+runTests();
+calc();
+</script>
+</body>
+</html>
+

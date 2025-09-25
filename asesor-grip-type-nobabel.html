@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asesor Grip-Type (Slip-on Joints) · LR Naval Ships</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "Segoe UI", "system-ui", "-apple-system", "sans-serif"],
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+  <div class="p-4">
+    <a href="./index.html" class="inline-flex items-center gap-2 text-sm text-sky-300 hover:text-sky-100">
+      <span aria-hidden="true">←</span>
+      Volver al inicio
+    </a>
+  </div>
+  <div id="root"></div>
+
+  <script type="module">
+    import htm from 'https://unpkg.com/htm?module';
+    import { createElement as h, useEffect, useRef, useState } from 'https://esm.sh/react@18';
+    import ReactDOM from 'https://esm.sh/react-dom@18/client';
+
+    const html = htm.bind(h);
+
+    const DEFAULT_JOINT_IMAGE = "./assets/joints/not-found.jpg";
+
+    const JOINT_IMAGES = {
+      pipe_welded_brazed: "./assets/joints/pipe_welded_brazed.jpg",
+      compression_swage: "./assets/joints/compression_swage.jpg",
+      compression_press: "./assets/joints/compression_press.jpg",
+      compression_typical: "./assets/joints/compression_typical.jpg",
+      compression_bite: "./assets/joints/compression_bite.jpg",
+      compression_flared: "./assets/joints/compression_flared.jpg",
+      slip_machine_grooved: "./assets/joints/slip_machine_grooved.jpg",
+      slip_grip: "./assets/joints/slip_grip.jpg",
+      slip_slip: "./assets/joints/slip_slip.jpg",
+    };
+
+    const JOINT_LABELS = {
+      pipe_welded_brazed: "Welded and Brazed Types (uniones soldadas y por braseado)",
+      compression_swage: "Swage Type (swage)",
+      compression_press: "Press Type (prensado)",
+      compression_typical: "Typical Compression Type (compresión “típica” con férula)",
+      compression_bite: "Bite Type (anillo mordedor)",
+      compression_flared: "Flared Type (abocardado/abocinado)",
+      slip_machine_grooved: "Machine Grooved Type — Roll Groove / Cut Groove (ranura laminada / ranura mecanizada)",
+      slip_grip: "Grip Type (tipo “grip”/agarre)",
+      slip_slip: "Slip Type (tipo “slip”/deslizante)",
+    };
+
+    const JOINT_CATEGORY_TITLES = {
+      pipe_welded_brazed: "Pipe unions",
+      compression_swage: "Compression couplings",
+      compression_press: "Compression couplings",
+      compression_typical: "Compression couplings",
+      compression_bite: "Compression couplings",
+      compression_flared: "Compression couplings",
+      slip_machine_grooved: "Slip-on Joints",
+      slip_grip: "Slip-on Joints",
+      slip_slip: "Slip-on Joints",
+    };
+
+    function parseViewerHash(hash) {
+      if (!hash) return null;
+      const match = hash.match(/^#view:([\w-]+)$/i);
+      return match ? match[1] : null;
+    }
+
+    function buildViewerTitle(kind) {
+      const label = JOINT_LABELS[kind] || kind;
+      const category = JOINT_CATEGORY_TITLES[kind];
+      return category ? `${category} · ${label}` : label;
+    }
+
+    const SearchIcon = ({ className = "w-4 h-4", ...props }) =>
+      h(
+        "svg",
+        {
+          className,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          ...props,
+        },
+        h("circle", { cx: 11, cy: 11, r: 7 }),
+        h("line", { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+      );
+
+    const ShieldIcon = ({ className = "w-6 h-6", ...props }) =>
+      h(
+        "svg",
+        {
+          className,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          ...props,
+        },
+        h("path", { d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" })
+      );
+
+    function App() {
+      const CLASS_LIMITS = {
+        steam: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 170 } },
+        thermal_oil: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 150 } },
+        flammable_liquids: { classII: { P: 16, T: 150 }, classIII: { P: 7, T: 60 } },
+        other_media: { classII: { P: 40, T: 300 }, classIII: { P: 16, T: 200 } },
+      };
+
+      const TABLE_NOTES_ES = {
+        "1": "Las juntas mecánicas que incluyan componentes que se deterioran fácilmente en caso de incendio deben ser de tipo resistente al fuego aprobado cuando se instalen en espacios de maquinaria de Categoría A. Los acoplamientos del ‘bilge main’ en espacios de Categoría A deben ser de acero, CuNi o material equivalente.",
+        "2": "Los slip‑on joints no se aceptan dentro de espacios de maquinaria de Categoría A, depósitos de munición ni espacios de alojamiento. Se aceptan en otros espacios de maquinaria y servicio siempre que queden en posiciones fácilmente visibles y accesibles.",
+        "3": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, salvo cuando estén en cubiertas abiertas con poco o ningún riesgo de incendio según SOLAS II‑2/9.2.3.3.2.2(10).",
+        "4": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado.",
+        "5": "Ver Vol 2, Pt 7, Ch 1, 5.10 – Other mechanical couplings (remisión normativa).",
+        "6": "Las juntas mecánicas solo se permiten por encima del límite de integridad estanca (WTI).",
+        "7": "Requisitos para HVAC trunking y para entradas/salidas de turbina de gas se tratan en las secciones correspondientes de las Reglas.",
+      };
+
+      const NAVAL_SYSTEMS = [
+        { id: "ff_le60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point ≤ 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
+        { id: "ff_le60_vent_lines", group: "Flammable fluids (flash point ≤ 60°C)", system: "Vent lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 3"] },
+        { id: "ff_gt60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
+        { id: "ff_gt60_ship_machinery_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Ship’s machinery fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+        { id: "ff_gt60_lubricating_oil", group: "Flammable fluids (flash point > 60°C)", system: "Lubricating oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+        { id: "ff_gt60_hydraulic_oil", group: "Flammable fluids (flash point > 60°C)", system: "Hydraulic oil", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+        { id: "sw_bilge", group: "Sea water", system: "Bilge lines", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+        { id: "sw_hp_spray", group: "Sea water", system: "HP sea water and water spray (not permanently filled)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)" },
+        { id: "sw_perm_fireext", group: "Sea water", system: "Permanent water filled fire‑extinguishing systems (fire main, sprinklers)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Note 3"] },
+        { id: "sw_nonperm_fireext", group: "Sea water", system: "Non‑permanent water filled fire‑extinguishing systems (foam, drencher, fire main)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*) – Foam: comply FSS Code", notes: ["Note 3"] },
+        { id: "sw_ballast", group: "Sea water", system: "Ballast system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+        { id: "sw_cooling", group: "Sea water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+        { id: "sw_tank_cleaning", group: "Sea water", system: "Tank cleaning services", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "sw_non_essential", group: "Sea water", system: "Non‑essential systems", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "fw_cooling", group: "Fresh water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+        { id: "fw_chilled", group: "Fresh water", system: "Chilled water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Except chilled water: 30 min wet (*)", notes: ["Note 1"] },
+        { id: "fw_condensate", group: "Fresh water", system: "Condensate return", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+        { id: "fw_made_demin", group: "Fresh water", system: "Made & demineralised water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
+        { id: "fw_ancillary", group: "Fresh water", system: "Ancillary system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "san_deck_drains", group: "Sanitary / drains / scuppers", system: "Deck drains (internal)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 6"] },
+        { id: "san_sanitary_drains", group: "Sanitary / drains / scuppers", system: "Sanitary drains", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "san_scuppers_overboard", group: "Sanitary / drains / scuppers", system: "Scuppers & discharge (overboard)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "sv_water_tanks_dry", group: "Sounding / vent", system: "Water tanks / dry spaces", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "Fire endurance test not required" },
+        { id: "sv_oil_tanks", group: "Sounding / vent", system: "Oil tanks (f.p. > 60°C)", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Notes 2 & 3"] },
+        { id: "sv_intakes_uptakes", group: "Sounding / vent", system: "Intakes and uptakes", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
+        { id: "sv_hvac", group: "Sounding / vent", system: "HVAC trunking", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
+        { id: "misc_air_hp", group: "Miscellaneous", system: "High pressure (HP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+        { id: "misc_air_mp", group: "Miscellaneous", system: "Medium pressure (MP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+        { id: "misc_air_lp", group: "Miscellaneous", system: "Low pressure (LP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+        { id: "misc_service_air_nonessential", group: "Miscellaneous", system: "Service air (non‑essential)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+        { id: "misc_brine", group: "Miscellaneous", system: "Brine", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
+        { id: "misc_co2", group: "Miscellaneous", system: "CO₂ system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+        { id: "misc_n2", group: "Miscellaneous", system: "Nitrogen system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)" },
+        { id: "misc_steam", group: "Miscellaneous", system: "Steam", mediumGroup: "steam", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "-", fireTest: "Fire endurance test not required", notes: ["See Note 5 / special consideration"] },
+      ];
+
+      const COUPLING_RULES = {
+        pipeUnions: (clazz, odMM) => {
+          if (clazz === "III") return { allowed: true, reason: "+ (sin límite de OD en Class III)" };
+          const ok = odMM <= 60.3;
+          return { allowed: ok, reason: ok ? "+ (OD ≤ 60.3 mm en Class I/II)" : "Table 1.5.4: En Class I/II solo OD ≤ 60.3 mm" };
+        },
+        compressionSubtypes: (clazz, odMM) => ({
+          swage: clazz === "III",
+          bite: clazz === "III" ? true : odMM <= 60.3,
+          typical: clazz === "III" ? true : odMM <= 60.3,
+          flared: clazz === "III" ? true : odMM <= 60.3,
+          press: clazz === "III",
+        }),
+        slipOnSubtypes: (clazz) => ({
+          machine_grooved: true,
+          grip: clazz !== "I",
+          slip: clazz !== "I",
+        }),
+      };
+
+      const [selectedSystemId, setSelectedSystemId] = useState(NAVAL_SYSTEMS[0].id);
+      const [classMode, setClassMode] = useState("manual");
+      const [clazz, setClazz] = useState("II");
+      const [odMM, setOdMM] = useState(50);
+      const [designPressureBar, setDesignPressureBar] = useState(7.5);
+      const [designTemperatureC, setDesignTemperatureC] = useState(25);
+      const [space, setSpace] = useState("other_machinery");
+      const [evaluation, setEvaluation] = useState(null);
+      const [viewer, setViewer] = useState(null);
+      const [viewerImageSrc, setViewerImageSrc] = useState("");
+      const [viewerImageStatus, setViewerImageStatus] = useState("idle");
+      const viewerHistoryRef = useRef(false);
+
+      function suggestClass(mediumGroup, P, T) {
+        const lim = CLASS_LIMITS[mediumGroup];
+        if (!lim) return "II";
+        if (P > lim.classII.P || T > lim.classII.T) return "I";
+        if (P > lim.classIII.P || T > lim.classIII.T) return "II";
+        return "III";
+      }
+
+      function computeUsedClass(sys) {
+        if (classMode === "manual") return clazz;
+        return suggestClass(sys.mediumGroup, designPressureBar, designTemperatureC);
+      }
+
+      function expandSystemNotes(notes) {
+        if (!notes) return [];
+        const out = [];
+        for (const n of notes) {
+          const nums = n.match(/[0-9]+/g) || [];
+          for (const code of nums) {
+            if (TABLE_NOTES_ES[code]) out.push(`Nota ${code}: ${TABLE_NOTES_ES[code]}`);
+          }
+        }
+        return out;
+      }
+
+      function buildComplianceNotes(sys, usedClass, catNotes) {
+        const notes = [];
+        if (sys.fireTest && !/not required/i.test(sys.fireTest)) {
+          notes.push(`Requiere ensayo de resistencia al fuego: ${sys.fireTest}.`);
+          notes.push("La junta seleccionada debe ser de tipo **resistente al fuego aprobado**.");
+        } else {
+          notes.push(`Ensayo de resistencia al fuego: **no requerido** (según la fila del sistema).`);
+        }
+
+        notes.push(...expandSystemNotes(sys.notes));
+
+        if (space === "other_machinery") {
+          notes.push("Si se emplean slip‑on joints en este espacio: deben estar en **posiciones visibles y accesibles** (Nota 2).");
+        }
+
+        if (["cargo_hold", "tank"].includes(space)) {
+          notes.push("5.10.9: Slip‑on joints no en bodegas/tanques o espacios no accesibles; dentro de tanques solo si el medio es el mismo.");
+        }
+
+        notes.push("5.10.10: El tipo Slip no debe usarse como medio principal de conexión (salvo compensación axial).");
+        notes.push("5.10.5: Las juntas mecánicas deben resistir presión de rotura ≥ 4 × presión de diseño.");
+        notes.push("5.10.12: Ensayos de tipo conforme a LR Type Approval Test Spec No. 2, según servicio.");
+        notes.push("5.10.6: Si el tramo está conectado directamente al costado por debajo del límite de integridad estanca, las juntas mecánicas están prohibidas.");
+
+        const isSteam = sys.system.toLowerCase() === "steam" || sys.mediumGroup === "steam";
+        if (isSteam && designPressureBar <= 10 && space === "open_deck") notes.push("5.10.11: En buques tanque (oil/chemical), permitido 'restrained slip‑on' para vapor ≤ 10 bar en cubierta expuesta para absorber movimiento axial.");
+
+        notes.push(`Clase utilizada: Class ${usedClass}${classMode === "auto" ? " (derivada por P/T)" : " (seleccionada por usuario)"}.`);
+
+        notes.push(...catNotes);
+        return notes;
+      }
+
+      function syncViewerFromHash() {
+        const kind = parseViewerHash(window.location.hash);
+        if (kind) {
+          setViewer({ open: true, kind, title: buildViewerTitle(kind) });
+        } else {
+          setViewer(null);
+          viewerHistoryRef.current = false;
+        }
+      }
+
+      function handleOpenViewer(kind) {
+        if (!kind) return;
+        const targetHash = `#view:${kind}`;
+        const basePath = `${window.location.pathname}${window.location.search}`;
+        const newUrl = `${basePath}${targetHash}`;
+        if (viewer?.open) {
+          history.replaceState(null, "", newUrl);
+        } else {
+          history.pushState(null, "", newUrl);
+          viewerHistoryRef.current = true;
+        }
+        syncViewerFromHash();
+      }
+
+      function handleCloseViewer() {
+        if (!viewer?.open) return;
+        const expectedHash = viewer?.kind ? `#view:${viewer.kind}` : null;
+        if (expectedHash && viewerHistoryRef.current && window.location.hash === expectedHash && window.history.length > 1) {
+          history.back();
+        } else {
+          const baseUrl = `${window.location.pathname}${window.location.search}`;
+          history.replaceState(null, "", baseUrl);
+          syncViewerFromHash();
+        }
+      }
+
+      useEffect(() => {
+        const handleLocationChange = () => syncViewerFromHash();
+        handleLocationChange();
+        window.addEventListener("hashchange", handleLocationChange);
+        window.addEventListener("popstate", handleLocationChange);
+        return () => {
+          window.removeEventListener("hashchange", handleLocationChange);
+          window.removeEventListener("popstate", handleLocationChange);
+        };
+      }, []);
+
+      useEffect(() => {
+        if (!(viewer?.open && viewer.kind)) {
+          setViewerImageStatus("idle");
+          setViewerImageSrc("");
+          return;
+        }
+
+        let cancelled = false;
+        const desiredSrc = JOINT_IMAGES[viewer.kind] || DEFAULT_JOINT_IMAGE;
+        setViewerImageStatus("loading");
+
+        const loader = new Image();
+        loader.src = desiredSrc;
+        loader.onload = () => {
+          if (!cancelled) {
+            setViewerImageSrc(desiredSrc);
+            setViewerImageStatus("loaded");
+          }
+        };
+        loader.onerror = () => {
+          if (cancelled) return;
+          if (desiredSrc === DEFAULT_JOINT_IMAGE) {
+            setViewerImageSrc(DEFAULT_JOINT_IMAGE);
+            setViewerImageStatus("error");
+            return;
+          }
+
+          const fallbackSrc = DEFAULT_JOINT_IMAGE;
+          const fallbackImg = new Image();
+          fallbackImg.src = fallbackSrc;
+          fallbackImg.onload = () => {
+            if (!cancelled) {
+              setViewerImageSrc(fallbackSrc);
+              setViewerImageStatus("loaded");
+            }
+          };
+          fallbackImg.onerror = () => {
+            if (!cancelled) {
+              setViewerImageSrc(fallbackSrc);
+              setViewerImageStatus("error");
+            }
+          };
+        };
+
+        return () => {
+          cancelled = true;
+        };
+      }, [viewer]);
+
+      useEffect(() => {
+        if (!viewer?.open) return;
+        const handleKeyDown = (event) => {
+          if (event.key === "Escape") {
+            handleCloseViewer();
+          }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+      }, [viewer?.open, viewer?.kind]);
+
+      function evaluate() {
+        const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
+        const usedClass = computeUsedClass(sys);
+
+        const base = { ...sys.allowed };
+
+        const allowAfterLocation = { ...base };
+        const catNotes = [];
+
+        if (["category_a", "accommodation", "munition_store"].includes(space)) {
+          allowAfterLocation.slipOn = false;
+          catNotes.push("Nota 2: Slip‑on bloqueado por la ubicación seleccionada.");
+        }
+        if (["cargo_hold", "tank"].includes(space)) {
+          allowAfterLocation.slipOn = false;
+          catNotes.push("5.10.9: Slip‑on bloqueado en bodegas/tanques (salvo mismo medio dentro del tanque).");
+        }
+
+        let pipeUnionsAllowed = allowAfterLocation.pipeUnions;
+        let pipeUnionsRule = { allowed: false, reason: "" };
+        if (pipeUnionsAllowed) {
+          pipeUnionsRule = COUPLING_RULES.pipeUnions(usedClass, odMM);
+          pipeUnionsAllowed = pipeUnionsAllowed && pipeUnionsRule.allowed;
+          if (!pipeUnionsRule.allowed) catNotes.push(pipeUnionsRule.reason);
+        }
+
+        let compressionAllowed = allowAfterLocation.compression;
+        let compressionSubs = { swage: false, bite: false, typical: false, flared: false, press: false };
+        if (compressionAllowed) {
+          compressionSubs = COUPLING_RULES.compressionSubtypes(usedClass, odMM);
+          const anySub = Object.values(compressionSubs).some(Boolean);
+          compressionAllowed = compressionAllowed && anySub;
+          if (!anySub) catNotes.push(`Table 1.5.4: En Class ${usedClass}${usedClass !== "III" ? ` y OD ${odMM} mm` : ""} no queda ningún subtipo de compression permitido.`);
+          if (usedClass !== "III" && odMM > 60.3) catNotes.push("Table 1.5.4: En Class I/II, Bite/Typical/Flared solo OD ≤ 60.3mm.");
+          if (usedClass !== "III") catNotes.push("Table 1.5.4: Swage/Press solo en Class III.");
+        }
+
+        let slipOnAllowed = allowAfterLocation.slipOn;
+        let slipOnSubs = { machine_grooved: false, grip: false, slip: false };
+        if (slipOnAllowed) {
+          slipOnSubs = COUPLING_RULES.slipOnSubtypes(usedClass);
+          const anySub = Object.values(slipOnSubs).some(Boolean);
+          slipOnAllowed = slipOnAllowed && anySub;
+          if (!slipOnSubs.grip || !slipOnSubs.slip) catNotes.push("Table 1.5.4: Grip/Slip no se permiten en Class I.");
+        }
+
+        const categories = { pipeUnions: pipeUnionsAllowed, compression: compressionAllowed, slipOn: slipOnAllowed };
+
+        const details = {
+          pipeUnionsRule,
+          compressionSubs,
+          slipOnSubs,
+          odMM,
+          design: { P: designPressureBar, T: designTemperatureC },
+          classMode,
+          suggestedClass: suggestClass(sys.mediumGroup, designPressureBar, designTemperatureC),
+        };
+
+        const reasons = [];
+        if (!categories.slipOn && base.slipOn) reasons.push("Slip‑on permitido por 1.5.3, pero bloqueado por ubicación (Nota 2 / 5.10.9) o por clase en 1.5.4.");
+
+        setEvaluation({ sys, usedClass, categories, reasons, details, notes: buildComplianceNotes(sys, usedClass, catNotes) });
+      }
+
+      const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
+      const usedClass = computeUsedClass(sys);
+
+      return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
+        <header className="sticky top-0 z-10 backdrop-blur bg-slate-900/70 border-b border-slate-700">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+            ${h(ShieldIcon, { className: "w-6 h-6" })}
+            <h1 className="text-xl font-semibold">Asesor Grip‑Type LR (Slip‑on Joints) – v0.7 · Naval Ships</h1>
+            <span className="ml-auto hidden md:block text-sm text-slate-300">Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.</span>
+          </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto p-4 space-y-6">
+          <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <${Field} label="Sistema (Table 1.5.3)">
+                <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${selectedSystemId} onChange=${(e) => setSelectedSystemId(e.target.value)}>
+                  ${Array.from(new Set(NAVAL_SYSTEMS.map((s) => s.group))).map(
+                    (grp) => html`<optgroup key=${grp} label=${grp}>
+                      ${NAVAL_SYSTEMS.filter((s) => s.group === grp).map(
+                        (s) => html`<option key=${s.id} value=${s.id}>${s.system}</option>`
+                      )}
+                    </optgroup>`
+                  )}
+                </select>
+              </${Field}>
+              <${Field} label="Espacio / Ubicación">
+                <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${space} onChange=${(e) => setSpace(e.target.value)}>
+                  <option value="category_a">Category A machinery space</option>
+                  <option value="other_machinery">Other machinery/service spaces (accesible & visible)</option>
+                  <option value="accommodation">Accommodation spaces</option>
+                  <option value="munition_store">Munition stores</option>
+                  <option value="cargo_hold">Cargo hold</option>
+                  <option value="tank">Inside tank</option>
+                  <option value="open_deck">Open/Weather deck</option>
+                </select>
+              </${Field}>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <${Field} label="Modo de clase">
+                <div className="flex items-center gap-3">
+                  <button onClick=${() => setClassMode("manual")} className=${`px-3 py-1 rounded-full border ${classMode === "manual" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}>
+                    Seleccionar clase
+                  </button>
+                  <button onClick=${() => setClassMode("auto")} className=${`px-3 py-1 rounded-full border ${classMode === "auto" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}>
+                    Calcular por P/T
+                  </button>
+                  <span className="text-xs text-slate-400">Class I es la más exigente; usa AUTO si quieres derivarla desde P/T (Tabla 1.2.1).</span>
+                </div>
+              </${Field}>
+              ${
+                classMode === "manual"
+                  ? html`<${Field} label="Clase de tubería (Table 1.5.4)">
+                      <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${clazz} onChange=${(e) => setClazz(e.target.value)}>
+                        <option value="I">Class I</option>
+                        <option value="II">Class II</option>
+                        <option value="III">Class III</option>
+                      </select>
+                    </${Field}>`
+                  : html`<div className="grid grid-cols-2 gap-3">
+                      <${Field} label="P diseño [bar]">
+                        <input type="number" step="0.1" className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${designPressureBar} onChange=${(e) => setDesignPressureBar(Number(e.target.value))} />
+                      </${Field}>
+                      <${Field} label="T diseño [°C]">
+                        <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${designTemperatureC} onChange=${(e) => setDesignTemperatureC(Number(e.target.value))} />
+                      </${Field}>
+                    </div>`
+              }
+            </div>
+
+            <div className="grid md:grid-cols-1 gap-4">
+              <${Field} label="Diámetro exterior OD [mm]">
+                <input type="number" className="w-full max-w-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${odMM} onChange=${(e) => setOdMM(Number(e.target.value))} />
+              </${Field}>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button onClick=${evaluate} className="inline-flex items-center gap-2 bg-emerald-400 text-emerald-950 font-semibold px-3 py-2 rounded-xl hover:bg-emerald-300">
+                ${h(SearchIcon, { className: "w-4 h-4" })} Evaluar
+              </button>
+              <div className="text-xs text-slate-300">
+                Clase utilizada ahora: <b>Class ${usedClass}</b> ${classMode === "auto" ? `(calculada por P/T para ${sys.mediumGroup})` : ""}
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
+            ${
+              !evaluation
+                ? html`<p className="text-slate-400 text-sm">Configura y pulsa Evaluar para ver las uniones permitidas y notas normativas (en español).</p>`
+                : html`<div className="space-y-4">
+                    <div className="text-sm text-slate-300">
+                      Sistema: <b>${evaluation.sys.group} → ${evaluation.sys.system}</b> · Condición del sistema (tabla): <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo fuego: <b>${evaluation.sys.fireTest}</b>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <${CategoryCard}
+                        title="Pipe unions"
+                        allowed=${evaluation.categories.pipeUnions}
+                        details=${evaluation.details.pipeUnionsRule?.reason}
+                        items=${[
+                          {
+                            label: JOINT_LABELS.pipe_welded_brazed,
+                            kind: "pipe_welded_brazed",
+                            available: evaluation.categories.pipeUnions,
+                          },
+                        ]}
+                        onView=${handleOpenViewer}
+                      />
+
+                      <${CategoryCard}
+                        title="Compression couplings"
+                        allowed=${evaluation.categories.compression}
+                        details=${evaluation.categories.compression ? "Subtipos según clase y OD" : "Sin subtipos válidos con la clase/OD"}
+                        items=${[
+                          {
+                            label: JOINT_LABELS.compression_swage,
+                            kind: "compression_swage",
+                            available: evaluation.details.compressionSubs.swage,
+                          },
+                          {
+                            label: JOINT_LABELS.compression_press,
+                            kind: "compression_press",
+                            available: evaluation.details.compressionSubs.press,
+                          },
+                          {
+                            label: JOINT_LABELS.compression_typical,
+                            kind: "compression_typical",
+                            available: evaluation.details.compressionSubs.typical,
+                          },
+                          {
+                            label: JOINT_LABELS.compression_bite,
+                            kind: "compression_bite",
+                            available: evaluation.details.compressionSubs.bite,
+                          },
+                          {
+                            label: JOINT_LABELS.compression_flared,
+                            kind: "compression_flared",
+                            available: evaluation.details.compressionSubs.flared,
+                          },
+                        ]}
+                        onView=${handleOpenViewer}
+                      />
+
+                      <${CategoryCard}
+                        title="Slip-on Joints"
+                        allowed=${evaluation.categories.slipOn}
+                        details=${evaluation.categories.slipOn ? "Machine‑grooved / Grip / Slip" : "Bloqueado por ubicación o clase"}
+                        items=${[
+                          {
+                            label: JOINT_LABELS.slip_machine_grooved,
+                            kind: "slip_machine_grooved",
+                            available: evaluation.details.slipOnSubs.machine_grooved,
+                          },
+                          {
+                            label: JOINT_LABELS.slip_grip,
+                            kind: "slip_grip",
+                            available: evaluation.details.slipOnSubs.grip,
+                          },
+                          {
+                            label: JOINT_LABELS.slip_slip,
+                            kind: "slip_slip",
+                            available: evaluation.details.slipOnSubs.slip,
+                          },
+                        ]}
+                        onView=${handleOpenViewer}
+                      />
+                    </div>
+
+                    <div className="text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
+                      <div className="font-semibold mb-1">Notas y condiciones que aplican</div>
+                      <ul className="list-disc list-inside">
+                        ${evaluation.notes.map((n, i) => html`<li key=${i}>${n}</li>`)}
+                      </ul>
+                    </div>
+
+                    <div className="text-xs text-slate-400">
+                      Grupo de medio: <b>${sys.mediumGroup}</b>. Límites Class II: P≤${CLASS_LIMITS[sys.mediumGroup].classII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classII.T} °C; Class III: P≤${CLASS_LIMITS[sys.mediumGroup].classIII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classIII.T} °C. Si P/T superan Class II, norma exige Class I (2.3.2).
+                    </div>
+                  </div>`
+            }
+          </section>
+
+          <footer className="pb-10 text-xs text-slate-400">v0.7 • Naval Ships – Motor de decisión con notas en español y visor de referencias gráficas (imágenes) por tipo de unión.</footer>
+        </main>
+
+        ${
+          viewer?.open
+            ? html`<div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick=${handleCloseViewer}>
+                <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 max-w-2xl w-full" onClick=${(e) => e.stopPropagation()}>
+                  <div className="flex items-center mb-3">
+                    <h3 className="text-lg font-semibold">${viewer.title}</h3>
+                    <button className="ml-auto px-3 py-1 rounded-lg bg-slate-800 border border-slate-600" onClick=${handleCloseViewer}>
+                      Cerrar
+                    </button>
+                  </div>
+                  <div className="bg-slate-800 rounded-xl p-4 flex items-center justify-center min-h-[280px]">
+                    ${
+                      viewerImageStatus === "loading" || viewerImageStatus === "idle"
+                        ? html`<div className="text-sm text-slate-300 animate-pulse">Cargando imagen...</div>`
+                        : html`<img
+                            src=${viewerImageSrc || DEFAULT_JOINT_IMAGE}
+                            alt=${JOINT_LABELS[viewer.kind] || viewer.title || "Joint reference"}
+                            className="max-h-[70vh] w-full object-contain rounded-lg"
+                          />`
+                    }
+                  </div>
+                  ${
+                    viewerImageStatus === "error"
+                      ? html`<div className="text-xs text-rose-300 mt-2">No se encontró una imagen específica; se muestra la referencia genérica.</div>`
+                      : html`<div className="text-xs text-slate-400 mt-2">Referencia fotográfica para el tipo de unión seleccionado.</div>`
+                  }
+                </div>
+              </div>`
+            : ""
+        }
+      </div>`;
+    }
+
+    function Field({ label, children }) {
+      return html`<label className="block text-sm">
+        <div className="mb-1 text-slate-300">${label}</div>
+        ${children}
+      </label>`;
+    }
+
+    function CategoryCard({ title, allowed, details, items, onView }) {
+      const wrapperClass = `rounded-xl p-3 border ${allowed ? "border-emerald-700 bg-emerald-900/20" : "border-rose-700 bg-rose-900/20"}`;
+      return html`<div className=${wrapperClass}>
+        <div className="font-semibold mb-1">${title}</div>
+        <div className="text-sm mb-2">
+          ${allowed ? "Se puede usar" : "No se puede usar"}${details ? html` • ${details}` : ""}
+        </div>
+        ${
+          items
+            ? html`<ul className="text-sm space-y-1">
+                ${items.map(
+                  (it, idx) => html`<li key=${idx} className="flex items-center gap-2">
+                    <span className=${it.available ? "" : "line-through opacity-60"}>${it.label}</span>
+                    ${
+                      it.available
+                        ? html`<button className="text-xs px-2 py-0.5 rounded-lg border border-slate-600 hover:bg-slate-700" onClick=${() => onView(it.kind)}>
+                            ver
+                          </button>`
+                        : ""
+                    }
+                  </li>`
+                )}
+              </ul>`
+            : ""
+        }
+      </div>`;
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(h(App));
+  </script>
+</body>
+</html>
