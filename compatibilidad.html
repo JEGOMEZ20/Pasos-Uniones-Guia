@@ -266,13 +266,6 @@
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
-
-      <div class="advanced-toggle">
-        <label>
-          <input type="checkbox" id="allowDash"/> Permitir casos “–” (acuerdo especial) <span class="badge">avanzado</span>
-        </label>
-      </div>
-
       <details>
         <summary><strong>Autoverificación de lógica (tests unitarios)</strong></summary>
         <div id="tests" class="tests"></div>
@@ -324,15 +317,36 @@ const SYSTEMS = [
   'Drinking water lines','Fresh cooling water lines','Compressed air lines','Hydraulic lines'
 ];
 
-const MATRIX = {
+const ALLOWED_SYMBOLS = new Set(['M','D','N','X','-']);
+
+function normalizeSymbol(value){
+  if(value==null) return 'X';
+  const raw=String(value).trim();
+  if(raw==='-') return '-';
+  const upper=raw.toUpperCase();
+  return ALLOWED_SYMBOLS.has(upper)?upper:'X';
+}
+
+function normalizeMatrix(matrix){
+  const normalized={};
+  Object.keys(matrix).forEach(system=>{
+    normalized[system]={};
+    Object.keys(matrix[system]).forEach(space=>{
+      normalized[system][space]=normalizeSymbol(matrix[system][space]);
+    });
+  });
+  return normalized;
+}
+
+const MATRIX = normalizeMatrix({
   'Bilge lines': {
-    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'D','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'M','Cargo pump rooms':'M','Weather deck':'-'
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'D','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'M','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'M','Cargo pump rooms':'M','Weather deck':'-'
   },
   'Ballast lines': {
-    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'M','Cargo tanks, tank ships':'-','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'-','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
   },
   'Seawater lines': {
-    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
+    'Machinery spaces':'M','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'M','Fuel and changeover tanks':'D','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'M','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'M','Weather deck':'N'
   },
   'Fuel lines': {
     'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'D','Ballast water tanks':'D','Fuel and changeover tanks':'N','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'-','Weather deck':'N'
@@ -356,15 +370,17 @@ const MATRIX = {
     'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'X','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'X','Drinking water tanks':'N','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'N','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'X','Weather deck':'N'
   },
   'Fresh cooling water lines': {
-    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'D','Fresh cooling water tanks':'N','Lubricating oil tanks':'D','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'-','Weather deck':'N'
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'X','Fuel and changeover tanks':'D','Fresh cooling water tanks':'N','Lubricating oil tanks':'D','Hydraulic oil tanks':'X','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'-','Cargo pump rooms':'-','Weather deck':'N'
   },
   'Compressed air lines': {
-    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'N','Condensate and feedwater tanks':'X','Accommodation':'N','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'X','Cargo pump rooms':'N','Weather deck':'N'
+    'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'M','Lubricating oil tanks':'M','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'N','Condensate and feedwater tanks':'X','Accommodation':'N','Cargo tanks, tank ships':'X','Cofferdams, tank ships':'N','Cargo pump rooms':'N','Weather deck':'N'
   },
   'Hydraulic lines': {
     'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'N','Cofferdams, tank ships':'N','Cargo pump rooms':'N','Weather deck':'N'
   },
-};
+});
+
+const matrix_rendered = MATRIX;
 
 // ==============================
 // Tablas 11.6–11.8 como INTERVALOS [min,max]
@@ -404,7 +420,7 @@ const SPACES_LABELS = {
 };
 
 const SYSTEMS_LABELS = {
-  'Bilge lines': 'Líneas de sentina',
+  'Bilge lines': 'Líneas de sentina (Achique)',
   'Ballast lines': 'Líneas de lastre',
   'Seawater lines': 'Líneas de agua de mar',
   'Fuel lines': 'Líneas de combustible',
@@ -433,6 +449,22 @@ function fillSelect(id,arr,labelMap){
     o.value = v;
     o.textContent = labelMap[v] || v;
     el.appendChild(o);
+  });
+}
+
+function wrapSvgText(textEl,text,maxCharsPerLine=28){
+  if(!textEl) return;
+  while(textEl.firstChild) textEl.removeChild(textEl.firstChild);
+  const parts=text.includes(' (')
+    ? [text.split(' (')[0],'('+text.split(' (')[1]]
+    : text.match(new RegExp(`.{1,${maxCharsPerLine}}(\s|$)`,'g'))||[text];
+  parts.forEach((line,i)=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','tspan');
+    t.setAttribute('x',textEl.getAttribute('x')||'50%');
+    t.setAttribute('dy',i===0?'0':'1.2em');
+    t.setAttribute('text-anchor','middle');
+    t.textContent=line.trim();
+    textEl.appendChild(t);
   });
 }
 
@@ -476,7 +508,7 @@ function drawViz({status,place,system,s}){
       </filter>
     </defs>
     <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
-    <text x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)">${placeES}</text>
+    <text class="viz-title" x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)"></text>
     <g filter="url(#${filterId})">
       <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
@@ -490,6 +522,8 @@ function drawViz({status,place,system,s}){
     ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
     ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
   </svg>`;
+  const titleNode=svg.querySelector('.viz-title');
+  wrapSvgText(titleNode,placeES);
 }
 
 function calc(){
@@ -500,7 +534,7 @@ function calc(){
   const da=parseFloat(document.getElementById('da').value);
 
   const cell=(MATRIX[system]||{})[locationSel];
-  let symbol=cell||'X';
+  let symbol=normalizeSymbol(cell);
   let group=null;
 
   if (symbol === '-') {
@@ -573,17 +607,22 @@ function calc(){
 
 function runTests(){
   const cases=[];
-  cases.push(['Fuel lines en Fuel&changeover = N',MATRIX['Fuel lines']['Fuel and changeover tanks']==='N']);
-  cases.push(['Bilge lines en Ballast = D',MATRIX['Bilge lines']['Ballast water tanks']==='D']);
-  cases.push(['Fresh cooling line en Fresh cooling tank = N',MATRIX['Fresh cooling water lines']['Fresh cooling water tanks']==='N']);
-  cases.push(['Hydraulic lines en Hydraulic oil tank = N',MATRIX['Hydraulic lines']['Hydraulic oil tanks']==='N']);
-  cases.push(['Drinking water line en Drinking water tank = N',MATRIX['Drinking water lines']['Drinking water tanks']==='N']);
-  cases.push(['Fuel lines en Machinery spaces = N',MATRIX['Fuel lines']['Machinery spaces']==='N']);
-  cases.push(['Bilge en Cofferdams/void = M',MATRIX['Bilge lines']['Cofferdams / void spaces']==='M']);
-  cases.push(['Steam en Accommodation = N',MATRIX['Steam lines']['Accommodation']==='N']);
-  cases.push(['Compressed air en Thermal oil tanks = N',MATRIX['Compressed air lines']['Thermal oil tanks']==='N']);
-  cases.push(['Hydraulic lines en Cargo tanks (tank ships) = N',MATRIX['Hydraulic lines']['Cargo tanks, tank ships']==='N']);
-  cases.push(['Fresh cooling line en Cargo pump rooms = –',MATRIX['Fresh cooling water lines']['Cargo pump rooms']==='-']);
+  cases.push(['Fuel lines en Fuel&changeover = N',matrix_rendered['Fuel lines']['Fuel and changeover tanks']==='N']);
+  cases.push(['Bilge lines en Ballast = D',matrix_rendered['Bilge lines']['Ballast water tanks']==='D']);
+  cases.push(['Fresh cooling line en Fresh cooling tank = N',matrix_rendered['Fresh cooling water lines']['Fresh cooling water tanks']==='N']);
+  cases.push(['Hydraulic lines en Hydraulic oil tank = N',matrix_rendered['Hydraulic lines']['Hydraulic oil tanks']==='N']);
+  cases.push(['Drinking water line en Drinking water tank = N',matrix_rendered['Drinking water lines']['Drinking water tanks']==='N']);
+  cases.push(['Fuel lines en Machinery spaces = N',matrix_rendered['Fuel lines']['Machinery spaces']==='N']);
+  cases.push(['Bilge en Cofferdams/void = M',matrix_rendered['Bilge lines']['Cofferdams / void spaces']==='M']);
+  cases.push(['Steam en Accommodation = N',matrix_rendered['Steam lines']['Accommodation']==='N']);
+  cases.push(['Compressed air en Thermal oil tanks = N',matrix_rendered['Compressed air lines']['Thermal oil tanks']==='N']);
+  cases.push(['Hydraulic lines en Cargo tanks (tank ships) = N',matrix_rendered['Hydraulic lines']['Cargo tanks, tank ships']==='N']);
+  cases.push(['Fresh cooling line en Cargo pump rooms = –',matrix_rendered['Fresh cooling water lines']['Cargo pump rooms']==='-']);
+  cases.push(['Bilge lines en Accommodation = M',matrix_rendered['Bilge lines']['Accommodation']==='M']);
+  cases.push(['Ballast lines en Accommodation = X',matrix_rendered['Ballast lines']['Accommodation']==='X']);
+  cases.push(['Seawater lines en Accommodation = M',matrix_rendered['Seawater lines']['Accommodation']==='M']);
+  cases.push(['Fresh cooling water lines en Cofferdams, tank ships = –',matrix_rendered['Fresh cooling water lines']['Cofferdams, tank ships']==='-']);
+  cases.push(['Compressed air lines en Cofferdams, tank ships = N',matrix_rendered['Compressed air lines']['Cofferdams, tank ships']==='N']);
   cases.push(['Steel M, dₐ=21.3 ⇒ s=3.2',Math.abs(tSteel('M',21.3)-3.2)<1e-9]);
   cases.push(['Steel D, dₐ=160 ⇒ s=8.8',Math.abs(tSteel('D',160)-8.8)<1e-9]);
   cases.push(['Inox, dₐ=21.3 ⇒ s=1.6',Math.abs(tInox(21.3)-1.6)<1e-9]);
@@ -598,16 +637,13 @@ function runTests(){
   ]);
 
   cases.push(['Solo símbolos permitidos en toda la matriz',
-    Object.keys(MATRIX).every(r =>
-      Object.keys(MATRIX[r]).every(c => ['M','D','N','X','-'].includes(MATRIX[r][c]))
+    Object.keys(matrix_rendered).every(r =>
+      Object.keys(matrix_rendered[r]).every(c => ALLOWED_SYMBOLS.has(matrix_rendered[r][c]))
     )
   ]);
 
   cases.push(['Caso “–” muestra aviso exacto',
-    (function(){
-      const sym = MATRIX['Fresh cooling water lines']['Cargo pump rooms'];
-      return sym === '-';
-    })()
+    matrix_rendered['Fresh cooling water lines']['Cargo pump rooms'] === '-'
   ]);
 
   const ok=cases.every(([_,p])=>p);
@@ -617,7 +653,7 @@ function runTests(){
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
-['system','location','material','da','allowDash'].forEach(id=>{
+['system','location','material','da'].forEach(id=>{
   document.getElementById(id).addEventListener('change',calc);
   document.getElementById(id).addEventListener('input',calc);
 });
