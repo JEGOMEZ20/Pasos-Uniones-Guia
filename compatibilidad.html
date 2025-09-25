@@ -108,6 +108,7 @@
     margin-top: 6px;
     line-height: 1.5;
   }
+  .hidden { display: none; }
   .advanced-toggle {
     margin-top: 16px;
     display: flex;
@@ -157,6 +158,40 @@
     background: radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.14), transparent 55%),
                 linear-gradient(160deg, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.55));
     overflow: hidden;
+  }
+  .viz-card { position: relative; }
+  .viz-card svg { display: block; }
+  .viz-title {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 48px;
+    text-align: center;
+    margin: 0 auto;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(226, 232, 240, 0.88);
+    pointer-events: none;
+  }
+  .viz-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 700;
+    background: rgba(15, 23, 42, 0.7);
+    border: 2px solid currentColor;
+    pointer-events: none;
   }
   h2 { font-size: 22px; margin: 18px 0 10px; letter-spacing: -0.01em; }
   .tbl {
@@ -255,10 +290,16 @@
           <select id="material">
             <option value="steel">Acero al carbono (Tabla 11.6)</option>
             <option value="stainless">Acero inoxidable austenítico (Tabla 11.7)</option>
-            <option value="copper">Cobre (Tabla 11.8)</option>
-            <option value="copper_alloy">Aleaciones de cobre (Tabla 11.8)</option>
+            <option value="copper_family">Cobre y aleaciones de cobre (Tabla 11.8)</option>
           </select>
           <div id="groupBox" class="hint">Grupo (solo steel): <b id="groupHint">—</b></div>
+          <div id="copperSub" class="hidden">
+            <label for="copperType">Subtipo</label>
+            <select id="copperType">
+              <option value="copper">Cobre</option>
+              <option value="copper_alloy">Aleaciones de cobre</option>
+            </select>
+          </div>
         </div>
         <div>
           <label>Diámetro exterior d<sub>a</sub> [mm]</label>
@@ -274,7 +315,7 @@
 
     <!-- Vista / resultado -->
     <div class="card result">
-      <div class="svgbox" id="viz"></div>
+      <div class="svgbox viz-card" id="viz"></div>
       <div class="legend">
         <span class="pill ok">Compatible</span>
         <span class="pill bad">No compatible</span>
@@ -391,13 +432,30 @@ const STEEL = {
   'D': [[38.0,88.9,6.3],[88.9,114.3,7.1],[114.3,152.4,8.0],[152.4,Infinity,8.8]]
 };
 const INOX = [[0,17.2,1.0],[17.2,48.3,1.6],[48.3,88.9,2.0],[88.9,168.3,2.3],[168.3,219.1,2.6],[219.1,273.0,2.9],[273.0,406.0,3.6],[406.0,Infinity,4.0]];
-const COPPER = [[8.0,10.0,1.0,0.8],[12.0,20.0,1.2,1.0],[25.0,44.5,1.5,1.2],[50.0,76.1,2.0,1.5],[88.9,108.0,2.5,2.0],[133.0,159.0,3.0,2.5],[193.7,267.0,3.5,3.0],[273.0,457.2,4.0,3.5],[470.0,508.0,4.5,4.0]];
+const TABLE_118 = [
+  { daMin: 8.0, daMax: 10.0, s: { copper: 1.0, copper_alloy: 0.8 } },
+  { daMin: 12.0, daMax: 20.0, s: { copper: 1.2, copper_alloy: 1.0 } },
+  { daMin: 25.0, daMax: 44.5, s: { copper: 1.5, copper_alloy: 1.2 } },
+  { daMin: 50.0, daMax: 76.1, s: { copper: 2.0, copper_alloy: 1.5 } },
+  { daMin: 88.9, daMax: 108.0, s: { copper: 2.5, copper_alloy: 2.0 } },
+  { daMin: 133.0, daMax: 159.0, s: { copper: 3.0, copper_alloy: 2.5 } },
+  { daMin: 193.7, daMax: 267.0, s: { copper: 3.5, copper_alloy: 3.0 } },
+  { daMin: 273.0, daMax: 457.2, s: { copper: 4.0, copper_alloy: 3.5 } },
+  { daMin: 470.0, daMax: 508.0, s: { copper: 4.5, copper_alloy: 4.0 } }
+];
 
 function inRangeClosedOpen(x,a,b){return x>=a && x<b;}
 function inRangeClosed(x,a,b){return x>=a && x<=b;}
 function tSteel(group,da){const arr=STEEL[group]||[];for(const[lo,hi,s]of arr){if(inRangeClosedOpen(da,lo,hi))return s;}return null;}
 function tInox(da){for(const[lo,hi,s]of INOX){if(inRangeClosedOpen(da,lo,hi))return s;}return null;}
-function tCopper(da,alloy){for(const[lo,hi,scu,sall]of COPPER){if(inRangeClosed(da,lo,hi))return alloy?sall:scu;}return null;}
+function tCopperFamily(da,subtype){
+  for(const row of TABLE_118){
+    if(inRangeClosed(da,row.daMin,row.daMax)){
+      return row.s[subtype] ?? null;
+    }
+  }
+  return null;
+}
 
 // ===== Etiquetas ES (sin cambiar las claves internas) =====
 const SPACES_LABELS = {
@@ -452,22 +510,6 @@ function fillSelect(id,arr,labelMap){
   });
 }
 
-function wrapSvgText(textEl,text,maxCharsPerLine=28){
-  if(!textEl) return;
-  while(textEl.firstChild) textEl.removeChild(textEl.firstChild);
-  const parts=text.includes(' (')
-    ? [text.split(' (')[0],'('+text.split(' (')[1]]
-    : text.match(new RegExp(`.{1,${maxCharsPerLine}}(\s|$)`,'g'))||[text];
-  parts.forEach((line,i)=>{
-    const t=document.createElementNS('http://www.w3.org/2000/svg','tspan');
-    t.setAttribute('x',textEl.getAttribute('x')||'50%');
-    t.setAttribute('dy',i===0?'0':'1.2em');
-    t.setAttribute('text-anchor','middle');
-    t.textContent=line.trim();
-    textEl.appendChild(t);
-  });
-}
-
 function drawViz({status,place,system,s}){
   const svg=document.getElementById('viz');
   const w=svg.clientWidth||560;
@@ -486,7 +528,9 @@ function drawViz({status,place,system,s}){
   const placeES = SPACES_LABELS[place] || place;
   const systemES = SYSTEMS_LABELS[system] || system;
   svg.innerHTML=`
-  <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${systemES} → ${placeES}">
+    <div class="viz-title"></div>
+    <div class="viz-check" aria-hidden="true"></div>
+    <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${systemES} → ${placeES}">
     <defs>
       <linearGradient id="tankGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="${tankTop}" />
@@ -508,29 +552,39 @@ function drawViz({status,place,system,s}){
       </filter>
     </defs>
     <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
-    <text class="viz-title" x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)"></text>
     <g filter="url(#${filterId})">
       <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
     <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
     ${s&&status==='ok'?`<text x="${tankX+tankW/2}" y="${pipeY+pipeH/2+24}" text-anchor="middle" font-size="14" fill="#4ade80">s = ${s.toFixed(1)} mm</text>`:''}
-    <g transform="translate(${tankX+tankW-58}, ${tankY+22})">
-      <circle cx="18" cy="18" r="18" fill="rgba(15,23,42,0.7)" stroke="${color}" stroke-width="2"/>
-      <text x="18" y="23" text-anchor="middle" font-size="18" fill="${color}" font-weight="700">${icon}</text>
-    </g>
     <text x="${tankX+36}" y="${tankY+tankH-28}" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
     ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
     ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
   </svg>`;
   const titleNode=svg.querySelector('.viz-title');
-  wrapSvgText(titleNode,placeES);
+  if(titleNode){
+    titleNode.textContent=placeES;
+  }
+  const checkNode=svg.querySelector('.viz-check');
+  if(checkNode){
+    checkNode.textContent=icon;
+    checkNode.style.color=color;
+    checkNode.style.borderColor=color;
+  }
+}
+
+const materialSel=document.getElementById('material');
+const copperSub=document.getElementById('copperSub');
+const copperTypeSel=document.getElementById('copperType');
+
+function toggleCopperSub(){
+  copperSub.classList.toggle('hidden', materialSel.value !== 'copper_family');
 }
 
 function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
-  const materialEl=document.getElementById('material');
-  const mat=materialEl.value;
+  const mat=materialSel.value;
   const da=parseFloat(document.getElementById('da').value);
 
   const cell=(MATRIX[system]||{})[locationSel];
@@ -577,16 +631,21 @@ function calc(){
       document.getElementById('outTbl').style.display='none'; return;
     }
     rule='Austenitic stainless steel · Tabla 11.7 · intervalo válido.';
-  } else {
+  } else if(mat==='copper_family'){
     document.getElementById('groupHint').textContent='—';
-    s=tCopper(da,mat==='copper_alloy');
+    const sub=copperTypeSel.value;
+    const row=TABLE_118.find(r=>da>=r.daMin && da<=r.daMax);
+    s=row?row.s[sub]??null:null;
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (cobre)</span>';
-      document.getElementById('explain').innerHTML='El diámetro no coincide con ningún rango de la Tabla 11.8 (tiene huecos entre tramos).';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
+      document.getElementById('explain').innerHTML='El diámetro no coincide con ningún rango de la Tabla 11.8 para el subtipo seleccionado.';
       document.getElementById('outTbl').style.display='none'; return;
     }
-    rule=`${mat==='copper'?'Copper':'Copper alloy'} · Tabla 11.8 · rango válido.`;
+    const subtypeText=copperTypeSel.options[copperTypeSel.selectedIndex].text;
+    rule=`Cobre y aleaciones · Tabla 11.8 · Subtipo: ${subtypeText}.`;
+  } else {
+    document.getElementById('groupHint').textContent='—';
   }
 
   drawViz({status:'ok',place:locationSel,system,s});
@@ -597,8 +656,11 @@ function calc(){
   tbody.innerHTML='';
   const sysES = SYSTEMS_LABELS[system] || system;
   const locES = SPACES_LABELS[locationSel] || locationSel;
+  const materialText = mat==='copper_family'
+    ? `Cobre y aleaciones (Tabla 11.8) – ${copperTypeSel.options[copperTypeSel.selectedIndex].text}`
+    : materialSel.options[materialSel.selectedIndex].text;
   const rows=[
-    ['Sistema',sysES],['Ubicación',locES],['Material',materialEl.options[materialEl.selectedIndex].text],
+    ['Sistema',sysES],['Ubicación',locES],['Material',materialText],
     ['Símbolo (Tabla 11.5)',symbol],['Grupo (si steel)',group||'—'],['dₐ [mm]',da],['Espesor s [mm]',s!=null?s.toFixed(1):'—'],
   ];
   for(const[k,v]of rows){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=k;tr.appendChild(a);const b=document.createElement('td');b.innerHTML=String(v);tr.appendChild(b);tbody.appendChild(tr);}
@@ -626,8 +688,9 @@ function runTests(){
   cases.push(['Steel M, dₐ=21.3 ⇒ s=3.2',Math.abs(tSteel('M',21.3)-3.2)<1e-9]);
   cases.push(['Steel D, dₐ=160 ⇒ s=8.8',Math.abs(tSteel('D',160)-8.8)<1e-9]);
   cases.push(['Inox, dₐ=21.3 ⇒ s=1.6',Math.abs(tInox(21.3)-1.6)<1e-9]);
-  cases.push(['Copper, dₐ=25 ⇒ s=1.5',Math.abs(tCopper(25,false)-1.5)<1e-9]);
-  cases.push(['Copper, dₐ=21 ⇒ fuera de tabla',tCopper(21,false)===null]);
+  cases.push(['Cobre puro, dₐ=25 ⇒ s=1.5',Math.abs(tCopperFamily(25,'copper')-1.5)<1e-9]);
+  cases.push(['Aleación de cobre, dₐ=25 ⇒ s=1.2',Math.abs(tCopperFamily(25,'copper_alloy')-1.2)<1e-9]);
+  cases.push(['Cobre, dₐ=21 ⇒ fuera de tabla',tCopperFamily(21,'copper')===null]);
   cases.push(['Etiquetas ES cubren todos los SPACES',
     SPACES.every(k => !!SPACES_LABELS[k])
   ]);
@@ -653,10 +716,21 @@ function runTests(){
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
-['system','location','material','da'].forEach(id=>{
+['system','location','da'].forEach(id=>{
   document.getElementById(id).addEventListener('change',calc);
   document.getElementById(id).addEventListener('input',calc);
 });
+materialSel.addEventListener('change',()=>{ toggleCopperSub(); calc(); });
+materialSel.addEventListener('input',()=>{ toggleCopperSub(); calc(); });
+copperTypeSel.addEventListener('change',calc);
+(function mapLegacyMaterials(){
+  const legacy=materialSel.value;
+  if(legacy==='copper' || legacy==='copper_alloy'){
+    materialSel.value='copper_family';
+    copperTypeSel.value=legacy;
+  }
+  toggleCopperSub();
+})();
 runTests();
 calc();
 </script>
