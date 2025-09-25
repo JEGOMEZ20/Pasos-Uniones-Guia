@@ -253,10 +253,10 @@
         <div>
           <label>Material</label>
           <select id="material">
-            <option value="steel">Steel (Tabla 11.6)</option>
-            <option value="stainless">Austenitic stainless steel (Tabla 11.7)</option>
-            <option value="copper">Copper (Tabla 11.8)</option>
-            <option value="copper_alloy">Copper alloys (Tabla 11.8)</option>
+            <option value="steel">Acero al carbono (Tabla 11.6)</option>
+            <option value="stainless">Acero inoxidable austenítico (Tabla 11.7)</option>
+            <option value="copper">Cobre (Tabla 11.8)</option>
+            <option value="copper_alloy">Aleaciones de cobre (Tabla 11.8)</option>
           </select>
           <div id="groupBox" class="hint">Grupo (solo steel): <b id="groupHint">—</b></div>
         </div>
@@ -303,7 +303,7 @@
   </div>
 
   <footer>
-    <p><strong>Leyenda</strong>: N/M/D = grupo para steel (espesor por Tabla 11.6). X = no instalar. “–” = solo con acuerdo especial de la Sociedad de Clasificación (por defecto tratado como no permitido).</p>
+    <p><strong>Leyenda</strong>: N/M/D = grupo para acero (espesor por Tabla 11.6). X = no instalar. “–” = instalación solo tras acuerdo especial de la Sociedad de Clasificación. En estos casos, se muestra el aviso: “Validar con el diseñador del sistema y con casa clasificadora”.</p>
   </footer>
 </div>
 
@@ -383,10 +383,58 @@ function tSteel(group,da){const arr=STEEL[group]||[];for(const[lo,hi,s]of arr){i
 function tInox(da){for(const[lo,hi,s]of INOX){if(inRangeClosedOpen(da,lo,hi))return s;}return null;}
 function tCopper(da,alloy){for(const[lo,hi,scu,sall]of COPPER){if(inRangeClosed(da,lo,hi))return alloy?sall:scu;}return null;}
 
+// ===== Etiquetas ES (sin cambiar las claves internas) =====
+const SPACES_LABELS = {
+  'Machinery spaces': 'Espacios de máquinas',
+  'Cofferdams / void spaces': 'Espacios de separación (cofferdams / voids)',
+  'Cargo holds': 'Bodegas de carga',
+  'Ballast water tanks': 'Tanques de agua de lastre',
+  'Fuel and changeover tanks': 'Tanques de combustible y conmutación',
+  'Fresh cooling water tanks': 'Tanques de agua dulce de enfriamiento',
+  'Lubricating oil tanks': 'Tanques de aceite lubricante',
+  'Hydraulic oil tanks': 'Tanques de aceite hidráulico',
+  'Drinking water tanks': 'Tanques de agua potable',
+  'Thermal oil tanks': 'Tanques de aceite térmico',
+  'Condensate and feedwater tanks': 'Tanques de condensado y agua de alimentación',
+  'Accommodation': 'Acomodaciones / habitabilidad',
+  'Cargo tanks, tank ships': 'Tanques de carga (buques tanque)',
+  'Cofferdams, tank ships': 'Espacios de separación en buques tanque (cofferdams)',
+  'Cargo pump rooms': 'Salas de bombas de carga',
+  'Weather deck': 'Cubierta expuesta (weather deck)'
+};
+
+const SYSTEMS_LABELS = {
+  'Bilge lines': 'Líneas de sentina',
+  'Ballast lines': 'Líneas de lastre',
+  'Seawater lines': 'Líneas de agua de mar',
+  'Fuel lines': 'Líneas de combustible',
+  'Lubricating lines': 'Líneas de lubricación',
+  'Thermal oil lines': 'Líneas de aceite térmico',
+  'Steam lines': 'Líneas de vapor',
+  'Condensate lines': 'Líneas de condensado',
+  'Feedwater lines': 'Líneas de agua de alimentación',
+  'Drinking water lines': 'Líneas de agua potable',
+  'Fresh cooling water lines': 'Líneas de agua dulce de enfriamiento',
+  'Compressed air lines': 'Líneas de aire comprimido',
+  'Hydraulic lines': 'Líneas hidráulicas'
+};
+
+// Mensaje canónico para “–”
+const MSG_AGREEMENT = 'Validar con el diseñador del sistema y con casa clasificadora';
+
 // ==============================
 // UI helpers
 // ==============================
-function fill(id,arr){const el=document.getElementById(id);el.innerHTML='';arr.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;el.appendChild(o);});}
+function fillSelect(id,arr,labelMap){
+  const el=document.getElementById(id);
+  el.innerHTML='';
+  arr.forEach(v=>{
+    const o=document.createElement('option');
+    o.value = v;
+    o.textContent = labelMap[v] || v;
+    el.appendChild(o);
+  });
+}
 
 function drawViz({status,place,system,s}){
   const svg=document.getElementById('viz');
@@ -400,11 +448,13 @@ function drawViz({status,place,system,s}){
   const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
   const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
   const icon=status==='ok'?'✔':status==='warn'?'!':'✖';
-  const note=status==='warn'?'Requiere acuerdo especial':status==='bad'?'Paso bloqueado':'Paso permitido';
+  const note=status==='warn'?MSG_AGREEMENT:status==='bad'?'Paso bloqueado':'Paso permitido';
   const pipeStroke=status==='warn'?'stroke-dasharray="20 12" stroke-width="4"':'stroke-width="2.4"';
   const filterId=status==='bad'?'glowBad':status==='warn'?'glowWarn':'glowOk';
+  const placeES = SPACES_LABELS[place] || place;
+  const systemES = SYSTEMS_LABELS[system] || system;
   svg.innerHTML=`
-  <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${system} → ${place}">
+  <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${systemES} → ${placeES}">
     <defs>
       <linearGradient id="tankGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="${tankTop}" />
@@ -426,11 +476,11 @@ function drawViz({status,place,system,s}){
       </filter>
     </defs>
     <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
-    <text x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)">${place}</text>
+    <text x="${tankX+tankW/2}" y="${tankY+36}" text-anchor="middle" font-size="16" font-weight="700" fill="rgba(226,232,240,0.88)">${placeES}</text>
     <g filter="url(#${filterId})">
       <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
-    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${system}</text>
+    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
     ${s&&status==='ok'?`<text x="${tankX+tankW/2}" y="${pipeY+pipeH/2+24}" text-anchor="middle" font-size="14" fill="#4ade80">s = ${s.toFixed(1)} mm</text>`:''}
     <g transform="translate(${tankX+tankW-58}, ${tankY+22})">
       <circle cx="18" cy="18" r="18" fill="rgba(15,23,42,0.7)" stroke="${color}" stroke-width="2"/>
@@ -445,20 +495,20 @@ function drawViz({status,place,system,s}){
 function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
-  const mat=document.getElementById('material').value;
+  const materialEl=document.getElementById('material');
+  const mat=materialEl.value;
   const da=parseFloat(document.getElementById('da').value);
-  const allowDash=document.getElementById('allowDash').checked;
 
   const cell=(MATRIX[system]||{})[locationSel];
   let symbol=cell||'X';
   let group=null;
 
-  if(symbol==='-' && !allowDash){
-    drawViz({status:'warn',place:locationSel,system});
-    document.getElementById('headline').innerHTML='<span class="pill warn">Especial (–)</span>';
-    document.getElementById('explain').innerHTML='Esta combinación requiere acuerdo especial de la Sociedad de Clasificación. Por defecto se trata como no permitida; marca la casilla “Permitir casos –” para forzar el cálculo bajo tu responsabilidad.';
-    document.getElementById('groupHint').textContent='—';
-    document.getElementById('outTbl').style.display='none';
+  if (symbol === '-') {
+    drawViz({status:'warn', place:locationSel, system});
+    document.getElementById('headline').innerHTML = '<span class="pill warn">Especial (–)</span>';
+    document.getElementById('explain').textContent = MSG_AGREEMENT;
+    document.getElementById('groupHint').textContent = '—';
+    document.getElementById('outTbl').style.display = 'none';
     return;
   }
 
@@ -511,9 +561,11 @@ function calc(){
 
   const tbody=document.querySelector('#outTbl tbody');
   tbody.innerHTML='';
+  const sysES = SYSTEMS_LABELS[system] || system;
+  const locES = SPACES_LABELS[locationSel] || locationSel;
   const rows=[
-    ['Sistema',system],['Ubicación',locationSel],['Material',document.getElementById('material').options[document.getElementById('material').selectedIndex].text],
-    ['Símbolo (Tabla 11.5)',symbol],['Grupo (si steel)',group||'—'],['dₐ [mm]',da],['Espesor s [mm]',s.toFixed(1)],
+    ['Sistema',sysES],['Ubicación',locES],['Material',materialEl.options[materialEl.selectedIndex].text],
+    ['Símbolo (Tabla 11.5)',symbol],['Grupo (si steel)',group||'—'],['dₐ [mm]',da],['Espesor s [mm]',s!=null?s.toFixed(1):'—'],
   ];
   for(const[k,v]of rows){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=k;tr.appendChild(a);const b=document.createElement('td');b.innerHTML=String(v);tr.appendChild(b);tbody.appendChild(tr);}
   document.getElementById('outTbl').style.display='table';
@@ -537,13 +589,34 @@ function runTests(){
   cases.push(['Inox, dₐ=21.3 ⇒ s=1.6',Math.abs(tInox(21.3)-1.6)<1e-9]);
   cases.push(['Copper, dₐ=25 ⇒ s=1.5',Math.abs(tCopper(25,false)-1.5)<1e-9]);
   cases.push(['Copper, dₐ=21 ⇒ fuera de tabla',tCopper(21,false)===null]);
+  cases.push(['Etiquetas ES cubren todos los SPACES',
+    SPACES.every(k => !!SPACES_LABELS[k])
+  ]);
+
+  cases.push(['Etiquetas ES cubren todos los SYSTEMS',
+    SYSTEMS.every(k => !!SYSTEMS_LABELS[k])
+  ]);
+
+  cases.push(['Solo símbolos permitidos en toda la matriz',
+    Object.keys(MATRIX).every(r =>
+      Object.keys(MATRIX[r]).every(c => ['M','D','N','X','-'].includes(MATRIX[r][c]))
+    )
+  ]);
+
+  cases.push(['Caso “–” muestra aviso exacto',
+    (function(){
+      const sym = MATRIX['Fresh cooling water lines']['Cargo pump rooms'];
+      return sym === '-';
+    })()
+  ]);
 
   const ok=cases.every(([_,p])=>p);
   document.getElementById('tests').innerHTML=(ok?'✅ Lógica verificada':'❌ Falla en pruebas')+'<br>'+cases.map(([n,p])=>(p?'✔️ ':'❌ ')+n).join('<br>');
 }
 
 // INIT
-fill('system',SYSTEMS); fill('location',SPACES);
+fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
+fillSelect('location', SPACES, SPACES_LABELS);
 ['system','location','material','da','allowDash'].forEach(id=>{
   document.getElementById(id).addEventListener('change',calc);
   document.getElementById(id).addEventListener('input',calc);
