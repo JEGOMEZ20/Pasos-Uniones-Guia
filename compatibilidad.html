@@ -45,6 +45,27 @@
     transition: color 0.2s ease;
   }
   nav a:hover { color: #7dd3fc; }
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .page-header .header-copy { flex: 1 1 380px; min-width: 260px; }
+  .page-header .header-brand {
+    flex: 0 0 auto;
+    max-width: 200px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+  .page-header .header-brand img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(8, 47, 73, 0.35);
+  }
   h1 {
     font-size: clamp(26px, 4vw, 38px);
     margin: 0 0 12px;
@@ -82,6 +103,9 @@
     flex-direction: column;
     gap: 10px;
   }
+  .card > .row + .row {
+    margin-top: 20px;
+  }
   .row.da-actions {
     display: flex;
     align-items: center;
@@ -100,7 +124,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: rgba(226, 232, 240, 0.78);
-    margin-bottom: 8px;
+    margin-bottom: 0;
     display: block;
   }
   select, input[type="number"], input[type="text"] {
@@ -141,6 +165,10 @@
     margin-top: 6px;
     line-height: 1.5;
   }
+  .hint.error {
+    color: #fca5a5;
+    font-weight: 600;
+  }
   .hidden { display: none; }
   .advanced-toggle {
     margin-top: 16px;
@@ -176,7 +204,12 @@
     letter-spacing: 0.03em;
     text-transform: uppercase;
   }
-  .pill.ok { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.45); }
+  .pill.ok {
+    background: #14532d;
+    color: #f4fff4;
+    border: 1px solid rgba(74, 222, 128, 0.7);
+    box-shadow: inset 0 1px 0 rgba(209, 250, 229, 0.2);
+  }
   .pill.bad { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); }
   .pill.warn { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }
   .legend {
@@ -187,7 +220,9 @@
     justify-content: center;
   }
   .result-meta { margin-top: 18px; text-align: center; }
-  .result-meta h2 { margin-top: 0; }
+  .result-title { margin: 0 0 12px; font-size: 20px; letter-spacing: 0.02em; text-transform: uppercase; }
+  .result-status { min-height: 40px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .result-status .pill { font-size: 14px; padding: 8px 18px; }
   .result-meta .small { margin: 0 auto; max-width: 420px; text-align: center; }
   .svgbox {
     position: relative;
@@ -278,6 +313,7 @@
     font-size: 13px;
     color: var(--mut);
     line-height: 1.6;
+    text-align: center;
   }
   @media (max-width: 940px) {
     .grid { grid-template-columns: 1fr; }
@@ -288,8 +324,15 @@
 <body>
 <div class="wrap">
   <nav><a href="index.html">← Volver al inicio</a></nav>
-  <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
-  <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+  <div class="page-header">
+    <div class="header-copy">
+      <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
+      <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+    </div>
+    <div class="header-brand">
+      <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
+    </div>
+  </div>
 
   <div class="grid">
     <!-- Controles -->
@@ -299,8 +342,10 @@
           <label>Sistema / fluido de la tubería</label>
           <select id="system"></select>
         </div>
+      </div>
+      <div class="row">
         <div>
-          <label>Ubicación (espacio o tanque)</label>
+          <label>Ubicación (espacio o tanque) a pasar</label>
           <select id="location"></select>
         </div>
       </div>
@@ -309,11 +354,10 @@
         <div>
           <label>Material</label>
           <select id="material">
-            <option value="steel">Acero al carbono (Tabla 11.6)</option>
-            <option value="stainless">Acero inoxidable austenítico (Tabla 11.7)</option>
-            <option value="copper_family">Cobre y aleaciones de cobre (Tabla 11.8)</option>
+            <option value="steel">Acero al carbono</option>
+            <option value="stainless">Acero inoxidable austenítico</option>
+            <option value="copper_family">Cobre y aleaciones de cobre</option>
           </select>
-          <div id="groupBox" class="hint">Grupo (solo steel): <b id="groupHint">—</b></div>
           <div id="copperSub" class="hidden">
             <label for="copperType">Subtipo</label>
             <select id="copperType">
@@ -349,7 +393,8 @@
         <span class="pill warn">Especial (–)</span>
       </div>
       <div class="result-meta">
-        <h2 id="headline">—</h2>
+        <h2 class="result-title">Resultado de análisis</h2>
+        <div id="headline" class="result-status">—</div>
         <div id="explain" class="small">—</div>
       </div>
 
@@ -363,7 +408,7 @@
   </div>
 
   <footer>
-    <p><strong>Leyenda</strong>: N/M/D = grupo para acero (espesor por Tabla 11.6). X = no instalar. “–” = instalación solo tras acuerdo especial de la Sociedad de Clasificación. En estos casos, se muestra el aviso: “Validar con el diseñador del sistema y con casa clasificadora”.</p>
+    <p>Por Jhon Eric Gomez - DVMPR-GEDIN<br />Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a>.</p>
   </footer>
 </div>
 
@@ -607,9 +652,12 @@ function drawViz({status,place,system,s}){
   const tankX=pad,tankY=pad,tankW=w-pad*2,tankH=h-pad*2;
   const pipeH=Math.max(32,tankH*0.2);
   const pipeY=tankY+tankH/2;
-  const pipeMargin=Math.max(16,tankW*0.04);
-  const pipeW=Math.max(0,tankW-pipeMargin*2);
-  const pipeX=tankX+pipeMargin;
+  const availableLeft=Math.max(0,tankX-6);
+  const availableRight=Math.max(0,w-(tankX+tankW)-6);
+  const maxExtension=Math.max(0,Math.min(availableLeft,availableRight));
+  const pipeExtension=Math.min(Math.max(18,tankW*0.06),maxExtension);
+  const pipeX=tankX-pipeExtension;
+  const pipeW=Math.max(0,tankW+pipeExtension*2);
   const color=status==='ok'?'var(--ok)':status==='warn'?'var(--warn)':'var(--bad)';
   const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
   const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
@@ -673,6 +721,15 @@ const btnDaValidate=document.getElementById('btnDaValidate');
 const sLine=document.getElementById('sLine');
 const schLine=document.getElementById('schLine');
 
+function setDaHelp(message,{isError=false}={}){
+  daHelp.textContent=message;
+  if(isError){
+    daHelp.classList.add('error');
+  } else {
+    daHelp.classList.remove('error');
+  }
+}
+
 let selectedDaKey=null;
 let selectedDaText='';
 
@@ -709,10 +766,17 @@ function setSchLineValue(text){
   schLine.textContent=text && text.trim()?text:' ';
 }
 
+function updateGroupHint(value){
+  const hint=document.getElementById('groupHint');
+  if(hint){
+    hint.textContent=value;
+  }
+}
+
 function resetResults(){
   document.getElementById('headline').textContent='—';
   document.getElementById('explain').textContent='—';
-  document.getElementById('groupHint').textContent='—';
+  updateGroupHint('—');
   document.getElementById('outTbl').style.display='none';
   setSLineValue(null);
   setSchLineValue('');
@@ -735,7 +799,7 @@ function populateDaOptions(){
   if(!options.length){
     selectedDaKey=null;
     selectedDaText='';
-    daHelp.textContent='Sin opciones disponibles';
+    setDaHelp('Sin opciones disponibles');
     return 0;
   }
   const validated=getDaSelection();
@@ -779,7 +843,7 @@ function populateDaOptions(){
   }
 
   if(!(validated.key!=null)){
-    daHelp.textContent=`${options.length} opciones disponibles.`;
+    setDaHelp(`${options.length} opciones disponibles.`);
   }
 
   return options.length;
@@ -811,7 +875,7 @@ function calc(){
     drawViz({status:'warn', place:locationSel, system});
     document.getElementById('headline').innerHTML='<span class="pill warn">Especial (–)</span>';
     document.getElementById('explain').textContent=MSG_AGREEMENT;
-    document.getElementById('groupHint').textContent='—';
+    updateGroupHint('—');
     setSLineValue(null);
     setSchLineValue('SCH NO disponible');
     table.style.display='none';
@@ -822,7 +886,7 @@ function calc(){
     drawViz({status:'bad',place:locationSel,system});
     document.getElementById('headline').innerHTML='<span class="pill bad">No compatible</span>';
     document.getElementById('explain').innerHTML='La tabla normativa (11.5) marca “X”: la tubería no debe instalarse en esta ubicación.';
-    document.getElementById('groupHint').textContent='—';
+    updateGroupHint('—');
     setSLineValue(null);
     setSchLineValue('SCH NO disponible');
     table.style.display='none';
@@ -836,7 +900,7 @@ function calc(){
 
   if(mat==='steel'){
     group=symbol;
-    document.getElementById('groupHint').textContent=group;
+    updateGroupHint(group);
     const rec=findScheduleByOd(Number(daKey));
     if(!rec){
       drawViz({status:'bad',place:locationSel,system});
@@ -861,7 +925,7 @@ function calc(){
     }
     rule=`Steel grupo <b>${group}</b> · Tabla 11.6 · Selección: ${selectionLabel}.`;
   } else if(mat==='stainless'){
-    document.getElementById('groupHint').textContent='—';
+    updateGroupHint('—');
     const rec=findScheduleByOd(Number(daKey));
     if(!rec){
       drawViz({status:'bad',place:locationSel,system});
@@ -886,7 +950,7 @@ function calc(){
     }
     rule=`Austenitic stainless steel · Tabla 11.7 · Selección: ${selectionLabel}.`;
   } else if(mat==='copper_family'){
-    document.getElementById('groupHint').textContent='—';
+    updateGroupHint('—');
     const sub=copperTypeSel.value;
     const rangeRow=findTable118Range(String(daKey));
     if(!rangeRow){
@@ -912,7 +976,7 @@ function calc(){
     const subtypeText=copperTypeSel.options[copperTypeSel.selectedIndex].text;
     rule=`Cobre y aleaciones · Tabla 11.8 · Rango: ${selectionLabel}. Subtipo: ${subtypeText}.`;
   } else {
-    document.getElementById('groupHint').textContent='—';
+    updateGroupHint('—');
   }
 
   drawViz({status:'ok',place:locationSel,system,s});
@@ -966,10 +1030,27 @@ function calc(){
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
+
+function invalidateResults({preserveHelp=false,message=''}={}){
+  resetResults();
+  if(message){
+    setDaHelp(message);
+    return;
+  }
+  if(preserveHelp){
+    return;
+  }
+  const validated=getDaSelection();
+  const hasValidated=validated.key!=null && validated.key!=='';
+  setDaHelp(hasValidated
+    ? 'Parámetros cambiaron. Pulse Validar para recalcular.'
+    : 'Seleccione un diámetro y pulse Validar.');
+}
+
 ['system','location'].forEach(id=>{
   const el=document.getElementById(id);
-  el.addEventListener('change',calc);
-  el.addEventListener('input',calc);
+  el.addEventListener('change',()=>invalidateResults());
+  el.addEventListener('input',()=>invalidateResults());
 });
 function handleMaterialChange(){
   toggleCopperSub();
@@ -977,13 +1058,12 @@ function handleMaterialChange(){
   selectedDaText='';
   populateDaOptions();
   setDaSelection(null,'');
-  daHelp.textContent='Seleccione un diámetro y pulse Validar.';
-  resetResults();
+  invalidateResults({message:'Seleccione un diámetro y pulse Validar.'});
 }
 materialSel.addEventListener('change',handleMaterialChange);
 materialSel.addEventListener('input',handleMaterialChange);
 copperTypeSel.addEventListener('change',()=>{
-  calc();
+  invalidateResults();
 });
 daSelect.addEventListener('change',()=>{
   const opt=daSelect.options[daSelect.selectedIndex];
@@ -995,20 +1075,21 @@ daSelect.addEventListener('change',()=>{
   if(!opt.value){
     selectedDaKey=null;
     selectedDaText='';
-    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    invalidateResults({message:'Seleccione un diámetro y pulse Validar.'});
     return;
   }
+  invalidateResults({preserveHelp:true});
   selectedDaKey=opt.value;
   selectedDaText=opt.textContent;
-  daHelp.textContent=`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`;
+  setDaHelp(`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`);
 });
 btnDaValidate.addEventListener('click',()=>{
   if(selectedDaKey==null || selectedDaKey===''){
-    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    setDaHelp('FALTA DIGITAR DIÁMETRO O TAMAÑO NOMINAL', {isError:true});
     return;
   }
   setDaSelection(selectedDaKey,selectedDaText);
-  daHelp.textContent=`Validado: ${selectedDaText}`;
+  setDaHelp(`Validado: ${selectedDaText}`);
   calc();
 });
 (function mapLegacyMaterials(){
@@ -1021,7 +1102,7 @@ btnDaValidate.addEventListener('click',()=>{
 toggleCopperSub();
 setDaSelection(null,'');
 populateDaOptions();
-daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+setDaHelp('Seleccione un diámetro y pulse Validar.');
 resetResults();
 </script>
 </body>
