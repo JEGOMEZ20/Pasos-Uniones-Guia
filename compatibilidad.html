@@ -30,7 +30,7 @@
   }
   a { color: inherit; }
   .wrap {
-    max-width: 1120px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 48px 24px 64px;
   }
@@ -74,17 +74,26 @@
   .card.result { position: sticky; top: 32px; }
   .row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
+  }
+  .row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
   .row.da-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+    justify-content: flex-start;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
   }
-  .row.row--spaced { margin-top: 18px; }
+  .row.row--spaced {
+    margin-top: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
   label {
     font-size: 12px;
     font-weight: 700;
@@ -110,7 +119,6 @@
     outline: none;
   }
   #daSelect { width: 100%; }
-  #daFilter { width: 100%; margin-bottom: .5rem; }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent), #0ea5e9);
     color: #0b1120;
@@ -171,9 +179,16 @@
   .pill.ok { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.45); }
   .pill.bad { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); }
   .pill.warn { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }
-  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-  .result-meta { margin-top: 18px; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    justify-content: center;
+  }
+  .result-meta { margin-top: 18px; text-align: center; }
   .result-meta h2 { margin-top: 0; }
+  .result-meta .small { margin: 0 auto; max-width: 420px; text-align: center; }
   .svgbox {
     position: relative;
     width: 100%;
@@ -190,12 +205,12 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 58%;
-    transform: translateY(10px);
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     pointer-events: none;
   }
   .viz-sline { font-weight: 600; }
@@ -258,39 +273,6 @@
   }
   .tbl tr:first-child td { border-top: none; }
   .small strong { color: #fff; }
-  .badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    background: rgba(168, 85, 247, 0.18);
-    color: #c4b5fd;
-    border: 1px solid rgba(168, 85, 247, 0.35);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  details {
-    margin-top: 16px;
-    background: rgba(15, 23, 42, 0.55);
-    border-radius: 18px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    overflow: hidden;
-  }
-  summary {
-    cursor: pointer;
-    padding: 14px 18px;
-    font-weight: 600;
-  }
-  details[open] summary { border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
-  details > div {
-    padding: 16px 18px;
-    font-size: 13px;
-    color: var(--ink-soft);
-    line-height: 1.5;
-  }
-  .tests { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
-  .tests b { color: #fff; }
   footer {
     margin-top: 32px;
     font-size: 13px;
@@ -341,20 +323,15 @@
           </div>
         </div>
         <div class="field">
-          <label for="daFilter">Diámetro exterior d<sub>a</sub> (dependiente de Material)</label>
-          <input id="daFilter" type="text" placeholder="Buscar por DN, NPS u OD…" autocomplete="off" />
-          <select id="daSelect" size="8"></select>
+          <label for="daSelect">Diámetro exterior d<sub>a</sub> (dependiente de Material)</label>
+          <select id="daSelect"></select>
           <div class="row da-actions">
-            <small id="daHelp" class="hint"></small>
             <button id="btnDaValidate" type="button" class="btn-primary">Validar</button>
+            <small id="daHelp" class="hint"></small>
           </div>
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
-      <details>
-        <summary><strong>Autoverificación de lógica (tests unitarios)</strong></summary>
-        <div id="tests" class="tests"></div>
-      </details>
     </div>
 
     <!-- Vista / resultado -->
@@ -370,7 +347,6 @@
         <span class="pill ok">Compatible</span>
         <span class="pill bad">No compatible</span>
         <span class="pill warn">Especial (–)</span>
-        <span class="badge">Visual: tanque + tubo</span>
       </div>
       <div class="result-meta">
         <h2 id="headline">—</h2>
@@ -629,8 +605,11 @@ function drawViz({status,place,system,s}){
   const h=svg.clientHeight||420;
   const pad=28;
   const tankX=pad,tankY=pad,tankW=w-pad*2,tankH=h-pad*2;
-  const pipeH=Math.max(28,tankH*0.16);
-  const pipeY=tankY+tankH*0.58;
+  const pipeH=Math.max(32,tankH*0.2);
+  const pipeY=tankY+tankH/2;
+  const pipeMargin=Math.max(16,tankW*0.04);
+  const pipeW=Math.max(0,tankW-pipeMargin*2);
+  const pipeX=tankX+pipeMargin;
   const color=status==='ok'?'var(--ok)':status==='warn'?'var(--warn)':'var(--bad)';
   const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
   const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
@@ -666,10 +645,10 @@ function drawViz({status,place,system,s}){
     </defs>
     <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
     <g filter="url(#${filterId})">
-      <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
+      <rect x="${pipeX}" y="${pipeY-pipeH/2}" width="${pipeW}" height="${pipeH}" rx="0" ry="0" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
-    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
-    <text x="${tankX+36}" y="${tankY+tankH-28}" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
+    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-16}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
+    <text x="${tankX+tankW/2}" y="${tankY+tankH-24}" text-anchor="middle" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
     ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
     ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
   </svg>`;
@@ -688,7 +667,6 @@ function drawViz({status,place,system,s}){
 const materialSel=document.getElementById('material');
 const copperSub=document.getElementById('copperSub');
 const copperTypeSel=document.getElementById('copperType');
-const daFilter=document.getElementById('daFilter');
 const daSelect=document.getElementById('daSelect');
 const daHelp=document.getElementById('daHelp');
 const btnDaValidate=document.getElementById('btnDaValidate');
@@ -753,48 +731,58 @@ function populateDaOptions(){
   } else if(mat==='copper_family'){
     options=TABLE_118.map(r=>({key:`${r.daMin}-${r.daMax}`,text:`${formatMM(r.daMin)} – ${formatMM(r.daMax)} mm`}));
   }
-  const total=options.length;
   daSelect.innerHTML='';
-  if(!total){
+  if(!options.length){
     selectedDaKey=null;
     selectedDaText='';
     daHelp.textContent='Sin opciones disponibles';
     return 0;
   }
-  const query=(daFilter.value||'').toLowerCase();
-  const filtered=options.filter(o=>o.text.toLowerCase().includes(query));
-  if(!filtered.length){
-    selectedDaKey=null;
-    selectedDaText='';
-    daHelp.textContent='Sin coincidencias';
-    return 0;
-  }
-  const fragment=document.createDocumentFragment();
-  const armedKey=selectedDaKey!=null?String(selectedDaKey):null;
-  filtered.forEach(o=>{
+  const validated=getDaSelection();
+  const validatedKey=validated.key!=null?String(validated.key):'';
+  const pendingKey=selectedDaKey!=null?String(selectedDaKey):'';
+  const targetKey=pendingKey || validatedKey;
+  let matchedText='';
+
+  const placeholder=document.createElement('option');
+  placeholder.value='';
+  placeholder.textContent='Selecciona un diámetro…';
+  placeholder.disabled=true;
+  daSelect.appendChild(placeholder);
+
+  options.forEach(o=>{
     const opt=document.createElement('option');
     opt.value=o.key;
     opt.textContent=o.text;
-    if(armedKey && o.key===armedKey){
+    if(targetKey && o.key===targetKey){
       opt.selected=true;
+      matchedText=o.text;
     }
-    fragment.appendChild(opt);
+    daSelect.appendChild(opt);
   });
-  daSelect.appendChild(fragment);
-  if(!filtered.some(o=>o.key===(armedKey||''))){
-    daSelect.selectedIndex=-1;
-    if(armedKey){
-      selectedDaKey=null;
-      selectedDaText='';
+
+  if(targetKey && matchedText){
+    placeholder.selected=false;
+    selectedDaKey=targetKey;
+    selectedDaText=matchedText;
+  } else {
+    placeholder.selected=true;
+    selectedDaKey=null;
+    selectedDaText='';
+    if(targetKey){
+      setDaSelection(null,'');
     }
   }
+
   if(hadFocus){
     daSelect.focus();
   }
-  daHelp.textContent=total===filtered.length
-    ? `Mostrando ${filtered.length} opciones`
-    : `Mostrando ${filtered.length} de ${total} opciones`;
-  return filtered.length;
+
+  if(!(validated.key!=null)){
+    daHelp.textContent=`${options.length} opciones disponibles.`;
+  }
+
+  return options.length;
 }
 
 function calc(){
@@ -975,57 +963,6 @@ function calc(){
   }
 }
 
-function runTests(){
-  const cases=[];
-  cases.push(['Fuel lines en Fuel&changeover = N',matrix_rendered['Fuel lines']['Fuel and changeover tanks']==='N']);
-  cases.push(['Bilge lines en Ballast = D',matrix_rendered['Bilge lines']['Ballast water tanks']==='D']);
-  cases.push(['Fresh cooling line en Fresh cooling tank = N',matrix_rendered['Fresh cooling water lines']['Fresh cooling water tanks']==='N']);
-  cases.push(['Hydraulic lines en Hydraulic oil tank = N',matrix_rendered['Hydraulic lines']['Hydraulic oil tanks']==='N']);
-  cases.push(['Drinking water line en Drinking water tank = N',matrix_rendered['Drinking water lines']['Drinking water tanks']==='N']);
-  cases.push(['Fuel lines en Machinery spaces = N',matrix_rendered['Fuel lines']['Machinery spaces']==='N']);
-  cases.push(['Bilge en Cofferdams/void = M',matrix_rendered['Bilge lines']['Cofferdams / void spaces']==='M']);
-  cases.push(['Steam en Accommodation = N',matrix_rendered['Steam lines']['Accommodation']==='N']);
-  cases.push(['Compressed air en Thermal oil tanks = N',matrix_rendered['Compressed air lines']['Thermal oil tanks']==='N']);
-  cases.push(['Hydraulic lines en Cargo tanks (tank ships) = N',matrix_rendered['Hydraulic lines']['Cargo tanks, tank ships']==='N']);
-  cases.push(['Fresh cooling line en Cargo pump rooms = –',matrix_rendered['Fresh cooling water lines']['Cargo pump rooms']==='-']);
-  cases.push(['Bilge lines en Accommodation = M',matrix_rendered['Bilge lines']['Accommodation']==='M']);
-  cases.push(['Ballast lines en Accommodation = X',matrix_rendered['Ballast lines']['Accommodation']==='X']);
-  cases.push(['Seawater lines en Accommodation = M',matrix_rendered['Seawater lines']['Accommodation']==='M']);
-  cases.push(['Fresh cooling water lines en Cofferdams, tank ships = –',matrix_rendered['Fresh cooling water lines']['Cofferdams, tank ships']==='-']);
-  cases.push(['Compressed air lines en Cofferdams, tank ships = N',matrix_rendered['Compressed air lines']['Cofferdams, tank ships']==='N']);
-  cases.push(['Steel M, dₐ=21.3 ⇒ s=3.2',Math.abs(tSteel('M',21.3)-3.2)<1e-9]);
-  cases.push(['Steel D, dₐ=160 ⇒ s=8.8',Math.abs(tSteel('D',160)-8.8)<1e-9]);
-  cases.push(['Inox, dₐ=21.3 ⇒ s=1.6',Math.abs(tInox(21.3)-1.6)<1e-9]);
-  cases.push(['Cobre puro, dₐ=25 ⇒ s=1.5',Math.abs(tCopperFamily(25,'copper')-1.5)<1e-9]);
-  cases.push(['Aleación de cobre, dₐ=25 ⇒ s=1.2',Math.abs(tCopperFamily(25,'copper_alloy')-1.2)<1e-9]);
-  cases.push(['Cobre, dₐ=21 ⇒ fuera de tabla',tCopperFamily(21,'copper')===null]);
-  const schedSteel=pickSchedule('steel',60.3,4.0);
-  const schedStainless=pickSchedule('stainless',10.3,5.0);
-  cases.push(['Steel OD 60,3 · smin 4,0 ⇒ SCH 80',schedSteel.sch==='80' && Math.abs(schedSteel.t-5.54)<1e-9]);
-  cases.push(['Inox OD 10,3 · smin 5,0 ⇒ sin schedule',schedStainless.sch===null]);
-  cases.push(['Tabla 11.8 · aleación 25–44.5 ⇒ 1.2',Math.abs(getSFrom118('25-44.5','copper_alloy')-1.2)<1e-9]);
-  cases.push(['Etiquetas ES cubren todos los SPACES',
-    SPACES.every(k => !!SPACES_LABELS[k])
-  ]);
-
-  cases.push(['Etiquetas ES cubren todos los SYSTEMS',
-    SYSTEMS.every(k => !!SYSTEMS_LABELS[k])
-  ]);
-
-  cases.push(['Solo símbolos permitidos en toda la matriz',
-    Object.keys(matrix_rendered).every(r =>
-      Object.keys(matrix_rendered[r]).every(c => ALLOWED_SYMBOLS.has(matrix_rendered[r][c]))
-    )
-  ]);
-
-  cases.push(['Caso “–” muestra aviso exacto',
-    matrix_rendered['Fresh cooling water lines']['Cargo pump rooms'] === '-'
-  ]);
-
-  const ok=cases.every(([_,p])=>p);
-  document.getElementById('tests').innerHTML=(ok?'✅ Lógica verificada':'❌ Falla en pruebas')+'<br>'+cases.map(([n,p])=>(p?'✔️ ':'❌ ')+n).join('<br>');
-}
-
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
@@ -1038,7 +975,6 @@ function handleMaterialChange(){
   toggleCopperSub();
   selectedDaKey=null;
   selectedDaText='';
-  daFilter.value='';
   populateDaOptions();
   setDaSelection(null,'');
   daHelp.textContent='Seleccione un diámetro y pulse Validar.';
@@ -1049,9 +985,6 @@ materialSel.addEventListener('input',handleMaterialChange);
 copperTypeSel.addEventListener('change',()=>{
   calc();
 });
-daFilter.addEventListener('input',()=>{
-  populateDaOptions();
-});
 daSelect.addEventListener('change',()=>{
   const opt=daSelect.options[daSelect.selectedIndex];
   if(!opt){
@@ -1059,9 +992,15 @@ daSelect.addEventListener('change',()=>{
     selectedDaText='';
     return;
   }
+  if(!opt.value){
+    selectedDaKey=null;
+    selectedDaText='';
+    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    return;
+  }
   selectedDaKey=opt.value;
   selectedDaText=opt.textContent;
-  daFilter.value=selectedDaText;
+  daHelp.textContent=`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`;
 });
 btnDaValidate.addEventListener('click',()=>{
   if(selectedDaKey==null || selectedDaKey===''){
@@ -1083,7 +1022,6 @@ toggleCopperSub();
 setDaSelection(null,'');
 populateDaOptions();
 daHelp.textContent='Seleccione un diámetro y pulse Validar.';
-runTests();
 resetResults();
 </script>
 </body>
