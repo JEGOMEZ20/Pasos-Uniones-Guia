@@ -312,7 +312,7 @@
       </div>
       <div class="row">
         <div>
-          <label>Ubicación (espacio o tanque)</label>
+          <label>Ubicación (espacio o tanque) a pasar</label>
           <select id="location"></select>
         </div>
       </div>
@@ -988,10 +988,27 @@ function calc(){
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
+
+function invalidateResults({preserveHelp=false,message=''}={}){
+  resetResults();
+  if(message){
+    daHelp.textContent=message;
+    return;
+  }
+  if(preserveHelp){
+    return;
+  }
+  const validated=getDaSelection();
+  const hasValidated=validated.key!=null && validated.key!=='';
+  daHelp.textContent=hasValidated
+    ? 'Parámetros cambiaron. Pulse Validar para recalcular.'
+    : 'Seleccione un diámetro y pulse Validar.';
+}
+
 ['system','location'].forEach(id=>{
   const el=document.getElementById(id);
-  el.addEventListener('change',calc);
-  el.addEventListener('input',calc);
+  el.addEventListener('change',()=>invalidateResults());
+  el.addEventListener('input',()=>invalidateResults());
 });
 function handleMaterialChange(){
   toggleCopperSub();
@@ -999,13 +1016,12 @@ function handleMaterialChange(){
   selectedDaText='';
   populateDaOptions();
   setDaSelection(null,'');
-  daHelp.textContent='Seleccione un diámetro y pulse Validar.';
-  resetResults();
+  invalidateResults({message:'Seleccione un diámetro y pulse Validar.'});
 }
 materialSel.addEventListener('change',handleMaterialChange);
 materialSel.addEventListener('input',handleMaterialChange);
 copperTypeSel.addEventListener('change',()=>{
-  calc();
+  invalidateResults();
 });
 daSelect.addEventListener('change',()=>{
   const opt=daSelect.options[daSelect.selectedIndex];
@@ -1017,9 +1033,10 @@ daSelect.addEventListener('change',()=>{
   if(!opt.value){
     selectedDaKey=null;
     selectedDaText='';
-    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    invalidateResults({message:'Seleccione un diámetro y pulse Validar.'});
     return;
   }
+  invalidateResults({preserveHelp:true});
   selectedDaKey=opt.value;
   selectedDaText=opt.textContent;
   daHelp.textContent=`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`;
