@@ -77,6 +77,13 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
   }
+  .row.da-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+  }
   .row.row--spaced { margin-top: 18px; }
   label {
     font-size: 12px;
@@ -104,6 +111,22 @@
   }
   #daSelect { width: 100%; }
   #daFilter { width: 100%; margin-bottom: .5rem; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0ea5e9);
+    color: #0b1120;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px rgba(14, 165, 233, 0.35);
+  }
   .hint {
     font-size: 12px;
     color: var(--mut);
@@ -163,6 +186,20 @@
   }
   .viz-card { position: relative; }
   .viz-card svg { display: block; }
+  .viz-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 58%;
+    transform: translateY(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+  .viz-sline { font-weight: 600; }
+  .viz-schline { font-size: 0.9rem; opacity: 0.9; }
   .viz-title {
     position: absolute;
     top: 8px;
@@ -303,11 +340,14 @@
             </select>
           </div>
         </div>
-        <div>
+        <div class="field">
           <label for="daFilter">Diámetro exterior d<sub>a</sub> (dependiente de Material)</label>
           <input id="daFilter" type="text" placeholder="Buscar por DN, NPS u OD…" autocomplete="off" />
           <select id="daSelect" size="8"></select>
-          <small id="daHelp" class="hint"></small>
+          <div class="row da-actions">
+            <small id="daHelp" class="hint"></small>
+            <button id="btnDaValidate" type="button" class="btn-primary">Validar</button>
+          </div>
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
@@ -319,7 +359,13 @@
 
     <!-- Vista / resultado -->
     <div class="card result">
-      <div class="svgbox viz-card" id="viz"></div>
+      <div class="viz-card">
+        <div class="svgbox" id="viz"></div>
+        <div class="viz-overlay">
+          <div id="sLine" class="viz-sline">s = — mm</div>
+          <div id="schLine" class="viz-schline"> </div>
+        </div>
+      </div>
       <div class="legend">
         <span class="pill ok">Compatible</span>
         <span class="pill bad">No compatible</span>
@@ -329,7 +375,6 @@
       <div class="result-meta">
         <h2 id="headline">—</h2>
         <div id="explain" class="small">—</div>
-        <div id="schLine" class="small">—</div>
       </div>
 
       <table class="tbl" id="outTbl" style="display:none">
@@ -624,7 +669,6 @@ function drawViz({status,place,system,s}){
       <rect x="${tankX-52}" y="${pipeY-pipeH/2}" width="${tankW+104}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
     <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-14}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
-    ${s&&status==='ok'?`<text x="${tankX+tankW/2}" y="${pipeY+pipeH/2+24}" text-anchor="middle" font-size="14" fill="#4ade80">s = ${s.toFixed(1)} mm</text>`:''}
     <text x="${tankX+36}" y="${tankY+tankH-28}" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
     ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
     ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
@@ -647,17 +691,63 @@ const copperTypeSel=document.getElementById('copperType');
 const daFilter=document.getElementById('daFilter');
 const daSelect=document.getElementById('daSelect');
 const daHelp=document.getElementById('daHelp');
+const btnDaValidate=document.getElementById('btnDaValidate');
+const sLine=document.getElementById('sLine');
 const schLine=document.getElementById('schLine');
+
+let selectedDaKey=null;
+let selectedDaText='';
+
+function setDaSelection(key,label){
+  if(key==null){
+    window.__daSelection__={key:null,label:''};
+    return;
+  }
+  const mat=materialSel.value;
+  if(mat==='steel' || mat==='stainless'){
+    const numericKey=Number(key);
+    window.__daSelection__={
+      key:Number.isNaN(numericKey)?null:numericKey,
+      label:label||''
+    };
+  } else {
+    window.__daSelection__={key:String(key),label:label||''};
+  }
+}
+
+function getDaSelection(){
+  return window.__daSelection__ || { key:null, label:'' };
+}
+
+function setSLineValue(value){
+  if(value==null){
+    sLine.textContent='s = — mm';
+  } else {
+    sLine.textContent=`s = ${value.toFixed(1)} mm`;
+  }
+}
+
+function setSchLineValue(text){
+  schLine.textContent=text && text.trim()?text:' ';
+}
+
+function resetResults(){
+  document.getElementById('headline').textContent='—';
+  document.getElementById('explain').textContent='—';
+  document.getElementById('groupHint').textContent='—';
+  document.getElementById('outTbl').style.display='none';
+  setSLineValue(null);
+  setSchLineValue('');
+}
 
 function toggleCopperSub(){
   copperSub.classList.toggle('hidden', materialSel.value !== 'copper_family');
 }
 
-function populateDaOptions(forceReset=false){
-  const prevValue=forceReset?null:daSelect.value;
-  const hadFocus=document.activeElement===daSelect;
+function populateDaOptions(){
   const mat=materialSel.value;
   let options=[];
+  const hadFocus=document.activeElement===daSelect;
   if(mat==='steel' || mat==='stainless'){
     options=SCHEDULES.map(r=>({key:String(r.od),text:r.label}));
   } else if(mat==='copper_family'){
@@ -666,33 +756,45 @@ function populateDaOptions(forceReset=false){
   const total=options.length;
   daSelect.innerHTML='';
   if(!total){
+    selectedDaKey=null;
+    selectedDaText='';
     daHelp.textContent='Sin opciones disponibles';
-    return false;
+    return 0;
   }
   const query=(daFilter.value||'').toLowerCase();
   const filtered=options.filter(o=>o.text.toLowerCase().includes(query));
   if(!filtered.length){
+    selectedDaKey=null;
+    selectedDaText='';
     daHelp.textContent='Sin coincidencias';
-    return false;
+    return 0;
   }
+  const fragment=document.createDocumentFragment();
+  const armedKey=selectedDaKey!=null?String(selectedDaKey):null;
   filtered.forEach(o=>{
     const opt=document.createElement('option');
     opt.value=o.key;
     opt.textContent=o.text;
-    daSelect.appendChild(opt);
+    if(armedKey && o.key===armedKey){
+      opt.selected=true;
+    }
+    fragment.appendChild(opt);
   });
-  let valueToSet=filtered[0].key;
-  if(!forceReset && prevValue && filtered.some(o=>o.key===prevValue)){
-    valueToSet=prevValue;
+  daSelect.appendChild(fragment);
+  if(!filtered.some(o=>o.key===(armedKey||''))){
+    daSelect.selectedIndex=-1;
+    if(armedKey){
+      selectedDaKey=null;
+      selectedDaText='';
+    }
   }
-  daSelect.value=valueToSet;
   if(hadFocus){
     daSelect.focus();
   }
   daHelp.textContent=total===filtered.length
     ? `Mostrando ${filtered.length} opciones`
     : `Mostrando ${filtered.length} de ${total} opciones`;
-  return true;
+  return filtered.length;
 }
 
 function calc(){
@@ -700,16 +802,16 @@ function calc(){
   const locationSel=document.getElementById('location').value;
   const mat=materialSel.value;
   const table=document.getElementById('outTbl');
-  schLine.textContent='—';
+  const {key:daKeyRaw,label:daLabel}=getDaSelection();
 
-  if(!daSelect || !daSelect.options.length){
-    table.style.display='none';
+  if(daKeyRaw==null || daKeyRaw===''){
+    resetResults();
     return;
   }
 
-  const daKey=daSelect.value;
-  if(!daKey){
-    table.style.display='none';
+  const daKey=(mat==='steel' || mat==='stainless')?Number(daKeyRaw):daKeyRaw;
+  if((mat==='steel' || mat==='stainless') && (Number.isNaN(daKey) || !isFinite(daKey))){
+    resetResults();
     return;
   }
 
@@ -722,6 +824,8 @@ function calc(){
     document.getElementById('headline').innerHTML='<span class="pill warn">Especial (–)</span>';
     document.getElementById('explain').textContent=MSG_AGREEMENT;
     document.getElementById('groupHint').textContent='—';
+    setSLineValue(null);
+    setSchLineValue('SCH NO disponible');
     table.style.display='none';
     return;
   }
@@ -731,13 +835,15 @@ function calc(){
     document.getElementById('headline').innerHTML='<span class="pill bad">No compatible</span>';
     document.getElementById('explain').innerHTML='La tabla normativa (11.5) marca “X”: la tubería no debe instalarse en esta ubicación.';
     document.getElementById('groupHint').textContent='—';
+    setSLineValue(null);
+    setSchLineValue('SCH NO disponible');
     table.style.display='none';
     return;
   }
 
   let s=null;
   let rule='';
-  let selectionLabel='';
+  let selectionLabel=daLabel||'';
   let odValue=null;
 
   if(mat==='steel'){
@@ -748,16 +854,20 @@ function calc(){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
       document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.6 para este grupo.';
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
     odValue=rec.od;
-    selectionLabel=rec.label;
+    selectionLabel=selectionLabel || rec.label;
     s=tSteel(group,odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
       document.getElementById('explain').innerHTML=`El diámetro seleccionado (${selectionLabel}) no se encuentra en los intervalos de la Tabla 11.6 para el grupo ${group}.`;
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
@@ -769,16 +879,20 @@ function calc(){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
       document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.7.';
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
     odValue=rec.od;
-    selectionLabel=rec.label;
+    selectionLabel=selectionLabel || rec.label;
     s=tInox(odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
       document.getElementById('explain').innerHTML='El diámetro seleccionado no cae en los intervalos de la Tabla 11.7.';
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
@@ -786,20 +900,24 @@ function calc(){
   } else if(mat==='copper_family'){
     document.getElementById('groupHint').textContent='—';
     const sub=copperTypeSel.value;
-    const rangeRow=findTable118Range(daKey);
+    const rangeRow=findTable118Range(String(daKey));
     if(!rangeRow){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
       document.getElementById('explain').innerHTML='El rango seleccionado no figura en la Tabla 11.8.';
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
-    selectionLabel=`${formatMM(rangeRow.daMin)} – ${formatMM(rangeRow.daMax)} mm`;
-    s=getSFrom118(daKey,sub);
+    selectionLabel=selectionLabel || `${formatMM(rangeRow.daMin)} – ${formatMM(rangeRow.daMax)} mm`;
+    s=getSFrom118(String(daKey),sub);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
       document.getElementById('explain').innerHTML='No existe espesor disponible para el subtipo seleccionado en ese rango.';
+      setSLineValue(null);
+      setSchLineValue('SCH NO disponible');
       table.style.display='none';
       return;
     }
@@ -812,6 +930,7 @@ function calc(){
   drawViz({status:'ok',place:locationSel,system,s});
   document.getElementById('headline').innerHTML='<span class="pill ok">Compatible</span>';
   document.getElementById('explain').innerHTML=`Espesor mínimo <b>s = ${s.toFixed(1)} mm</b>. ${rule}`;
+  setSLineValue(s);
 
   const tbody=document.querySelector('#outTbl tbody');
   tbody.innerHTML='';
@@ -850,9 +969,9 @@ function calc(){
 
   if(mat==='steel' || mat==='stainless'){
     const {sch,t}=pickSchedule(mat,odValue,s);
-    schLine.textContent=sch?`SCH recomendado: SCH ${sch} [t = ${t.toFixed(2)} mm]`:'SCH NO disponible';
+    setSchLineValue(sch?`SCH recomendado: SCH ${sch} [t = ${t.toFixed(2)} mm]`:'SCH NO disponible');
   } else {
-    schLine.textContent='Tabla GL 11.8 (sin schedule)';
+    setSchLineValue('Tabla GL 11.8 (sin schedule)');
   }
 }
 
@@ -917,35 +1036,42 @@ fillSelect('location', SPACES, SPACES_LABELS);
 });
 function handleMaterialChange(){
   toggleCopperSub();
+  selectedDaKey=null;
+  selectedDaText='';
   daFilter.value='';
-  const hasOptions=populateDaOptions(true);
-  if(hasOptions){
-    calc();
-  } else {
-    document.getElementById('outTbl').style.display='none';
-    schLine.textContent='—';
-    document.getElementById('headline').textContent='—';
-    document.getElementById('explain').textContent='—';
-  }
+  populateDaOptions();
+  setDaSelection(null,'');
+  daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+  resetResults();
 }
 materialSel.addEventListener('change',handleMaterialChange);
 materialSel.addEventListener('input',handleMaterialChange);
 copperTypeSel.addEventListener('change',()=>{
-  if(daSelect.options.length){
-    calc();
-  }
+  calc();
 });
 daFilter.addEventListener('input',()=>{
-  if(populateDaOptions()){
-    calc();
-  } else {
-    document.getElementById('outTbl').style.display='none';
-    schLine.textContent='—';
-    document.getElementById('headline').textContent='—';
-    document.getElementById('explain').textContent='—';
-  }
+  populateDaOptions();
 });
-daSelect.addEventListener('change',calc);
+daSelect.addEventListener('change',()=>{
+  const opt=daSelect.options[daSelect.selectedIndex];
+  if(!opt){
+    selectedDaKey=null;
+    selectedDaText='';
+    return;
+  }
+  selectedDaKey=opt.value;
+  selectedDaText=opt.textContent;
+  daFilter.value=selectedDaText;
+});
+btnDaValidate.addEventListener('click',()=>{
+  if(selectedDaKey==null || selectedDaKey===''){
+    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    return;
+  }
+  setDaSelection(selectedDaKey,selectedDaText);
+  daHelp.textContent=`Validado: ${selectedDaText}`;
+  calc();
+});
 (function mapLegacyMaterials(){
   const legacy=materialSel.value;
   if(legacy==='copper' || legacy==='copper_alloy'){
@@ -954,16 +1080,11 @@ daSelect.addEventListener('change',calc);
   }
 })();
 toggleCopperSub();
-const initialHasOptions=populateDaOptions(true);
+setDaSelection(null,'');
+populateDaOptions();
+daHelp.textContent='Seleccione un diámetro y pulse Validar.';
 runTests();
-if(initialHasOptions){
-  calc();
-} else {
-  document.getElementById('outTbl').style.display='none';
-  schLine.textContent='—';
-  document.getElementById('headline').textContent='—';
-  document.getElementById('explain').textContent='—';
-}
+resetResults();
 </script>
 </body>
 </html>
