@@ -29,8 +29,35 @@
     padding: 48px 24px 64px;
   }
   header {
-    text-align: center;
     margin-bottom: 48px;
+  }
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .page-header .header-copy {
+    flex: 1 1 360px;
+    min-width: 260px;
+  }
+  .page-header .header-brand {
+    flex: 0 0 auto;
+    max-width: 200px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 12px;
+    border-radius: 22px;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
+  }
+  .page-header .header-brand img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 14px;
   }
   h1 {
     margin: 0 0 12px;
@@ -41,7 +68,7 @@
     font-size: 16px;
     line-height: 1.6;
     max-width: 720px;
-    margin: 0 auto;
+    margin: 0;
     color: rgba(226, 232, 240, 0.78);
   }
   .grid {
@@ -123,10 +150,17 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Herramientas normativas para sistemas de tuberías</h1>
-      <p class="intro">
-        Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques. Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el nuevo asesor para juntas flexibles tipo Grip (Slip-on) según LR Naval Ships v0.7.
-      </p>
+      <div class="page-header">
+        <div class="header-copy">
+          <h1>Herramientas normativas para sistemas de tuberías</h1>
+          <p class="intro">
+            Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques. Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el nuevo asesor para comprobación del tipo de juntas que se pueden usar según LR Naval Ships v0.7.
+          </p>
+        </div>
+        <div class="header-brand">
+          <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
+        </div>
+      </div>
     </header>
 
     <main class="grid">
@@ -134,7 +168,7 @@
         <div class="meta">GL · Tabla 11.5</div>
         <h2>Compatibilidad de tuberías a través de tanques</h2>
         <p>
-          Evalúa si una línea puede atravesar un tanque o espacio específico según las tablas 11.5–11.8. Incluye cálculo de espesor mínimo por material y representación visual inmediata.
+          Evalúa si una línea puede atravesar un tanque o espacio específico según GL. Incluye cálculo de espesor mínimo por material y representación visual inmediata.
         </p>
         <a class="btn primary" href="./compatibilidad.html">
           <span>→</span> Abrir herramienta
@@ -145,7 +179,7 @@
         <div class="meta">LR Naval Ships · Tabla 1.5</div>
         <h2>Asesor Grip-Type para juntas Slip-on</h2>
         <p>
-          Determina la viabilidad de juntas mecánicas Slip-on, Pipe Unions y Compression por sistema, clase y ubicación. Incluye notas normativas traducidas y visor ligero de esquemas SVG.
+          Analiza la viabilidad de juntas mecánicas Slip-on, Pipe Unions y Compression por sistema, clase y ubicación, con recomendaciones normativas aplicables y visor ligero de esquemas SVG.
         </p>
         <a class="btn secondary" href="./asesor-grip-type-nobabel.html">
           <span>→</span> Explorar asesor
@@ -154,7 +188,7 @@
     </main>
 
     <footer>
-      <p>¿Necesitas otra integración? Escríbenos y la añadimos en esta misma plataforma.</p>
+      <p>Por Jhon Eric Gomez - DVMPR-GEDIN<br />Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a>.</p>
     </footer>
   </div>
 </body>
