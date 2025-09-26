@@ -1034,7 +1034,9 @@ fillSelect('location', SPACES, SPACES_LABELS);
 function invalidateResults({preserveHelp=false,message=''}={}){
   resetResults();
   if(message){
+ codex/update-form-layout-and-labels-f2f1wh
     setDaHelp(message);
+
     return;
   }
   if(preserveHelp){
@@ -1042,6 +1044,7 @@ function invalidateResults({preserveHelp=false,message=''}={}){
   }
   const validated=getDaSelection();
   const hasValidated=validated.key!=null && validated.key!=='';
+ codex/update-form-layout-and-labels-f2f1wh
   setDaHelp(hasValidated
     ? 'Parámetros cambiaron. Pulse Validar para recalcular.'
     : 'Seleccione un diámetro y pulse Validar.');
