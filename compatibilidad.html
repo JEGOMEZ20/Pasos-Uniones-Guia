@@ -87,7 +87,7 @@
     margin-bottom: 8px;
     display: block;
   }
-  select, input[type="number"] {
+  select, input[type="number"], input[type="text"] {
     width: 100%;
     padding: 12px 14px;
     border-radius: 14px;
@@ -97,11 +97,13 @@
     font-size: 15px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  select:focus, input[type="number"]:focus {
+  select:focus, input[type="number"]:focus, input[type="text"]:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
     outline: none;
   }
+  #daSelect { width: 100%; }
+  #daFilter { width: 100%; margin-bottom: .5rem; }
   .hint {
     font-size: 12px;
     color: var(--mut);
@@ -302,8 +304,10 @@
           </div>
         </div>
         <div>
-          <label>Diámetro exterior d<sub>a</sub> [mm]</label>
-          <input id="da" type="number" step="0.1" min="1" value="60"/>
+          <label for="daFilter">Diámetro exterior d<sub>a</sub> (dependiente de Material)</label>
+          <input id="daFilter" type="text" placeholder="Buscar por DN, NPS u OD…" autocomplete="off" />
+          <select id="daSelect" size="8"></select>
+          <small id="daHelp" class="hint"></small>
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
@@ -325,6 +329,7 @@
       <div class="result-meta">
         <h2 id="headline">—</h2>
         <div id="explain" class="small">—</div>
+        <div id="schLine" class="small">—</div>
       </div>
 
       <table class="tbl" id="outTbl" style="display:none">
@@ -424,6 +429,30 @@ const MATRIX = normalizeMatrix({
 const matrix_rendered = MATRIX;
 
 // ==============================
+// Datos de diámetros / schedules (Tablas 11.6–11.8)
+// ==============================
+const SCHEDULES = [
+  { nps: '1/8', dn: 6,   od: 10.3, label: 'DN6 (1/8) – OD 10,3',   t: { '5S': null,'5': null,'10S':1.24,'10':1.24,'40S':1.73,'40':1.73,'80S':2.41,'80':2.41,'160': null } },
+  { nps: '1/4', dn: 8,   od: 13.7, label: 'DN8 (1/4) – OD 13,7',   t: { '5S': null,'5': null,'10S':1.65,'10':1.65,'40S':2.24,'40':2.24,'80S':3.02,'80':3.02,'160': null } },
+  { nps: '3/8', dn: 10,  od: 17.2, label: 'DN10 (3/8) – OD 17,2',  t: { '5S': null,'5': null,'10S':1.65,'10':1.65,'40S':2.31,'40':2.31,'80S':3.20,'80':3.20,'160': null } },
+  { nps: '1/2', dn: 15,  od: 21.3, label: 'DN15 (1/2) – OD 21,3',  t: { '5S':1.65,'5':1.65,'10S':2.11,'10':2.11,'40S':2.77,'40':2.77,'80S':3.73,'80':3.73,'160':4.78 } },
+  { nps: '3/4', dn: 20,  od: 26.7, label: 'DN20 (3/4) – OD 26,7',  t: { '5S':1.65,'5':1.65,'10S':2.11,'10':2.11,'40S':2.87,'40':2.87,'80S':3.91,'80':3.91,'160':5.56 } },
+  { nps: '1',   dn: 25,  od: 33.4, label: 'DN25 (1) – OD 33,4',    t: { '5S':1.65,'5':1.65,'10S':2.77,'10':2.77,'40S':3.38,'40':3.38,'80S':4.55,'80':4.55,'160':6.35 } },
+  { nps: '1 1/4', dn:32, od:42.2,  label: 'DN32 (1¼) – OD 42,2',   t: { '5S':1.65,'5':1.65,'10S':2.77,'10':2.77,'40S':3.56,'40':3.56,'80S':4.85,'80':4.85,'160':6.35 } },
+  { nps: '1 1/2', dn:40, od:48.3,  label: 'DN40 (1½) – OD 48,3',   t: { '5S':1.65,'5':1.65,'10S':2.77,'10':2.77,'40S':3.68,'40':3.68,'80S':5.08,'80':5.08,'160':7.14 } },
+  { nps: '2',   dn: 50,  od: 60.3, label: 'DN50 (2) – OD 60,3',    t: { '5S':1.65,'5':1.65,'10S':2.77,'10':2.77,'40S':3.91,'40':3.91,'80S':5.54,'80':5.54,'160':8.74 } },
+  { nps: '2 1/2',dn:65,  od: 73.0, label: 'DN65 (2½) – OD 73,0',   t: { '5S':2.11,'5':2.11,'10S':3.05,'10':3.05,'40S':5.16,'40':5.16,'80S':7.01,'80':7.01,'160':9.53 } },
+  { nps: '3',   dn: 80,  od: 88.9, label: 'DN80 (3) – OD 88,9',    t: { '5S':2.11,'5':2.11,'10S':3.05,'10':3.05,'40S':5.49,'40':5.49,'80S':7.62,'80':7.62,'160':11.13 } },
+  { nps: '3 1/2',dn:90,  od:101.6, label: 'DN90 (3½) – OD 101,6',  t: { '5S':2.11,'5':2.11,'10S':3.05,'10':3.05,'40S':5.74,'40':5.74,'80S':8.08,'80':8.08,'160': null } },
+  { nps: '4',   dn:100,  od:114.3, label: 'DN100 (4) – OD 114,3',  t: { '5S':2.11,'5':2.11,'10S':3.05,'10':3.05,'40S':6.02,'40':6.02,'80S':8.56,'80':11.13,'160':13.49 } },
+  { nps: '5',   dn:125,  od:141.3, label: 'DN125 (5) – OD 141,3',  t: { '5S':2.77,'5':2.77,'10S':3.40,'10':3.40,'40S':6.55,'40':6.55,'80S':9.53,'80':9.53,'160':15.88 } },
+  { nps: '6',   dn:150,  od:168.3, label: 'DN150 (6) – OD 168,3',  t: { '5S':2.77,'5':2.77,'10S':3.40,'10':3.40,'40S':7.11,'40':7.11,'80S':10.97,'80':10.97,'160':18.26 } },
+  { nps: '8',   dn:200,  od:219.1, label: 'DN200 (8) – OD 219,1',  t: { '5S':2.77,'5':2.77,'10S':3.76,'10':3.76,'40S':8.18,'40':8.18,'80S':12.70,'80':12.70,'160':23.01 } },
+  { nps: '10',  dn:250,  od:273.1, label: 'DN250 (10) – OD 273,1', t: { '5S':3.40,'5':3.40,'10S':4.19,'10':4.19,'40S':9.27,'40':9.27,'80S':12.70,'80':15.09,'160':28.58 } },
+  { nps: '12',  dn:300,  od:323.9, label: 'DN300 (12) – OD 323,9', t: { '5S':3.96,'5':3.96,'10S':4.57,'10':4.57,'40S':9.53,'40':10.31,'80S':12.70,'80':17.48,'160':33.32 } }
+];
+
+// ==============================
 // Tablas 11.6–11.8 como INTERVALOS [min,max]
 // ==============================
 const STEEL = {
@@ -433,15 +462,15 @@ const STEEL = {
 };
 const INOX = [[0,17.2,1.0],[17.2,48.3,1.6],[48.3,88.9,2.0],[88.9,168.3,2.3],[168.3,219.1,2.6],[219.1,273.0,2.9],[273.0,406.0,3.6],[406.0,Infinity,4.0]];
 const TABLE_118 = [
-  { daMin: 8.0, daMax: 10.0, s: { copper: 1.0, copper_alloy: 0.8 } },
-  { daMin: 12.0, daMax: 20.0, s: { copper: 1.2, copper_alloy: 1.0 } },
-  { daMin: 25.0, daMax: 44.5, s: { copper: 1.5, copper_alloy: 1.2 } },
-  { daMin: 50.0, daMax: 76.1, s: { copper: 2.0, copper_alloy: 1.5 } },
-  { daMin: 88.9, daMax: 108.0, s: { copper: 2.5, copper_alloy: 2.0 } },
-  { daMin: 133.0, daMax: 159.0, s: { copper: 3.0, copper_alloy: 2.5 } },
-  { daMin: 193.7, daMax: 267.0, s: { copper: 3.5, copper_alloy: 3.0 } },
-  { daMin: 273.0, daMax: 457.2, s: { copper: 4.0, copper_alloy: 3.5 } },
-  { daMin: 470.0, daMax: 508.0, s: { copper: 4.5, copper_alloy: 4.0 } }
+  { daMin: 8,    daMax: 10,    s: { copper: 1.0, copper_alloy: 0.8 } },
+  { daMin: 12,   daMax: 20,    s: { copper: 1.2, copper_alloy: 1.0 } },
+  { daMin: 25,   daMax: 44.5,  s: { copper: 1.5, copper_alloy: 1.2 } },
+  { daMin: 50,   daMax: 76.1,  s: { copper: 2.0, copper_alloy: 1.5 } },
+  { daMin: 88.9, daMax: 108,   s: { copper: 2.5, copper_alloy: 2.0 } },
+  { daMin: 133,  daMax: 159,   s: { copper: 3.0, copper_alloy: 2.5 } },
+  { daMin: 193.7,daMax: 267,   s: { copper: 3.5, copper_alloy: 3.0 } },
+  { daMin: 273,  daMax: 457.2, s: { copper: 4.0, copper_alloy: 3.5 } },
+  { daMin: 508,  daMax: 508,   s: { copper: 4.5, copper_alloy: 4.0 } }
 ];
 
 function inRangeClosedOpen(x,a,b){return x>=a && x<b;}
@@ -495,6 +524,45 @@ const SYSTEMS_LABELS = {
 
 // Mensaje canónico para “–”
 const MSG_AGREEMENT = 'Validar con el diseñador del sistema y con casa clasificadora';
+
+const mmFormatter = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+function formatMM(value){
+  return mmFormatter.format(Number(value));
+}
+function findScheduleByOd(od){
+  const target=Number(od);
+  if(Number.isNaN(target)) return null;
+  return SCHEDULES.find(r=>Math.abs(r.od-target)<1e-6) || null;
+}
+function parseRangeKey(rangeKey){
+  return (rangeKey||'').split('-').map(v=>Number(v));
+}
+function findTable118Range(rangeKey){
+  const [min,max]=parseRangeKey(rangeKey);
+  if(Number.isNaN(min) || Number.isNaN(max)) return null;
+  return TABLE_118.find(r=>Math.abs(r.daMin-min)<1e-6 && Math.abs(r.daMax-max)<1e-6) || null;
+}
+function getSFrom118(rangeKey,sub){
+  const row=findTable118Range(rangeKey);
+  return row?row.s[sub]??null:null;
+}
+function pickSchedule(mat,od,sMin){
+  const orderSteel=['5','10','40','80','160'];
+  const orderStainless=['5S','10S','40S','80S'];
+  if(mat==='steel' || mat==='stainless'){
+    const rec=findScheduleByOd(od);
+    if(!rec) return {sch:null,t:null};
+    const order=mat==='steel'?orderSteel:orderStainless;
+    for(const sch of order){
+      const t=rec.t[sch];
+      if(t!=null && t>=sMin-1e-9){
+        return {sch,t};
+      }
+    }
+    return {sch:null,t:null};
+  }
+  return {sch:null,t:null};
+}
 
 // ==============================
 // UI helpers
@@ -576,27 +644,85 @@ function drawViz({status,place,system,s}){
 const materialSel=document.getElementById('material');
 const copperSub=document.getElementById('copperSub');
 const copperTypeSel=document.getElementById('copperType');
+const daFilter=document.getElementById('daFilter');
+const daSelect=document.getElementById('daSelect');
+const daHelp=document.getElementById('daHelp');
+const schLine=document.getElementById('schLine');
 
 function toggleCopperSub(){
   copperSub.classList.toggle('hidden', materialSel.value !== 'copper_family');
+}
+
+function populateDaOptions(forceReset=false){
+  const prevValue=forceReset?null:daSelect.value;
+  const hadFocus=document.activeElement===daSelect;
+  const mat=materialSel.value;
+  let options=[];
+  if(mat==='steel' || mat==='stainless'){
+    options=SCHEDULES.map(r=>({key:String(r.od),text:r.label}));
+  } else if(mat==='copper_family'){
+    options=TABLE_118.map(r=>({key:`${r.daMin}-${r.daMax}`,text:`${formatMM(r.daMin)} – ${formatMM(r.daMax)} mm`}));
+  }
+  const total=options.length;
+  daSelect.innerHTML='';
+  if(!total){
+    daHelp.textContent='Sin opciones disponibles';
+    return false;
+  }
+  const query=(daFilter.value||'').toLowerCase();
+  const filtered=options.filter(o=>o.text.toLowerCase().includes(query));
+  if(!filtered.length){
+    daHelp.textContent='Sin coincidencias';
+    return false;
+  }
+  filtered.forEach(o=>{
+    const opt=document.createElement('option');
+    opt.value=o.key;
+    opt.textContent=o.text;
+    daSelect.appendChild(opt);
+  });
+  let valueToSet=filtered[0].key;
+  if(!forceReset && prevValue && filtered.some(o=>o.key===prevValue)){
+    valueToSet=prevValue;
+  }
+  daSelect.value=valueToSet;
+  if(hadFocus){
+    daSelect.focus();
+  }
+  daHelp.textContent=total===filtered.length
+    ? `Mostrando ${filtered.length} opciones`
+    : `Mostrando ${filtered.length} de ${total} opciones`;
+  return true;
 }
 
 function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
   const mat=materialSel.value;
-  const da=parseFloat(document.getElementById('da').value);
+  const table=document.getElementById('outTbl');
+  schLine.textContent='—';
+
+  if(!daSelect || !daSelect.options.length){
+    table.style.display='none';
+    return;
+  }
+
+  const daKey=daSelect.value;
+  if(!daKey){
+    table.style.display='none';
+    return;
+  }
 
   const cell=(MATRIX[system]||{})[locationSel];
   let symbol=normalizeSymbol(cell);
   let group=null;
 
-  if (symbol === '-') {
+  if(symbol==='-'){
     drawViz({status:'warn', place:locationSel, system});
-    document.getElementById('headline').innerHTML = '<span class="pill warn">Especial (–)</span>';
-    document.getElementById('explain').textContent = MSG_AGREEMENT;
-    document.getElementById('groupHint').textContent = '—';
-    document.getElementById('outTbl').style.display = 'none';
+    document.getElementById('headline').innerHTML='<span class="pill warn">Especial (–)</span>';
+    document.getElementById('explain').textContent=MSG_AGREEMENT;
+    document.getElementById('groupHint').textContent='—';
+    table.style.display='none';
     return;
   }
 
@@ -605,45 +731,80 @@ function calc(){
     document.getElementById('headline').innerHTML='<span class="pill bad">No compatible</span>';
     document.getElementById('explain').innerHTML='La tabla normativa (11.5) marca “X”: la tubería no debe instalarse en esta ubicación.';
     document.getElementById('groupHint').textContent='—';
-    document.getElementById('outTbl').style.display='none';
+    table.style.display='none';
     return;
   }
 
-  let s=null; let rule='';
+  let s=null;
+  let rule='';
+  let selectionLabel='';
+  let odValue=null;
+
   if(mat==='steel'){
     group=symbol;
     document.getElementById('groupHint').textContent=group;
-    s=tSteel(group,da);
+    const rec=findScheduleByOd(Number(daKey));
+    if(!rec){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
+      document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.6 para este grupo.';
+      table.style.display='none';
+      return;
+    }
+    odValue=rec.od;
+    selectionLabel=rec.label;
+    s=tSteel(group,odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
-      document.getElementById('explain').innerHTML='El diámetro ingresado no cae en ningún intervalo de la Tabla 11.6 para el grupo '+group+'. Ajusta dₐ o consulta a clase.';
-      document.getElementById('outTbl').style.display='none'; return;
+      document.getElementById('explain').innerHTML=`El diámetro seleccionado (${selectionLabel}) no se encuentra en los intervalos de la Tabla 11.6 para el grupo ${group}.`;
+      table.style.display='none';
+      return;
     }
-    rule=`Steel grupo <b>${group}</b> · Tabla 11.6 · intervalo válido para d<sub>a</sub> = ${da} mm.`;
+    rule=`Steel grupo <b>${group}</b> · Tabla 11.6 · Selección: ${selectionLabel}.`;
   } else if(mat==='stainless'){
     document.getElementById('groupHint').textContent='—';
-    s=tInox(da);
+    const rec=findScheduleByOd(Number(daKey));
+    if(!rec){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
+      document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.7.';
+      table.style.display='none';
+      return;
+    }
+    odValue=rec.od;
+    selectionLabel=rec.label;
+    s=tInox(odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
-      document.getElementById('explain').innerHTML='El diámetro no cae en los intervalos de la Tabla 11.7.';
-      document.getElementById('outTbl').style.display='none'; return;
+      document.getElementById('explain').innerHTML='El diámetro seleccionado no cae en los intervalos de la Tabla 11.7.';
+      table.style.display='none';
+      return;
     }
-    rule='Austenitic stainless steel · Tabla 11.7 · intervalo válido.';
+    rule=`Austenitic stainless steel · Tabla 11.7 · Selección: ${selectionLabel}.`;
   } else if(mat==='copper_family'){
     document.getElementById('groupHint').textContent='—';
     const sub=copperTypeSel.value;
-    const row=TABLE_118.find(r=>da>=r.daMin && da<=r.daMax);
-    s=row?row.s[sub]??null:null;
+    const rangeRow=findTable118Range(daKey);
+    if(!rangeRow){
+      drawViz({status:'bad',place:locationSel,system});
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
+      document.getElementById('explain').innerHTML='El rango seleccionado no figura en la Tabla 11.8.';
+      table.style.display='none';
+      return;
+    }
+    selectionLabel=`${formatMM(rangeRow.daMin)} – ${formatMM(rangeRow.daMax)} mm`;
+    s=getSFrom118(daKey,sub);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
       document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
-      document.getElementById('explain').innerHTML='El diámetro no coincide con ningún rango de la Tabla 11.8 para el subtipo seleccionado.';
-      document.getElementById('outTbl').style.display='none'; return;
+      document.getElementById('explain').innerHTML='No existe espesor disponible para el subtipo seleccionado en ese rango.';
+      table.style.display='none';
+      return;
     }
     const subtypeText=copperTypeSel.options[copperTypeSel.selectedIndex].text;
-    rule=`Cobre y aleaciones · Tabla 11.8 · Subtipo: ${subtypeText}.`;
+    rule=`Cobre y aleaciones · Tabla 11.8 · Rango: ${selectionLabel}. Subtipo: ${subtypeText}.`;
   } else {
     document.getElementById('groupHint').textContent='—';
   }
@@ -654,17 +815,45 @@ function calc(){
 
   const tbody=document.querySelector('#outTbl tbody');
   tbody.innerHTML='';
-  const sysES = SYSTEMS_LABELS[system] || system;
-  const locES = SPACES_LABELS[locationSel] || locationSel;
-  const materialText = mat==='copper_family'
+  const sysES=SYSTEMS_LABELS[system]||system;
+  const locES=SPACES_LABELS[locationSel]||locationSel;
+  const materialText=mat==='copper_family'
     ? `Cobre y aleaciones (Tabla 11.8) – ${copperTypeSel.options[copperTypeSel.selectedIndex].text}`
     : materialSel.options[materialSel.selectedIndex].text;
   const rows=[
-    ['Sistema',sysES],['Ubicación',locES],['Material',materialText],
-    ['Símbolo (Tabla 11.5)',symbol],['Grupo (si steel)',group||'—'],['dₐ [mm]',da],['Espesor s [mm]',s!=null?s.toFixed(1):'—'],
+    ['Sistema',sysES],
+    ['Ubicación',locES],
+    ['Material',materialText],
+    ['Símbolo (Tabla 11.5)',symbol],
+    ['Grupo (si steel)',group||'—']
   ];
-  for(const[k,v]of rows){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=k;tr.appendChild(a);const b=document.createElement('td');b.innerHTML=String(v);tr.appendChild(b);tbody.appendChild(tr);}
-  document.getElementById('outTbl').style.display='table';
+  if(mat==='copper_family'){
+    rows.push(['Rango dₐ [mm]',selectionLabel]);
+  } else {
+    rows.push(['Selección dₐ',selectionLabel]);
+    if(odValue!=null){
+      rows.push(['OD [mm]',`${formatMM(odValue)} mm`]);
+    }
+  }
+  rows.push(['Espesor s [mm]',s!=null?s.toFixed(1):'—']);
+  for(const[k,v]of rows){
+    const tr=document.createElement('tr');
+    const a=document.createElement('td');
+    a.textContent=k;
+    tr.appendChild(a);
+    const b=document.createElement('td');
+    b.innerHTML=String(v);
+    tr.appendChild(b);
+    tbody.appendChild(tr);
+  }
+  table.style.display='table';
+
+  if(mat==='steel' || mat==='stainless'){
+    const {sch,t}=pickSchedule(mat,odValue,s);
+    schLine.textContent=sch?`SCH recomendado: SCH ${sch} [t = ${t.toFixed(2)} mm]`:'SCH NO disponible';
+  } else {
+    schLine.textContent='Tabla GL 11.8 (sin schedule)';
+  }
 }
 
 function runTests(){
@@ -691,6 +880,11 @@ function runTests(){
   cases.push(['Cobre puro, dₐ=25 ⇒ s=1.5',Math.abs(tCopperFamily(25,'copper')-1.5)<1e-9]);
   cases.push(['Aleación de cobre, dₐ=25 ⇒ s=1.2',Math.abs(tCopperFamily(25,'copper_alloy')-1.2)<1e-9]);
   cases.push(['Cobre, dₐ=21 ⇒ fuera de tabla',tCopperFamily(21,'copper')===null]);
+  const schedSteel=pickSchedule('steel',60.3,4.0);
+  const schedStainless=pickSchedule('stainless',10.3,5.0);
+  cases.push(['Steel OD 60,3 · smin 4,0 ⇒ SCH 80',schedSteel.sch==='80' && Math.abs(schedSteel.t-5.54)<1e-9]);
+  cases.push(['Inox OD 10,3 · smin 5,0 ⇒ sin schedule',schedStainless.sch===null]);
+  cases.push(['Tabla 11.8 · aleación 25–44.5 ⇒ 1.2',Math.abs(getSFrom118('25-44.5','copper_alloy')-1.2)<1e-9]);
   cases.push(['Etiquetas ES cubren todos los SPACES',
     SPACES.every(k => !!SPACES_LABELS[k])
   ]);
@@ -716,23 +910,60 @@ function runTests(){
 // INIT
 fillSelect('system', SYSTEMS, SYSTEMS_LABELS);
 fillSelect('location', SPACES, SPACES_LABELS);
-['system','location','da'].forEach(id=>{
-  document.getElementById(id).addEventListener('change',calc);
-  document.getElementById(id).addEventListener('input',calc);
+['system','location'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('change',calc);
+  el.addEventListener('input',calc);
 });
-materialSel.addEventListener('change',()=>{ toggleCopperSub(); calc(); });
-materialSel.addEventListener('input',()=>{ toggleCopperSub(); calc(); });
-copperTypeSel.addEventListener('change',calc);
+function handleMaterialChange(){
+  toggleCopperSub();
+  daFilter.value='';
+  const hasOptions=populateDaOptions(true);
+  if(hasOptions){
+    calc();
+  } else {
+    document.getElementById('outTbl').style.display='none';
+    schLine.textContent='—';
+    document.getElementById('headline').textContent='—';
+    document.getElementById('explain').textContent='—';
+  }
+}
+materialSel.addEventListener('change',handleMaterialChange);
+materialSel.addEventListener('input',handleMaterialChange);
+copperTypeSel.addEventListener('change',()=>{
+  if(daSelect.options.length){
+    calc();
+  }
+});
+daFilter.addEventListener('input',()=>{
+  if(populateDaOptions()){
+    calc();
+  } else {
+    document.getElementById('outTbl').style.display='none';
+    schLine.textContent='—';
+    document.getElementById('headline').textContent='—';
+    document.getElementById('explain').textContent='—';
+  }
+});
+daSelect.addEventListener('change',calc);
 (function mapLegacyMaterials(){
   const legacy=materialSel.value;
   if(legacy==='copper' || legacy==='copper_alloy'){
     materialSel.value='copper_family';
     copperTypeSel.value=legacy;
   }
-  toggleCopperSub();
 })();
+toggleCopperSub();
+const initialHasOptions=populateDaOptions(true);
 runTests();
-calc();
+if(initialHasOptions){
+  calc();
+} else {
+  document.getElementById('outTbl').style.display='none';
+  schLine.textContent='—';
+  document.getElementById('headline').textContent='—';
+  document.getElementById('explain').textContent='—';
+}
 </script>
 </body>
 </html>
