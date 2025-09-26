@@ -74,8 +74,13 @@
   .card.result { position: sticky; top: 32px; }
   .row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
+  }
+  .row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
   .row.da-actions {
     display: flex;
@@ -85,7 +90,10 @@
     margin-top: 12px;
     flex-wrap: wrap;
   }
-  .row.row--spaced { margin-top: 18px; }
+  .row.row--spaced {
+    margin-top: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
   label {
     font-size: 12px;
     font-weight: 700;
@@ -599,8 +607,9 @@ function drawViz({status,place,system,s}){
   const tankX=pad,tankY=pad,tankW=w-pad*2,tankH=h-pad*2;
   const pipeH=Math.max(32,tankH*0.2);
   const pipeY=tankY+tankH/2;
-  const pipeW=tankW*0.78;
-  const pipeX=tankX+(tankW-pipeW)/2;
+  const pipeMargin=Math.max(16,tankW*0.04);
+  const pipeW=Math.max(0,tankW-pipeMargin*2);
+  const pipeX=tankX+pipeMargin;
   const color=status==='ok'?'var(--ok)':status==='warn'?'var(--warn)':'var(--bad)';
   const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
   const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
@@ -636,7 +645,7 @@ function drawViz({status,place,system,s}){
     </defs>
     <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
     <g filter="url(#${filterId})">
-      <rect x="${pipeX}" y="${pipeY-pipeH/2}" width="${pipeW}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
+      <rect x="${pipeX}" y="${pipeY-pipeH/2}" width="${pipeW}" height="${pipeH}" rx="0" ry="0" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
     </g>
     <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-16}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
     <text x="${tankX+tankW/2}" y="${tankY+tankH-24}" text-anchor="middle" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
