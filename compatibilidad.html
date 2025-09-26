@@ -45,6 +45,27 @@
     transition: color 0.2s ease;
   }
   nav a:hover { color: #7dd3fc; }
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .page-header .header-copy { flex: 1 1 380px; min-width: 260px; }
+  .page-header .header-brand {
+    flex: 0 0 auto;
+    max-width: 200px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+  .page-header .header-brand img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(8, 47, 73, 0.35);
+  }
   h1 {
     font-size: clamp(26px, 4vw, 38px);
     margin: 0 0 12px;
@@ -143,6 +164,10 @@
     color: var(--mut);
     margin-top: 6px;
     line-height: 1.5;
+  }
+  .hint.error {
+    color: #fca5a5;
+    font-weight: 600;
   }
   .hidden { display: none; }
   .advanced-toggle {
@@ -288,6 +313,7 @@
     font-size: 13px;
     color: var(--mut);
     line-height: 1.6;
+    text-align: center;
   }
   @media (max-width: 940px) {
     .grid { grid-template-columns: 1fr; }
@@ -298,8 +324,15 @@
 <body>
 <div class="wrap">
   <nav><a href="index.html">← Volver al inicio</a></nav>
-  <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
-  <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+  <div class="page-header">
+    <div class="header-copy">
+      <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
+      <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+    </div>
+    <div class="header-brand">
+      <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
+    </div>
+  </div>
 
   <div class="grid">
     <!-- Controles -->
@@ -375,7 +408,7 @@
   </div>
 
   <footer>
-    <p><strong>Leyenda</strong>: N/M/D = grupo para acero (espesor por Tabla 11.6). X = no instalar. “–” = instalación solo tras acuerdo especial de la Sociedad de Clasificación. En estos casos, se muestra el aviso: “Validar con el diseñador del sistema y con casa clasificadora”.</p>
+    <p>Por Jhon Eric Gomez - DVMPR-GEDIN<br />Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a>.</p>
   </footer>
 </div>
 
@@ -688,6 +721,15 @@ const btnDaValidate=document.getElementById('btnDaValidate');
 const sLine=document.getElementById('sLine');
 const schLine=document.getElementById('schLine');
 
+function setDaHelp(message,{isError=false}={}){
+  daHelp.textContent=message;
+  if(isError){
+    daHelp.classList.add('error');
+  } else {
+    daHelp.classList.remove('error');
+  }
+}
+
 let selectedDaKey=null;
 let selectedDaText='';
 
@@ -757,7 +799,7 @@ function populateDaOptions(){
   if(!options.length){
     selectedDaKey=null;
     selectedDaText='';
-    daHelp.textContent='Sin opciones disponibles';
+    setDaHelp('Sin opciones disponibles');
     return 0;
   }
   const validated=getDaSelection();
@@ -801,7 +843,7 @@ function populateDaOptions(){
   }
 
   if(!(validated.key!=null)){
-    daHelp.textContent=`${options.length} opciones disponibles.`;
+    setDaHelp(`${options.length} opciones disponibles.`);
   }
 
   return options.length;
@@ -992,7 +1034,9 @@ fillSelect('location', SPACES, SPACES_LABELS);
 function invalidateResults({preserveHelp=false,message=''}={}){
   resetResults();
   if(message){
-    daHelp.textContent=message;
+ codex/update-form-layout-and-labels-f2f1wh
+    setDaHelp(message);
+
     return;
   }
   if(preserveHelp){
@@ -1000,9 +1044,10 @@ function invalidateResults({preserveHelp=false,message=''}={}){
   }
   const validated=getDaSelection();
   const hasValidated=validated.key!=null && validated.key!=='';
-  daHelp.textContent=hasValidated
+ codex/update-form-layout-and-labels-f2f1wh
+  setDaHelp(hasValidated
     ? 'Parámetros cambiaron. Pulse Validar para recalcular.'
-    : 'Seleccione un diámetro y pulse Validar.';
+    : 'Seleccione un diámetro y pulse Validar.');
 }
 
 ['system','location'].forEach(id=>{
@@ -1039,15 +1084,15 @@ daSelect.addEventListener('change',()=>{
   invalidateResults({preserveHelp:true});
   selectedDaKey=opt.value;
   selectedDaText=opt.textContent;
-  daHelp.textContent=`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`;
+  setDaHelp(`Seleccionado: ${selectedDaText}. Pulse Validar para aplicar.`);
 });
 btnDaValidate.addEventListener('click',()=>{
   if(selectedDaKey==null || selectedDaKey===''){
-    daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+    setDaHelp('FALTA DIGITAR DIÁMETRO O TAMAÑO NOMINAL', {isError:true});
     return;
   }
   setDaSelection(selectedDaKey,selectedDaText);
-  daHelp.textContent=`Validado: ${selectedDaText}`;
+  setDaHelp(`Validado: ${selectedDaText}`);
   calc();
 });
 (function mapLegacyMaterials(){
@@ -1060,7 +1105,7 @@ btnDaValidate.addEventListener('click',()=>{
 toggleCopperSub();
 setDaSelection(null,'');
 populateDaOptions();
-daHelp.textContent='Seleccione un diámetro y pulse Validar.';
+setDaHelp('Seleccione un diámetro y pulse Validar.');
 resetResults();
 </script>
 </body>
