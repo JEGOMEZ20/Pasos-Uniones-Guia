@@ -19,6 +19,94 @@
     };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ===== Mejoras de presentación (no tocan la lógica) ===== */
+    .result-card {
+      border-radius: 14px;
+      padding: 18px 18px 8px 18px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .result-header {
+      text-align: center;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .result-title-es {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .result-title-en {
+      display: block;
+      font-size: 0.95rem;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    /* Lista de opciones más “lineal” y respirada */
+    .option-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 900px) {
+      .option-list {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .option-text {
+      line-height: 1.25;
+    }
+
+    .option-es {
+      display: block;
+      font-weight: 600;
+    }
+
+    .option-en {
+      display: block;
+      opacity: 0.75;
+      font-size: 0.92rem;
+    }
+
+    /* Botón "ver" existente: solo aseguremos consistencia */
+    .option-actions .chip {
+      white-space: nowrap;
+    }
+
+    /* Estados no permitidos / deshabilitados */
+    .option-item.disabled {
+      opacity: 0.55;
+      filter: grayscale(20%);
+      text-decoration: line-through;
+    }
+
+    /* Bloque “se puede usar / notas” más claro */
+    .block-subtitle {
+      margin: 6px 0 12px 0;
+      opacity: 0.9;
+    }
+  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen">
   <div class="p-4">
@@ -74,6 +162,17 @@
       slip_slip: "Slip-on Joints",
     };
 
+    const ES_JOIN_TITLES = {
+      "Pipe unions": "Uniones para tubería",
+      "Compression couplings": "Acoples de compresión",
+      "Slip-on Joints": "Juntas Slip-on",
+    };
+
+    function biTitle(en) {
+      const es = ES_JOIN_TITLES[en] ?? en;
+      return { es, en };
+    }
+
     const ES_GROUP = {
       "Flammable fluids (flash point ≤ 60°C)": "Fluidos inflamables (punto de inflamación ≤ 60 °C)",
       "Flammable fluids (flash point > 60°C)": "Fluidos inflamables (punto de inflamación > 60 °C)",
@@ -125,7 +224,22 @@
       misc_co2: "Sistema de CO₂",
       misc_n2: "Sistema de nitrógeno",
       misc_steam: "Vapor",
+      pipe_welded_brazed: "Uniones soldadas y por braseado",
+      compression_swage: "Tipo swage",
+      compression_press: "Tipo prensado",
+      compression_typical: "Tipo compresión típica (férula)",
+      compression_bite: "Tipo mordedor",
+      compression_flared: "Tipo abocardado/abocinado",
+      slip_machine_grooved: "Tipo ranurado (laminado/mecanizado)",
+      slip_grip: "Tipo grip / agarre",
+      slip_slip: "Tipo slip / deslizante",
     };
+
+    function biLabel(item) {
+      const es = ES_SYSTEM[item.id] ?? item.system ?? item.id;
+      const en = item.system ?? item.id;
+      return { es, en };
+    }
 
     const ES_SPACES = {
       category_a: "Espacio de máquinas de categoría A",
@@ -641,9 +755,11 @@
                         details=${evaluation.details.pipeUnionsRule?.reason}
                         items=${[
                           {
-                            label: JOINT_LABELS.pipe_welded_brazed,
+                            id: "pipe_welded_brazed",
+                            system: "Welded and Brazed Types",
                             kind: "pipe_welded_brazed",
                             available: evaluation.categories.pipeUnions,
+                            disabled: !evaluation.categories.pipeUnions,
                           },
                         ]}
                         onView=${handleOpenViewer}
@@ -655,29 +771,39 @@
                         details=${evaluation.categories.compression ? "Subtipos según clase y OD" : "Sin subtipos válidos con la clase/OD"}
                         items=${[
                           {
-                            label: JOINT_LABELS.compression_swage,
+                            id: "compression_swage",
+                            system: "Swage Type",
                             kind: "compression_swage",
                             available: evaluation.details.compressionSubs.swage,
+                            disabled: !evaluation.details.compressionSubs.swage,
                           },
                           {
-                            label: JOINT_LABELS.compression_press,
+                            id: "compression_press",
+                            system: "Press Type",
                             kind: "compression_press",
                             available: evaluation.details.compressionSubs.press,
+                            disabled: !evaluation.details.compressionSubs.press,
                           },
                           {
-                            label: JOINT_LABELS.compression_typical,
+                            id: "compression_typical",
+                            system: "Typical Compression Type",
                             kind: "compression_typical",
                             available: evaluation.details.compressionSubs.typical,
+                            disabled: !evaluation.details.compressionSubs.typical,
                           },
                           {
-                            label: JOINT_LABELS.compression_bite,
+                            id: "compression_bite",
+                            system: "Bite Type",
                             kind: "compression_bite",
                             available: evaluation.details.compressionSubs.bite,
+                            disabled: !evaluation.details.compressionSubs.bite,
                           },
                           {
-                            label: JOINT_LABELS.compression_flared,
+                            id: "compression_flared",
+                            system: "Flared Type",
                             kind: "compression_flared",
                             available: evaluation.details.compressionSubs.flared,
+                            disabled: !evaluation.details.compressionSubs.flared,
                           },
                         ]}
                         onView=${handleOpenViewer}
@@ -689,19 +815,25 @@
                         details=${evaluation.categories.slipOn ? "Machine‑grooved / Grip / Slip" : "Bloqueado por ubicación o clase"}
                         items=${[
                           {
-                            label: JOINT_LABELS.slip_machine_grooved,
+                            id: "slip_machine_grooved",
+                            system: "Machine Grooved Type",
                             kind: "slip_machine_grooved",
                             available: evaluation.details.slipOnSubs.machine_grooved,
+                            disabled: !evaluation.details.slipOnSubs.machine_grooved,
                           },
                           {
-                            label: JOINT_LABELS.slip_grip,
+                            id: "slip_grip",
+                            system: "Grip Type",
                             kind: "slip_grip",
                             available: evaluation.details.slipOnSubs.grip,
+                            disabled: !evaluation.details.slipOnSubs.grip,
                           },
                           {
-                            label: JOINT_LABELS.slip_slip,
+                            id: "slip_slip",
+                            system: "Slip Type",
                             kind: "slip_slip",
                             available: evaluation.details.slipOnSubs.slip,
+                            disabled: !evaluation.details.slipOnSubs.slip,
                           },
                         ]}
                         onView=${handleOpenViewer}
@@ -766,30 +898,41 @@
     }
 
     function CategoryCard({ title, allowed, details, items, onView }) {
-      const wrapperClass = `rounded-xl p-3 border ${allowed ? "border-emerald-700 bg-emerald-900/20" : "border-rose-700 bg-rose-900/20"}`;
+      const { es: titleEs, en: titleEn } = biTitle(title);
+      const subtitleText = `${allowed ? "Se puede usar" : "No se puede usar"}${details ? ` • ${details}` : ""}`;
+      const wrapperClass = `result-card ${allowed ? "border-emerald-600/60 bg-emerald-500/5" : "border-rose-600/60 bg-rose-500/5"}`;
+      const listItems = Array.isArray(items) ? items : [];
+
       return html`<div className=${wrapperClass}>
-        <div className="font-semibold mb-1">${title}</div>
-        <div className="text-sm mb-2">
-          ${allowed ? "Se puede usar" : "No se puede usar"}${details ? html` • ${details}` : ""}
+        <div className="result-header" aria-live="polite">
+          <span className="result-title-es">${titleEs}</span>
+          <span className="result-title-en">(${titleEn})</span>
         </div>
-        ${
-          items
-            ? html`<ul className="text-sm space-y-1">
-                ${items.map(
-                  (it, idx) => html`<li key=${idx} className="flex items-center gap-2">
-                    <span className=${it.available ? "" : "line-through opacity-60"}>${it.label}</span>
-                    ${
-                      it.available
-                        ? html`<button className="text-xs px-2 py-0.5 rounded-lg border border-slate-600 hover:bg-slate-700" onClick=${() => onView(it.kind)}>
-                            ver
-                          </button>`
-                        : ""
-                    }
-                  </li>`
-                )}
-              </ul>`
-            : ""
-        }
+        <div className="block-subtitle">${subtitleText}</div>
+        <ul className="option-list">
+          ${listItems.map((item, idx) => {
+            const { es, en } = biLabel(item);
+            const optionId = item.id ?? item.kind ?? idx;
+            const isDisabled = item.disabled === true || item.available === false;
+            return html`<li key=${optionId} className=${`option-item${isDisabled ? " disabled" : ""}`}>
+              <div className="option-text">
+                <span className="option-es">${es}</span>
+                <span className="option-en">(${en})</span>
+              </div>
+              <div className="option-actions">
+                <button
+                  type="button"
+                  className="chip text-xs px-2 py-0.5 rounded-lg border border-slate-600 hover:bg-slate-700 disabled:opacity-60 disabled:hover:bg-transparent"
+                  data-id=${optionId}
+                  disabled=${isDisabled}
+                  onClick=${() => onView(item.kind)}
+                >
+                  ver
+                </button>
+              </div>
+            </li>`;
+          })}
+        </ul>
       </div>`;
     }
 
