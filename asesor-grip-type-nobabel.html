@@ -31,7 +31,7 @@
 
   <script type="module">
     import htm from 'https://unpkg.com/htm?module';
-    import { createElement as h, useEffect, useRef, useState } from 'https://esm.sh/react@18';
+    import { createElement as h, useEffect, useMemo, useRef, useState } from 'https://esm.sh/react@18';
     import ReactDOM from 'https://esm.sh/react-dom@18/client';
 
     const html = htm.bind(h);
@@ -73,6 +73,91 @@
       slip_grip: "Slip-on Joints",
       slip_slip: "Slip-on Joints",
     };
+
+    const ES_GROUP = {
+      "Flammable fluids (flash point ≤ 60°C)": "Fluidos inflamables (punto de inflamación ≤ 60 °C)",
+      "Flammable fluids (flash point > 60°C)": "Fluidos inflamables (punto de inflamación > 60 °C)",
+      "Sea water": "Agua de mar",
+      "Fresh water": "Agua dulce",
+      "Sanitary / drains / scuppers": "Sanitario / drenajes / imbornales",
+      "Sounding / vent": "Aforo / venteo",
+      "Miscellaneous": "Varios",
+    };
+
+    const ES_SYSTEM = {
+      ff_le60_aircraft_vehicle_fuel: "Líneas de combustible de aeronaves y vehículos",
+      ff_le60_vent_lines: "Líneas de venteo",
+
+      ff_gt60_aircraft_vehicle_fuel: "Líneas de combustible de aeronaves y vehículos",
+      ff_gt60_ship_machinery_fuel: "Líneas de combustible de maquinaria del buque",
+      ff_gt60_lubricating_oil: "Líneas de aceite lubricante",
+      ff_gt60_hydraulic_oil: "Aceite hidráulico",
+
+      sw_bilge: "Líneas de achique",
+      sw_hp_spray: "Agua de mar a alta presión y rociadores (no permanentemente llenos)",
+      sw_perm_fireext: "Sistemas contra incendios permanentemente llenos (línea principal, rociadores)",
+      sw_nonperm_fireext: "Sistemas contra incendios no permanentemente llenos (espuma, diluvio, línea principal)",
+      sw_ballast: "Sistema de lastre",
+      sw_cooling: "Sistema de agua de enfriamiento",
+      sw_tank_cleaning: "Servicios de limpieza de tanques",
+      sw_non_essential: "Sistemas no esenciales",
+
+      fw_cooling: "Sistema de agua de enfriamiento",
+      fw_chilled: "Sistema de agua helada",
+      fw_condensate: "Retorno de condensado",
+      fw_made_demin: "Sistema de agua fabricada y desmineralizada",
+      fw_ancillary: "Sistema auxiliar",
+
+      san_deck_drains: "Drenajes de cubierta (internos)",
+      san_sanitary_drains: "Drenajes sanitarios",
+      san_scuppers_overboard: "Imbornales y descargas (al mar)",
+
+      sv_water_tanks_dry: "Tanques de agua / espacios secos",
+      sv_oil_tanks: "Tanques de aceite (p.f. > 60 °C)",
+      sv_intakes_uptakes: "Tomas y escapes",
+      sv_hvac: "Conductos HVAC",
+
+      misc_air_hp: "Aire de alta presión (HP)",
+      misc_air_mp: "Aire de media presión (MP)",
+      misc_air_lp: "Aire de baja presión (LP)",
+      misc_service_air_nonessential: "Aire de servicio (no esencial)",
+      misc_brine: "Salmuera",
+      misc_co2: "Sistema de CO₂",
+      misc_n2: "Sistema de nitrógeno",
+      misc_steam: "Vapor",
+    };
+
+    const ES_SPACES = {
+      category_a: "Espacio de máquinas de categoría A",
+      other_machinery: "Otros espacios de maquinaria/servicio (accesibles y visibles)",
+      accommodation: "Acomodaciones (habitabilidad)",
+      munition_store: "Depósitos de municiones",
+      cargo_hold: "Bodega de carga",
+      tank: "Interior de tanque",
+      open_deck: "Cubierta expuesta / intemperie",
+    };
+
+    function tGroup(groupKey) {
+      return ES_GROUP[groupKey] ?? groupKey;
+    }
+
+    function tSystem(item) {
+      return ES_SYSTEM[item.id] ?? item.system ?? item.id;
+    }
+
+    function tSpace(spaceKey) {
+      return ES_SPACES[spaceKey] ?? spaceKey;
+    }
+
+    const SPACES_KEYS = [
+      "category_a",
+      "other_machinery",
+      "accommodation",
+      "munition_store",
+      "cargo_hold",
+      "tank",
+      "open_deck",
+    ];
 
     function parseViewerHash(hash) {
       if (!hash) return null;
@@ -206,6 +291,19 @@
       const [viewerImageSrc, setViewerImageSrc] = useState("");
       const [viewerImageStatus, setViewerImageStatus] = useState("idle");
       const viewerHistoryRef = useRef(false);
+
+      const groupedSystems = useMemo(() => {
+        const order = [];
+        const byGroup = new Map();
+        for (const item of NAVAL_SYSTEMS) {
+          if (!byGroup.has(item.group)) {
+            byGroup.set(item.group, []);
+            order.push(item.group);
+          }
+          byGroup.get(item.group).push(item);
+        }
+        return { order, byGroup };
+      }, []);
 
       function suggestClass(mediumGroup, P, T) {
         const lim = CLASS_LIMITS[mediumGroup];
@@ -451,26 +549,30 @@
         <main className="max-w-7xl mx-auto p-4 space-y-6">
           <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <${Field} label="Sistema (Table 1.5.3)">
-                <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${selectedSystemId} onChange=${(e) => setSelectedSystemId(e.target.value)}>
-                  ${Array.from(new Set(NAVAL_SYSTEMS.map((s) => s.group))).map(
-                    (grp) => html`<optgroup key=${grp} label=${grp}>
-                      ${NAVAL_SYSTEMS.filter((s) => s.group === grp).map(
-                        (s) => html`<option key=${s.id} value=${s.id}>${s.system}</option>`
-                      )}
+              <${Field} label="Sistema (Tabla 1.5.3)">
+                <select
+                  id="select-system"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                  value=${selectedSystemId}
+                  onChange=${(e) => setSelectedSystemId(e.target.value)}
+                >
+                  ${groupedSystems.order.map(
+                    (groupKey) => html`<optgroup key=${groupKey} label=${tGroup(groupKey)}>
+                      ${groupedSystems.byGroup
+                        .get(groupKey)
+                        .map((item) => html`<option key=${item.id} value=${item.id}>${tSystem(item)}</option>`)}
                     </optgroup>`
                   )}
                 </select>
               </${Field}>
               <${Field} label="Espacio / Ubicación">
-                <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${space} onChange=${(e) => setSpace(e.target.value)}>
-                  <option value="category_a">Category A machinery space</option>
-                  <option value="other_machinery">Other machinery/service spaces (accesible & visible)</option>
-                  <option value="accommodation">Accommodation spaces</option>
-                  <option value="munition_store">Munition stores</option>
-                  <option value="cargo_hold">Cargo hold</option>
-                  <option value="tank">Inside tank</option>
-                  <option value="open_deck">Open/Weather deck</option>
+                <select
+                  id="select-space"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                  value=${space}
+                  onChange=${(e) => setSpace(e.target.value)}
+                >
+                  ${SPACES_KEYS.map((key) => html`<option key=${key} value=${key}>${tSpace(key)}</option>`)}
                 </select>
               </${Field}>
             </div>
@@ -529,7 +631,7 @@
                 ? html`<p className="text-slate-400 text-sm">Configura y pulsa Evaluar para ver las uniones permitidas y notas normativas (en español).</p>`
                 : html`<div className="space-y-4">
                     <div className="text-sm text-slate-300">
-                      Sistema: <b>${evaluation.sys.group} → ${evaluation.sys.system}</b> · Condición del sistema (tabla): <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo fuego: <b>${evaluation.sys.fireTest}</b>
+                      Sistema: <b>${tGroup(evaluation.sys.group)} → ${tSystem(evaluation.sys)}</b> · Condición del sistema (tabla): <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo fuego: <b>${evaluation.sys.fireTest}</b>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4">
