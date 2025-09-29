@@ -98,6 +98,13 @@
     backdrop-filter: blur(16px);
   }
   .card.result { position: sticky; top: 32px; }
+
+  #notesCard[data-state="idle"] .card-title::after {
+    content: " (pendiente de validar)";
+    font-weight: 400;
+    opacity: 0.7;
+    font-size: 0.9em;
+  }
   .row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -381,7 +388,7 @@
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
-      <div id="notesCard" class="card" style="margin-top:1rem;">
+      <div id="notesCard" class="card" data-state="idle" style="margin-top:1rem;">
         <div class="card-title">NOTAS</div>
         <div class="card-body">
           <p id="notesText" class="muted"></p>
@@ -751,14 +758,6 @@ function computeNotes(systemKey, spaceKey) {
   // Fallback (p.ej., negras sin potable): GL 2015
   return 'Definición tomada de GL 2015.';
 }
-
-function renderNotes() {
-  const systemKey = document.getElementById('system').value;
-  const spaceKey  = document.getElementById('location').value;
-  const note = computeNotes(systemKey, spaceKey);
-  const el = document.getElementById('notesText');
-  if (el) el.textContent = note;
-}
 function pickSchedule(mat,od,sMin){
   const orderSteel=['5','10','40','80','160'];
   const orderStainless=['5S','10S','40S','80S'];
@@ -780,6 +779,29 @@ function pickSchedule(mat,od,sMin){
 // ==============================
 // UI helpers
 // ==============================
+// ===== Notas: helpers =====
+function setNote(text) {
+  const card = document.getElementById('notesCard');
+  const txt  = document.getElementById('notesText');
+  if (!card || !txt) return;
+  txt.textContent = text;
+  card.dataset.state = 'active';
+  if (card.style.display === 'none') {
+    card.style.display = '';
+  }
+}
+
+function resetNotes() {
+  const card = document.getElementById('notesCard');
+  const txt  = document.getElementById('notesText');
+  if (!card || !txt) return;
+  txt.textContent = '';
+  card.dataset.state = 'idle';
+  // Para ocultar completamente la tarjeta en estado "idle",
+  // descomente la siguiente línea:
+  // card.style.display = 'none';
+}
+
 function fillSelect(id,arr,labelMap){
   const el=document.getElementById(id);
   el.innerHTML='';
@@ -999,7 +1021,6 @@ function populateDaOptions(){
 function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
-  renderNotes();
   const mat=materialSel.value;
   const table=document.getElementById('outTbl');
   const {key:daKeyRaw,label:daLabel}=getDaSelection();
@@ -1199,7 +1220,6 @@ function invalidateResults({preserveHelp=false,message=''}={}){
 ['system','location'].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener('change',()=>{
-    renderNotes();
     invalidateResults();
   });
   el.addEventListener('input',()=>invalidateResults());
@@ -1243,6 +1263,10 @@ btnDaValidate.addEventListener('click',()=>{
   setDaSelection(selectedDaKey,selectedDaText);
   setDaHelp(`Validado: ${selectedDaText}`);
   calc();
+  const systemKey = document.getElementById('system').value;
+  const spaceKey  = document.getElementById('location').value;
+  const note = computeNotes(systemKey, spaceKey);
+  setNote(note);
 });
 (function mapLegacyMaterials(){
   const legacy=materialSel.value;
@@ -1256,7 +1280,18 @@ setDaSelection(null,'');
 populateDaOptions();
 setDaHelp('Seleccione un diámetro y pulse Validar.');
 resetResults();
-renderNotes();
+
+['system','location','material','copperType','daSelect'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){
+    el.addEventListener('change',resetNotes);
+    el.addEventListener('input',resetNotes);
+  }
+});
+
+window.addEventListener('DOMContentLoaded',()=>{
+  resetNotes();
+});
 </script>
 </body>
 </html>
