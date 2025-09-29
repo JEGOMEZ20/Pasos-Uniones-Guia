@@ -381,6 +381,12 @@
           <div class="hint">El espesor s se calcula según el intervalo [mín, máx] en la tabla del material.</div>
         </div>
       </div>
+      <div id="notesCard" class="card" style="margin-top:1rem;">
+        <div class="card-title">NOTAS</div>
+        <div class="card-body">
+          <p id="notesText" class="muted"></p>
+        </div>
+      </div>
     </div>
 
     <!-- Vista / resultado -->
@@ -421,17 +427,47 @@
 // ==============================
 // MATRIZ NORMATIVA (todas las ubicaciones) – valores: 'N','M','D','X','-'
 // ==============================
+// ===== SPACES (orden de columnas) =====
 const SPACES = [
-  'Machinery spaces','Cofferdams / void spaces','Cargo holds','Ballast water tanks',
-  'Fuel and changeover tanks','Fresh cooling water tanks','Lubricating oil tanks','Hydraulic oil tanks',
-  'Drinking water tanks','Thermal oil tanks','Condensate and feedwater tanks','Accommodation',
-  'Cargo tanks, tank ships','Cofferdams, tank ships','Cargo pump rooms','Weather deck',
+  'Machinery spaces',
+  'Cofferdams / void spaces',
+  'Cargo holds',
+  'Ballast water tanks',
+  'Fuel and changeover tanks',
+  'Fresh cooling water tanks',
+  'Lubricating oil tanks',
+  'Hydraulic oil tanks',
+  'Drinking water tanks',
+  'Thermal oil tanks',
+  'Condensate and feedwater tanks',
+  'Accommodation',
+  'Cargo tanks, tank ships',
+  'Cofferdams, tank ships',
+  'Cargo pump rooms',
+  'Weather deck',
+  // ↓↓↓ NUEVOS ESPACIOS (al final, sin alterar claves internas)
+  'Blackwater Tanks',
+  'Greywater Tanks',
 ];
 
+// ===== SYSTEMS =====
 const SYSTEMS = [
-  'Bilge lines','Ballast lines','Seawater lines','Fuel lines','Lubricating lines',
-  'Thermal oil lines','Steam lines','Condensate lines','Feedwater lines',
-  'Drinking water lines','Fresh cooling water lines','Compressed air lines','Hydraulic lines'
+  'Bilge lines',
+  'Ballast lines',
+  'Seawater lines',
+  'Fuel lines',
+  'Lubricating lines',
+  'Thermal oil lines',
+  'Steam lines',
+  'Condensate lines',
+  'Feedwater lines',
+  'Drinking water lines',
+  'Fresh cooling water lines',
+  'Compressed air lines',
+  'Hydraulic lines',
+  // ↓↓↓ NUEVOS SISTEMAS
+  'Blackwater lines',
+  'Greywater lines',
 ];
 
 const ALLOWED_SYMBOLS = new Set(['M','D','N','X','-']);
@@ -496,6 +532,74 @@ const MATRIX = normalizeMatrix({
     'Machinery spaces':'N','Cofferdams / void spaces':'M','Cargo holds':'M','Ballast water tanks':'M','Fuel and changeover tanks':'M','Fresh cooling water tanks':'X','Lubricating oil tanks':'X','Hydraulic oil tanks':'N','Drinking water tanks':'X','Thermal oil tanks':'X','Condensate and feedwater tanks':'X','Accommodation':'X','Cargo tanks, tank ships':'N','Cofferdams, tank ships':'N','Cargo pump rooms':'N','Weather deck':'N'
   },
 });
+
+// ===== Extensión de columnas para nuevos espacios =====
+(() => {
+  const tailBySystem = {
+    'Bilge lines':            ['X','M'],
+    'Ballast lines':          ['X','-'],
+    'Seawater lines':         ['X','X'],
+    'Fuel lines':             ['X','X'],
+    'Lubricating lines':      ['X','X'],
+    'Thermal oil lines':      ['X','X'],
+    'Steam lines':            ['X','X'],
+    'Condensate lines':       ['X','X'],
+    'Feedwater lines':        ['X','X'],
+    'Drinking water lines':   ['X','X'],
+    'Fresh cooling water lines':['X','X'],
+    'Compressed air lines':   ['X','X'],
+    'Hydraulic lines':        ['X','X'],
+  };
+  Object.entries(tailBySystem).forEach(([sys, [bw, gw]]) => {
+    if (MATRIX[sys]) {
+      MATRIX[sys]['Blackwater Tanks'] = bw;
+      MATRIX[sys]['Greywater Tanks']  = gw;
+    }
+  });
+})();
+
+// ===== Nuevas filas en MATRIX =====
+MATRIX['Blackwater lines'] = {
+  'Machinery spaces':'N',
+  'Cofferdams / void spaces':'M',
+  'Cargo holds':'-',
+  'Ballast water tanks':'X',
+  'Fuel and changeover tanks':'X',
+  'Fresh cooling water tanks':'X',
+  'Lubricating oil tanks':'X',
+  'Hydraulic oil tanks':'X',
+  'Drinking water tanks':'X',
+  'Thermal oil tanks':'X',
+  'Condensate and feedwater tanks':'X',
+  'Accommodation':'N',
+  'Cargo tanks, tank ships':'X',
+  'Cofferdams, tank ships':'X',
+  'Cargo pump rooms':'N',
+  'Weather deck':'N',
+  'Blackwater Tanks':'M',
+  'Greywater Tanks':'M',
+};
+
+MATRIX['Greywater lines'] = {
+  'Machinery spaces':'N',
+  'Cofferdams / void spaces':'M',
+  'Cargo holds':'-',
+  'Ballast water tanks':'X',
+  'Fuel and changeover tanks':'X',
+  'Fresh cooling water tanks':'X',
+  'Lubricating oil tanks':'X',
+  'Hydraulic oil tanks':'X',
+  'Drinking water tanks':'X',
+  'Thermal oil tanks':'X',
+  'Condensate and feedwater tanks':'X',
+  'Accommodation':'N',
+  'Cargo tanks, tank ships':'X',
+  'Cofferdams, tank ships':'X',
+  'Cargo pump rooms':'N',
+  'Weather deck':'N',
+  'Blackwater Tanks':'M',
+  'Greywater Tanks':'M',
+};
 
 const matrix_rendered = MATRIX;
 
@@ -574,7 +678,10 @@ const SPACES_LABELS = {
   'Cargo tanks, tank ships': 'Tanques de carga (buques tanque)',
   'Cofferdams, tank ships': 'Espacios de separación en buques tanque (cofferdams)',
   'Cargo pump rooms': 'Salas de bombas de carga',
-  'Weather deck': 'Cubierta expuesta (weather deck)'
+  'Weather deck': 'Cubierta expuesta (weather deck)',
+  // ↓↓↓ NUEVOS ESPACIOS
+  'Blackwater Tanks': 'Tanques de aguas negras',
+  'Greywater Tanks': 'Tanques de aguas grises',
 };
 
 const SYSTEMS_LABELS = {
@@ -590,7 +697,10 @@ const SYSTEMS_LABELS = {
   'Drinking water lines': 'Líneas de agua potable',
   'Fresh cooling water lines': 'Líneas de agua dulce de enfriamiento',
   'Compressed air lines': 'Líneas de aire comprimido',
-  'Hydraulic lines': 'Líneas hidráulicas'
+  'Hydraulic lines': 'Líneas hidráulicas',
+  // ↓↓↓ NUEVOS SISTEMAS
+  'Blackwater lines': 'Líneas de aguas negras',
+  'Greywater lines': 'Líneas de aguas grises',
 };
 
 // Mensaje canónico para “–”
@@ -616,6 +726,38 @@ function findTable118Range(rangeKey){
 function getSFrom118(rangeKey,sub){
   const row=findTable118Range(rangeKey);
   return row?row.s[sub]??null:null;
+}
+// ===== Notas contextuales (GL / IMO / COTECMAR) =====
+function computeNotes(systemKey, spaceKey) {
+  const isBW = systemKey === 'Blackwater lines' || spaceKey === 'Blackwater Tanks';
+  const isGW = systemKey === 'Greywater lines'  || spaceKey === 'Greywater Tanks';
+  const isDW = systemKey === 'Drinking water lines' || spaceKey === 'Drinking water tanks';
+
+  // Regla 1: Agua potable en relación con negras/grises → IMO
+  if (isDW && (isBW || isGW)) {
+    return 'Clasificación considerando IMO. GL 2015 no detalla la relación de agua potable con aguas negras/grises.';
+  }
+
+  // Regla 2: Sólo grises (sin agua potable) → COTECMAR
+  if (isGW && !isDW) {
+    return 'Definición según COTECMAR. Confirmar con Diseñador.';
+  }
+
+  // Regla 3 (por defecto): sin negras ni grises → GL 2015
+  if (!isBW && !isGW) {
+    return 'Definición tomada de GL 2015.';
+  }
+
+  // Fallback (p.ej., negras sin potable): GL 2015
+  return 'Definición tomada de GL 2015.';
+}
+
+function renderNotes() {
+  const systemKey = document.getElementById('system').value;
+  const spaceKey  = document.getElementById('location').value;
+  const note = computeNotes(systemKey, spaceKey);
+  const el = document.getElementById('notesText');
+  if (el) el.textContent = note;
 }
 function pickSchedule(mat,od,sMin){
   const orderSteel=['5','10','40','80','160'];
@@ -857,6 +999,7 @@ function populateDaOptions(){
 function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
+  renderNotes();
   const mat=materialSel.value;
   const table=document.getElementById('outTbl');
   const {key:daKeyRaw,label:daLabel}=getDaSelection();
@@ -1039,7 +1182,6 @@ fillSelect('location', SPACES, SPACES_LABELS);
 function invalidateResults({preserveHelp=false,message=''}={}){
   resetResults();
   if(message){
- codex/update-form-layout-and-labels-f2f1wh
     setDaHelp(message);
 
     return;
@@ -1049,7 +1191,6 @@ function invalidateResults({preserveHelp=false,message=''}={}){
   }
   const validated=getDaSelection();
   const hasValidated=validated.key!=null && validated.key!=='';
- codex/update-form-layout-and-labels-f2f1wh
   setDaHelp(hasValidated
     ? 'Parámetros cambiaron. Pulse Validar para recalcular.'
     : 'Seleccione un diámetro y pulse Validar.');
@@ -1057,7 +1198,10 @@ function invalidateResults({preserveHelp=false,message=''}={}){
 
 ['system','location'].forEach(id=>{
   const el=document.getElementById(id);
-  el.addEventListener('change',()=>invalidateResults());
+  el.addEventListener('change',()=>{
+    renderNotes();
+    invalidateResults();
+  });
   el.addEventListener('input',()=>invalidateResults());
 });
 function handleMaterialChange(){
@@ -1112,6 +1256,7 @@ setDaSelection(null,'');
 populateDaOptions();
 setDaHelp('Seleccione un diámetro y pulse Validar.');
 resetResults();
+renderNotes();
 </script>
 </body>
 </html>
