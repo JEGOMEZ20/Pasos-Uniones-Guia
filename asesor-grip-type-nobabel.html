@@ -39,13 +39,55 @@
     }
 
     .result-card--allowed {
-      border-color: rgba(34, 197, 94, 0.28);
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.65);
+      box-shadow: 0 12px 28px rgba(34, 197, 94, 0.22), 0 0 0 1px rgba(34, 197, 94, 0.45);
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.16), rgba(14, 116, 144, 0.05));
+    }
+
+    .result-card--allowed .block-subtitle {
+      color: #4ade80;
+    }
+
+    .result-card--allowed .option-item {
+      border-color: rgba(34, 197, 94, 0.42);
+      background: rgba(34, 197, 94, 0.14);
+    }
+
+    .result-card--allowed .option-actions .chip {
+      border-color: rgba(34, 197, 94, 0.5);
+      background: rgba(34, 197, 94, 0.22);
+      color: #bbf7d0;
+    }
+
+    .result-card--allowed .option-actions .chip:hover {
+      background: rgba(34, 197, 94, 0.28);
+      border-color: rgba(34, 197, 94, 0.6);
     }
 
     .result-card--blocked {
-      border-color: rgba(244, 63, 94, 0.28);
-      box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.12);
+      border-color: rgba(239, 68, 68, 0.7);
+      box-shadow: 0 12px 28px rgba(239, 68, 68, 0.24), 0 0 0 1px rgba(239, 68, 68, 0.5);
+      background: linear-gradient(145deg, rgba(127, 29, 29, 0.3), rgba(67, 20, 20, 0.12));
+    }
+
+    .result-card--blocked .block-subtitle {
+      color: #fca5a5;
+    }
+
+    .result-card--blocked .option-item {
+      border-color: rgba(239, 68, 68, 0.48);
+      background: rgba(239, 68, 68, 0.14);
+    }
+
+    .result-card--blocked .option-actions .chip {
+      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.22);
+      color: #fecdd3;
+    }
+
+    .result-card--blocked .option-actions .chip:hover {
+      background: rgba(239, 68, 68, 0.28);
+      border-color: rgba(239, 68, 68, 0.62);
     }
 
     .result-header {
@@ -327,6 +369,27 @@
       "open_deck",
     ];
 
+    const SCHEDULES = [
+      { nps: "1/8", dn: 6, od: 10.3, label: "DN6 (1/8) – OD 10,3", t: { "5S": null, "5": null, "10S": 1.24, "10": 1.24, "40S": 1.73, "40": 1.73, "80S": 2.41, "80": 2.41, "160": null } },
+      { nps: "1/4", dn: 8, od: 13.7, label: "DN8 (1/4) – OD 13,7", t: { "5S": null, "5": null, "10S": 1.65, "10": 1.65, "40S": 2.24, "40": 2.24, "80S": 3.02, "80": 3.02, "160": null } },
+      { nps: "3/8", dn: 10, od: 17.2, label: "DN10 (3/8) – OD 17,2", t: { "5S": null, "5": null, "10S": 1.65, "10": 1.65, "40S": 2.31, "40": 2.31, "80S": 3.2, "80": 3.2, "160": null } },
+      { nps: "1/2", dn: 15, od: 21.3, label: "DN15 (1/2) – OD 21,3", t: { "5S": 1.65, "5": 1.65, "10S": 2.11, "10": 2.11, "40S": 2.77, "40": 2.77, "80S": 3.73, "80": 3.73, "160": 4.78 } },
+      { nps: "3/4", dn: 20, od: 26.7, label: "DN20 (3/4) – OD 26,7", t: { "5S": 1.65, "5": 1.65, "10S": 2.11, "10": 2.11, "40S": 2.87, "40": 2.87, "80S": 3.91, "80": 3.91, "160": 5.56 } },
+      { nps: "1", dn: 25, od: 33.4, label: "DN25 (1) – OD 33,4", t: { "5S": 1.65, "5": 1.65, "10S": 2.77, "10": 2.77, "40S": 3.38, "40": 3.38, "80S": 4.55, "80": 4.55, "160": 6.35 } },
+      { nps: "1 1/4", dn: 32, od: 42.2, label: "DN32 (1¼) – OD 42,2", t: { "5S": 1.65, "5": 1.65, "10S": 2.77, "10": 2.77, "40S": 3.56, "40": 3.56, "80S": 4.85, "80": 4.85, "160": 6.35 } },
+      { nps: "1 1/2", dn: 40, od: 48.3, label: "DN40 (1½) – OD 48,3", t: { "5S": 1.65, "5": 1.65, "10S": 2.77, "10": 2.77, "40S": 3.68, "40": 3.68, "80S": 5.08, "80": 5.08, "160": 7.14 } },
+      { nps: "2", dn: 50, od: 60.3, label: "DN50 (2) – OD 60,3", t: { "5S": 1.65, "5": 1.65, "10S": 2.77, "10": 2.77, "40S": 3.91, "40": 3.91, "80S": 5.54, "80": 5.54, "160": 8.74 } },
+      { nps: "2 1/2", dn: 65, od: 73.0, label: "DN65 (2½) – OD 73,0", t: { "5S": 2.11, "5": 2.11, "10S": 3.05, "10": 3.05, "40S": 5.16, "40": 5.16, "80S": 7.01, "80": 7.01, "160": 9.53 } },
+      { nps: "3", dn: 80, od: 88.9, label: "DN80 (3) – OD 88,9", t: { "5S": 2.11, "5": 2.11, "10S": 3.05, "10": 3.05, "40S": 5.49, "40": 5.49, "80S": 7.62, "80": 7.62, "160": 11.13 } },
+      { nps: "3 1/2", dn: 90, od: 101.6, label: "DN90 (3½) – OD 101,6", t: { "5S": 2.11, "5": 2.11, "10S": 3.05, "10": 3.05, "40S": 5.74, "40": 5.74, "80S": 8.08, "80": 8.08, "160": null } },
+      { nps: "4", dn: 100, od: 114.3, label: "DN100 (4) – OD 114,3", t: { "5S": 2.11, "5": 2.11, "10S": 3.05, "10": 3.05, "40S": 6.02, "40": 6.02, "80S": 8.56, "80": 11.13, "160": 13.49 } },
+      { nps: "5", dn: 125, od: 141.3, label: "DN125 (5) – OD 141,3", t: { "5S": 2.77, "5": 2.77, "10S": 3.4, "10": 3.4, "40S": 6.55, "40": 6.55, "80S": 9.53, "80": 9.53, "160": 15.88 } },
+      { nps: "6", dn: 150, od: 168.3, label: "DN150 (6) – OD 168,3", t: { "5S": 2.77, "5": 2.77, "10S": 3.4, "10": 3.4, "40S": 7.11, "40": 7.11, "80S": 10.97, "80": 10.97, "160": 18.26 } },
+      { nps: "8", dn: 200, od: 219.1, label: "DN200 (8) – OD 219,1", t: { "5S": 2.77, "5": 2.77, "10S": 3.76, "10": 3.76, "40S": 8.18, "40": 8.18, "80S": 12.7, "80": 12.7, "160": 23.01 } },
+      { nps: "10", dn: 250, od: 273.1, label: "DN250 (10) – OD 273,1", t: { "5S": 3.4, "5": 3.4, "10S": 4.19, "10": 4.19, "40S": 9.27, "40": 9.27, "80S": 12.7, "80": 15.09, "160": 28.58 } },
+      { nps: "12", dn: 300, od: 323.9, label: "DN300 (12) – OD 323,9", t: { "5S": 3.96, "5": 3.96, "10S": 4.57, "10": 4.57, "40S": 9.53, "40": 10.31, "80S": 12.7, "80": 17.48, "160": 33.32 } },
+    ];
+
     function parseViewerHash(hash) {
       if (!hash) return null;
       const match = hash.match(/^#view:([\w-]+)$/i);
@@ -447,10 +510,13 @@
         }),
       };
 
+      const defaultSchedule = SCHEDULES.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES[0];
+      const defaultOd = defaultSchedule ? defaultSchedule.od : 60.3;
+
       const [selectedSystemId, setSelectedSystemId] = useState(NAVAL_SYSTEMS[0].id);
       const [classMode, setClassMode] = useState("manual");
       const [clazz, setClazz] = useState("II");
-      const [odMM, setOdMM] = useState(50);
+      const [odMM, setOdMM] = useState(defaultOd);
       const [designPressureBar, setDesignPressureBar] = useState(7.5);
       const [designTemperatureC, setDesignTemperatureC] = useState(25);
       const [space, setSpace] = useState("other_machinery");
@@ -472,6 +538,8 @@
         }
         return { order, byGroup };
       }, []);
+
+      const odSelectOptions = useMemo(() => SCHEDULES, []);
 
       function suggestClass(mediumGroup, P, T) {
         const lim = CLASS_LIMITS[mediumGroup];
@@ -706,11 +774,29 @@
       const usedClass = computeUsedClass(sys);
 
       return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
-        <header className="sticky top-0 z-10 backdrop-blur bg-slate-900/70 border-b border-slate-700">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-            ${h(ShieldIcon, { className: "w-6 h-6" })}
-            <h1 className="text-xl font-semibold">Asesor Grip‑Type LR (Slip‑on Joints) – v0.7 · Naval Ships</h1>
-            <span className="ml-auto hidden md:block text-sm text-slate-300">Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.</span>
+        <header className="sticky top-0 z-10 backdrop-blur bg-slate-900/75 border-b border-slate-700/70">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0">
+                <img
+                  src="./assets/joints/cotec.jpg"
+                  alt="COTECMAR"
+                  className="w-20 md:w-24 rounded-2xl shadow-lg ring-1 ring-slate-700/50"
+                />
+              </div>
+              <div className="flex-1 text-center">
+                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-100">
+                  Asesor Grip‑Type LR (Slip‑on Joints) – v0.7 · Naval Ships
+                </h1>
+                <div className="mt-2 hidden md:flex items-center justify-center gap-2 text-sm text-slate-300">
+                  ${h(ShieldIcon, { className: "w-5 h-5" })}
+                  <span>Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.</span>
+                </div>
+                <p className="mt-2 text-xs text-slate-300 md:hidden">
+                  Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.
+                </p>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -779,7 +865,17 @@
 
             <div className="grid md:grid-cols-1 gap-4">
               <${Field} label="Diámetro exterior OD [mm]">
-                <input type="number" className="w-full max-w-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${odMM} onChange=${(e) => setOdMM(Number(e.target.value))} />
+                <div className="max-w-sm">
+                  <select
+                    className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                    value=${String(odMM)}
+                    onChange=${(e) => setOdMM(Number(e.target.value))}
+                  >
+                    ${odSelectOptions.map((option) =>
+                      html`<option key=${option.od} value=${option.od}>${option.label}</option>`
+                    )}
+                  </select>
+                </div>
               </${Field}>
             </div>
 
