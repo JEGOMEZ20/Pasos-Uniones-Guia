@@ -1092,7 +1092,7 @@ function calc(){
       table.style.display='none';
       return;
     }
-    rule=`Steel grupo <b>${group}</b> · Tabla 11.6 · Selección: ${selectionLabel}.`;
+    rule=`Steel grupo <b>${group}</b> · Selección: ${selectionLabel}.`;
   } else if(mat==='stainless'){
     updateGroupHint('—');
     const rec=findScheduleByOd(Number(daKey));
@@ -1117,7 +1117,7 @@ function calc(){
       table.style.display='none';
       return;
     }
-    rule=`Austenitic stainless steel · Tabla 11.7 · Selección: ${selectionLabel}.`;
+    rule=`Austenitic stainless steel · Selección: ${selectionLabel}.`;
   } else if(mat==='copper_family'){
     updateGroupHint('—');
     const sub=copperTypeSel.value;
@@ -1143,7 +1143,7 @@ function calc(){
       return;
     }
     const subtypeText=copperTypeSel.options[copperTypeSel.selectedIndex].text;
-    rule=`Cobre y aleaciones · Tabla 11.8 · Rango: ${selectionLabel}. Subtipo: ${subtypeText}.`;
+    rule=`Cobre y aleaciones · Rango: ${selectionLabel}. Subtipo: ${subtypeText}.`;
   } else {
     updateGroupHint('—');
   }
