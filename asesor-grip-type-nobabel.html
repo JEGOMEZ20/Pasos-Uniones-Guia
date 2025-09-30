@@ -71,14 +71,10 @@
       margin-top: 0.5rem;
     }
 
-    .badge-class {
-      display: inline-block;
-      margin-left: 0.5rem;
-      padding: 0.1rem 0.5rem;
-      border-radius: 0.5rem;
+    .logic-hint {
       font-size: 0.85rem;
-      background: rgba(148, 163, 184, 0.15);
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      opacity: 0.85;
+      margin-top: 6px;
     }
 
     .result-row {
@@ -627,6 +623,7 @@
       const [designTemperatureC, setDesignTemperatureC] = useState(25);
       const [space, setSpace] = useState("other_machinery");
       const [evaluation, setEvaluation] = useState(null);
+      const [hasPendingChanges, setHasPendingChanges] = useState(false);
       const [viewer, setViewer] = useState(null);
       const [viewerImageSrc, setViewerImageSrc] = useState("");
       const [viewerImageStatus, setViewerImageStatus] = useState("idle");
@@ -646,6 +643,11 @@
       }, []);
 
       const odSelectOptions = useMemo(() => SCHEDULES_DN16_200, []);
+
+      function markPendingChanges() {
+        setEvaluation(null);
+        setHasPendingChanges(true);
+      }
 
       function suggestClass(mediumGroup, P, T) {
         const lim = CLASS_LIMITS[mediumGroup];
@@ -875,6 +877,7 @@
         if (!categories.slipOn && base.slipOn) reasons.push("Slip‑on permitido por 1.5.3, pero bloqueado por ubicación (Nota 2 / 5.10.9) o por clase en 1.5.4.");
 
         setEvaluation({ sys, usedClass, categories, reasons, details, notes: buildComplianceNotes(sys, usedClass, catNotes) });
+        setHasPendingChanges(false);
       }
 
       const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
@@ -896,14 +899,13 @@
                   Basado en LR Vol. 2 – Machinery &amp; Engineering Systems, Pt 7: Piping Systems,
                   Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones
                   en español.
-                  <span className="badge-class">Class {usedClass}</span>
                 </p>
-                <div className="hidden md:flex items-center gap-2 text-sm text-slate-300">
+                <div className="hidden md:flex items-center gap-2 text-sm text-slate-300 logic-hint">
                   ${h(ShieldIcon, { className: "w-5 h-5" })}
-                  <span>Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD).</span>
+                  <span>Con notas en español.</span>
                 </div>
-                <p className="text-xs text-slate-300 md:hidden text-left">
-                  Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD).
+                <p className="text-xs text-slate-300 md:hidden text-left logic-hint">
+                  Con notas en español.
                 </p>
               </div>
               <div className="header-brand">
@@ -920,7 +922,12 @@
                   id="select-system"
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
                   value=${selectedSystemId}
-                  onChange=${(e) => setSelectedSystemId(e.target.value)}
+                  onChange=${(e) => {
+                    const value = e.target.value;
+                    if (value === selectedSystemId) return;
+                    setSelectedSystemId(value);
+                    markPendingChanges();
+                  }}
                 >
                   ${groupedSystems.order.map(
                     (groupKey) => html`<optgroup key=${groupKey} label=${tGroup(groupKey)}>
@@ -936,7 +943,12 @@
                   id="select-space"
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
                   value=${space}
-                  onChange=${(e) => setSpace(e.target.value)}
+                  onChange=${(e) => {
+                    const value = e.target.value;
+                    if (value === space) return;
+                    setSpace(value);
+                    markPendingChanges();
+                  }}
                 >
                   ${SPACES_KEYS.map((key) => html`<option key=${key} value=${key}>${tSpace(key)}</option>`)}
                 </select>
@@ -946,10 +958,24 @@
             <div className="grid md:grid-cols-2 gap-4">
               <${Field} label="Modo de clase">
                 <div className="flex items-center gap-3">
-                  <button onClick=${() => setClassMode("manual")} className=${`px-3 py-1 rounded-full border ${classMode === "manual" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}>
+                  <button
+                    onClick=${() => {
+                      if (classMode === "manual") return;
+                      setClassMode("manual");
+                      markPendingChanges();
+                    }}
+                    className=${`px-3 py-1 rounded-full border ${classMode === "manual" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}
+                  >
                     Seleccionar clase
                   </button>
-                  <button onClick=${() => setClassMode("auto")} className=${`px-3 py-1 rounded-full border ${classMode === "auto" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}>
+                  <button
+                    onClick=${() => {
+                      if (classMode === "auto") return;
+                      setClassMode("auto");
+                      markPendingChanges();
+                    }}
+                    className=${`px-3 py-1 rounded-full border ${classMode === "auto" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}
+                  >
                     Calcular por P/T
                   </button>
                   <span className="text-xs text-slate-400">Class I es la más exigente; usa AUTO si quieres derivarla desde P/T.</span>
@@ -958,7 +984,16 @@
               ${
                 classMode === "manual"
                   ? html`<${Field} label="Clase de tubería">
-                      <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${clazz} onChange=${(e) => setClazz(e.target.value)}>
+                      <select
+                        className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                        value=${clazz}
+                        onChange=${(e) => {
+                          const value = e.target.value;
+                          if (value === clazz) return;
+                          setClazz(value);
+                          markPendingChanges();
+                        }}
+                      >
                         <option value="I">Class I</option>
                         <option value="II">Class II</option>
                         <option value="III">Class III</option>
@@ -966,10 +1001,31 @@
                     </${Field}>`
                   : html`<div className="grid grid-cols-2 gap-3">
                       <${Field} label="P diseño [bar]">
-                        <input type="number" step="0.1" className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${designPressureBar} onChange=${(e) => setDesignPressureBar(Number(e.target.value))} />
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                          value=${designPressureBar}
+                          onChange=${(e) => {
+                            const value = Number(e.target.value);
+                            if (value === designPressureBar) return;
+                            setDesignPressureBar(value);
+                            markPendingChanges();
+                          }}
+                        />
                       </${Field}>
                       <${Field} label="T diseño [°C]">
-                        <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${designTemperatureC} onChange=${(e) => setDesignTemperatureC(Number(e.target.value))} />
+                        <input
+                          type="number"
+                          className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                          value=${designTemperatureC}
+                          onChange=${(e) => {
+                            const value = Number(e.target.value);
+                            if (value === designTemperatureC) return;
+                            setDesignTemperatureC(value);
+                            markPendingChanges();
+                          }}
+                        />
                       </${Field}>
                     </div>`
               }
@@ -984,7 +1040,10 @@
                     onChange=${(e) => {
                       const value = e.target.value;
                       if (value === "") return;
-                      setOdMM(Number(value));
+                      const numeric = Number(value);
+                      if (numeric === odMM) return;
+                      setOdMM(numeric);
+                      markPendingChanges();
                     }}
                   >
                     <option value="" disabled>Selecciona DN / OD</option>
@@ -1009,7 +1068,9 @@
           <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
             ${
               !evaluation
-                ? html`<p className="text-slate-400 text-sm">Configura y pulsa Evaluar para ver las uniones permitidas y notas normativas (en español).</p>`
+                ? (hasPendingChanges
+                    ? html`<p className="text-slate-400 text-sm mt-1">Cambiaste un parámetro. Presiona <strong>Evaluar</strong> para actualizar el resultado.</p>`
+                    : html`<p className="text-slate-400 text-sm">Configura y pulsa Evaluar para ver las uniones permitidas y notas normativas (en español).</p>`)
                 : html`<div className="space-y-4">
                     <div className="text-sm text-slate-300">
                       Sistema: <b>${tGroup(evaluation.sys.group)} → ${tSystem(evaluation.sys)}</b> · Condición del sistema: <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo de fuego: <b>${evaluation.sys.fireTest}</b>
