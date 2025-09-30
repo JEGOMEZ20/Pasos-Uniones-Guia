@@ -90,6 +90,9 @@
     max-width: 720px;
     margin: 0 0 24px;
   }
+  .block-subtitle {
+    display: block;
+  }
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
@@ -346,7 +349,11 @@
   <div class="page-header">
     <div class="header-copy">
       <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
-      <p id="pageSublead" class="sublead"></p>
+      <p id="pageSublead" class="sublead block-subtitle">
+        Basado en LR Vol. 2 – Machinery &amp; Engineering Systems, Pt 7: Piping Systems,
+        Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones
+        en español.
+      </p>
     </div>
     <div class="header-brand">
       <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
@@ -500,6 +507,7 @@ const MATERIAL_ES = {
 function stripTableRefs(text) {
   if (typeof text !== 'string') return '';
   const cleaned = text
+    .replace(/\s*\((Tabla|Table)[^)]+\)/gi, '')
     .replace(/(?:·\s*)?Tabla\s+11\.\d\s*(?:·)?/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -508,9 +516,9 @@ function stripTableRefs(text) {
 
 const sublead = document.getElementById('pageSublead');
 if (sublead) {
-  sublead.textContent =
-    'Basado en norma GL para compatibilidad de rutas de tuberías; ' +
-    'para agua potable se considera IMO. Criterios complementados con la experiencia del astillero COTECMAR.';
+  sublead.innerHTML =
+    'Basado en LR Vol. 2 – Machinery &amp; Engineering Systems, Pt 7: Piping Systems, ' +
+    'Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones en español.';
 }
 
 const summaryEl = document.getElementById('outSummary');
