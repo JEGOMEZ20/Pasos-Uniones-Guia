@@ -1232,16 +1232,6 @@ function calc(){
 
   const groupLetter=(mat==='steel')?(group||'—'):'';
   const selDaLabel=selectionLabel || '—';
-  let summaryIntro=`Espesor mínimo s = ${s.toFixed(1)} mm. `;
-  if(mat==='steel'){
-    summaryIntro+=`${matLabelBase} · grupo ${groupLetter||'—'}.`;
-  } else {
-    summaryIntro+=`${matLabelBase}.`;
-  }
-  if(mat==='copper_family' && subtypeLabel){
-    summaryIntro+=` Subtipo: ${subtypeLabel}.`;
-  }
-
   // === Obtener SCH sugerido solo para acero/inox ===
   let schSuggested=null;
   let schData=null;
@@ -1251,12 +1241,12 @@ function calc(){
     schData=picked;
   }
 
-  const summaryLines=[summaryIntro.trim()];
-  if(mat==='steel'){
-    summaryLines.push('SCH sugerido: N/A.');
-  } else if(mat==='stainless'){
+  const summaryLines=[];
+  if(mat==='steel' || mat==='stainless'){
     const schLabel=schSuggested?`SCH sugerido: SCH ${schSuggested}.`:'SCH sugerido: —.';
     summaryLines.push(schLabel);
+  } else if(mat==='copper_family'){
+    summaryLines.push('SCH sugerido: N/A.');
   }
   summaryLines.push(`Selección: ${selDaLabel}.`);
   setSummary(summaryLines.join('<br>'));
