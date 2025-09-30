@@ -1153,6 +1153,15 @@ function calc(){
   document.getElementById('explain').innerHTML=`Espesor mínimo <b>s = ${s.toFixed(1)} mm</b>. ${rule}`;
   setSLineValue(s);
 
+  // === Obtener SCH sugerido solo para acero/inox ===
+  let schSuggested=null;
+  let schData=null;
+  if((mat==='steel' || mat==='stainless') && odValue!=null){
+    const picked=pickSchedule(mat,odValue,s);
+    schSuggested=picked.sch;
+    schData=picked;
+  }
+
   const tbody=document.querySelector('#outTbl tbody');
   tbody.innerHTML='';
   const sysES=SYSTEMS_LABELS[system]||system;
@@ -1160,13 +1169,17 @@ function calc(){
   const materialText=mat==='copper_family'
     ? `Cobre y aleaciones (Tabla 11.8) – ${copperTypeSel.options[copperTypeSel.selectedIndex].text}`
     : materialSel.options[materialSel.selectedIndex].text;
-  const rows=[
-    ['Sistema',sysES],
-    ['Ubicación',locES],
-    ['Material',materialText],
-    ['Símbolo (Tabla 11.5)',symbol],
-    ['Grupo (si steel)',group||'—']
-  ];
+
+  // === Construcción de filas para #outTbl ===
+  const rows=[];
+  rows.push(['Sistema',sysES]);
+  rows.push(['Ubicación',locES]);
+  rows.push(['Material',materialText]);
+
+  if(mat==='steel'){
+    rows.push(['Grupo (si steel)',group||'—']);
+  }
+
   if(mat==='copper_family'){
     rows.push(['Rango dₐ [mm]',selectionLabel]);
   } else {
@@ -1175,7 +1188,15 @@ function calc(){
       rows.push(['OD [mm]',`${formatMM(odValue)} mm`]);
     }
   }
+
   rows.push(['Espesor s [mm]',s!=null?s.toFixed(1):'—']);
+
+  let schCell='N/A';
+  if(mat==='steel' || mat==='stainless'){
+    schCell=schSuggested?`SCH ${schSuggested}`:'—';
+  }
+  rows.push(['SCH sugerido',schCell]);
+
   for(const[k,v]of rows){
     const tr=document.createElement('tr');
     const a=document.createElement('td');
@@ -1189,8 +1210,9 @@ function calc(){
   table.style.display='table';
 
   if(mat==='steel' || mat==='stainless'){
-    const {sch,t}=pickSchedule(mat,odValue,s);
-    setSchLineValue(sch?`SCH recomendado: SCH ${sch} [t = ${t.toFixed(2)} mm]`:'SCH NO disponible');
+    setSchLineValue(schSuggested && schData?.t!=null
+      ? `SCH recomendado: SCH ${schSuggested} [t = ${schData.t.toFixed(2)} mm]`
+      : 'SCH NO disponible');
   } else {
     setSchLineValue('Tabla GL 11.8 (sin schedule)');
   }
