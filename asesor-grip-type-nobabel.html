@@ -39,7 +39,8 @@
 
     .page-header .header-brand {
       flex: 0 0 auto;
-      max-width: 200px;
+      width: 200px;
+      max-width: 100%;
       display: flex;
       align-items: flex-start;
       justify-content: flex-end;
@@ -51,9 +52,10 @@
     }
 
     .page-header .header-brand img {
-      max-width: 100%;
+      width: 100%;
       height: auto;
       border-radius: 14px;
+      display: block;
     }
 
     .sublead {
@@ -837,7 +839,7 @@
                 </p>
               </div>
               <div className="header-brand">
-                <img src="{% static 'img/cotecmar_logo.png' %}" alt="COTECMAR" id="logoCotecmar" />
+                <img src="assets/joints/cotec.jpg" alt="COTECMAR" id="logoCotecmar" />
               </div>
             </div>
           </div>
