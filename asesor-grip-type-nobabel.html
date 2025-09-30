@@ -66,6 +66,21 @@
       max-width: 720px;
     }
 
+    .block-subtitle {
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    .badge-class {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      background: rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
     .result-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -87,6 +102,11 @@
       border-color: rgba(34, 197, 94, 0.65);
       box-shadow: 0 12px 28px rgba(34, 197, 94, 0.22), 0 0 0 1px rgba(34, 197, 94, 0.45);
       background: linear-gradient(145deg, rgba(34, 197, 94, 0.16), rgba(14, 116, 144, 0.05));
+    }
+
+    .card-allowed {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.55);
     }
 
     .result-card--allowed .block-subtitle {
@@ -113,6 +133,19 @@
       border-color: rgba(239, 68, 68, 0.7);
       box-shadow: 0 12px 28px rgba(239, 68, 68, 0.24), 0 0 0 1px rgba(239, 68, 68, 0.5);
       background: linear-gradient(145deg, rgba(127, 29, 29, 0.3), rgba(67, 20, 20, 0.12));
+    }
+
+    .card-denied {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .card-allowed .status-dot {
+      background: #22c55e;
+    }
+
+    .card-denied .status-dot {
+      background: #ef4444;
     }
 
     .result-card--blocked .block-subtitle {
@@ -223,6 +256,32 @@
     .option-actions .chip:hover {
       background: rgba(255, 255, 255, 0.14);
       border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .notes {
+      margin-top: 12px;
+    }
+
+    .notes-title {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 6px 0;
+    }
+
+    .notes-list li {
+      font-size: 0.95rem;
+      line-height: 1.45;
+      margin: 4px 0;
+      opacity: 0.95;
+    }
+
+    details {
+      border-left: 3px solid rgba(148, 163, 184, 0.35);
+      padding-left: 10px;
+    }
+
+    details + details {
+      margin-top: 8px;
     }
 
     .option-actions .chip:disabled {
@@ -435,6 +494,8 @@
       { nps: "12", dn: 300, od: 323.9, label: "DN300 (12) – OD 323,9", t: { "5S": 3.96, "5": 3.96, "10S": 4.57, "10": 4.57, "40S": 9.53, "40": 10.31, "80S": 12.7, "80": 17.48, "160": 33.32 } },
     ];
 
+    const SCHEDULES_DN16_200 = SCHEDULES.filter((s) => s.dn >= 16 && s.dn <= 200);
+
     function parseViewerHash(hash) {
       if (!hash) return null;
       const match = hash.match(/^#view:([\w-]+)$/i);
@@ -539,7 +600,7 @@
         pipeUnions: (clazz, odMM) => {
           if (clazz === "III") return { allowed: true, reason: "+ (sin límite de OD en Class III)" };
           const ok = odMM <= 60.3;
-          return { allowed: ok, reason: ok ? "+ (OD ≤ 60.3 mm en Class I/II)" : "Table 1.5.4: En Class I/II solo OD ≤ 60.3 mm" };
+          return { allowed: ok, reason: ok ? "+ (OD ≤ 60,3 mm en Class I/II)" : "En Class I/II solo se permite OD ≤ 60,3 mm." };
         },
         compressionSubtypes: (clazz, odMM) => ({
           swage: clazz === "III",
@@ -555,7 +616,7 @@
         }),
       };
 
-      const defaultSchedule = SCHEDULES.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES[0];
+      const defaultSchedule = SCHEDULES_DN16_200.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES_DN16_200[0] || SCHEDULES[0];
       const defaultOd = defaultSchedule ? defaultSchedule.od : 60.3;
 
       const [selectedSystemId, setSelectedSystemId] = useState(NAVAL_SYSTEMS[0].id);
@@ -584,7 +645,7 @@
         return { order, byGroup };
       }, []);
 
-      const odSelectOptions = useMemo(() => SCHEDULES, []);
+      const odSelectOptions = useMemo(() => SCHEDULES_DN16_200, []);
 
       function suggestClass(mediumGroup, P, T) {
         const lim = CLASS_LIMITS[mediumGroup];
@@ -637,8 +698,6 @@
 
         const isSteam = sys.system.toLowerCase() === "steam" || sys.mediumGroup === "steam";
         if (isSteam && designPressureBar <= 10 && space === "open_deck") notes.push("5.10.11: En buques tanque (oil/chemical), permitido 'restrained slip‑on' para vapor ≤ 10 bar en cubierta expuesta para absorber movimiento axial.");
-
-        notes.push(`Clase utilizada: Class ${usedClass}${classMode === "auto" ? " (derivada por P/T)" : " (seleccionada por usuario)"}.`);
 
         notes.push(...catNotes);
         return notes;
@@ -759,6 +818,9 @@
 
         const allowAfterLocation = { ...base };
         const catNotes = [];
+        const odDisplay = Number.isFinite(odMM)
+          ? odMM.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })
+          : odMM;
 
         if (["category_a", "accommodation", "munition_store"].includes(space)) {
           allowAfterLocation.slipOn = false;
@@ -783,9 +845,9 @@
           compressionSubs = COUPLING_RULES.compressionSubtypes(usedClass, odMM);
           const anySub = Object.values(compressionSubs).some(Boolean);
           compressionAllowed = compressionAllowed && anySub;
-          if (!anySub) catNotes.push(`Table 1.5.4: En Class ${usedClass}${usedClass !== "III" ? ` y OD ${odMM} mm` : ""} no queda ningún subtipo de compression permitido.`);
-          if (usedClass !== "III" && odMM > 60.3) catNotes.push("Table 1.5.4: En Class I/II, Bite/Typical/Flared solo OD ≤ 60.3mm.");
-          if (usedClass !== "III") catNotes.push("Table 1.5.4: Swage/Press solo en Class III.");
+          if (!anySub) catNotes.push(`En Class ${usedClass}${usedClass !== "III" ? ` y OD ${odDisplay} mm` : ""} no queda ningún subtipo de compresión permitido.`);
+          if (usedClass !== "III" && odMM > 60.3) catNotes.push("En Class I/II, Bite/Typical/Flared solo hasta OD 60,3 mm.");
+          if (usedClass !== "III") catNotes.push("Swage/Press solo en Class III.");
         }
 
         let slipOnAllowed = allowAfterLocation.slipOn;
@@ -794,7 +856,7 @@
           slipOnSubs = COUPLING_RULES.slipOnSubtypes(usedClass);
           const anySub = Object.values(slipOnSubs).some(Boolean);
           slipOnAllowed = slipOnAllowed && anySub;
-          if (!slipOnSubs.grip || !slipOnSubs.slip) catNotes.push("Table 1.5.4: Grip/Slip no se permiten en Class I.");
+          if (!slipOnSubs.grip || !slipOnSubs.slip) catNotes.push("Grip/Slip no se permiten en Class I.");
         }
 
         const categories = { pipeUnions: pipeUnionsAllowed, compression: compressionAllowed, slipOn: slipOnAllowed };
@@ -818,6 +880,10 @@
       const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
       const usedClass = computeUsedClass(sys);
 
+      const allNotes = Array.isArray(evaluation?.notes) ? evaluation.notes : [];
+      const notasSistema = allNotes.filter((n) => /^Nota\s*[1-7]/i.test(n));
+      const notasLR = allNotes.filter((n) => !/^Nota\s*[1-7]/i.test(n));
+
       return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
 
           <header className="max-w-7xl mx-auto px-4 py-6 w-full">
@@ -826,16 +892,18 @@
                 <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-100">
                   Asesor de juntas mecánicas – Grip Type
                 </h1>
-                <p className="sublead text-slate-300">
-                  Basado en norma GL para compatibilidad de rutas de tuberías; para agua potable se considera IMO. Criterios
-                  complementados con la experiencia del astillero COTECMAR.
+                <p className="sublead block-subtitle text-slate-300">
+                  Basado en LR Vol. 2 – Machinery &amp; Engineering Systems, Pt 7: Piping Systems,
+                  Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones
+                  en español.
+                  <span className="badge-class">Class {usedClass}</span>
                 </p>
                 <div className="hidden md:flex items-center gap-2 text-sm text-slate-300">
                   ${h(ShieldIcon, { className: "w-5 h-5" })}
-                  <span>Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.</span>
+                  <span>Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD).</span>
                 </div>
                 <p className="text-xs text-slate-300 md:hidden text-left">
-                  Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.
+                  Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD).
                 </p>
               </div>
               <div className="header-brand">
@@ -847,7 +915,7 @@
         <main className="max-w-7xl mx-auto p-4 space-y-6">
           <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <${Field} label="Sistema (Tabla 1.5.3)">
+              <${Field} label="Sistema">
                 <select
                   id="select-system"
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
@@ -884,12 +952,12 @@
                   <button onClick=${() => setClassMode("auto")} className=${`px-3 py-1 rounded-full border ${classMode === "auto" ? "bg-slate-700 border-slate-500" : "border-slate-600"}`}>
                     Calcular por P/T
                   </button>
-                  <span className="text-xs text-slate-400">Class I es la más exigente; usa AUTO si quieres derivarla desde P/T (Tabla 1.2.1).</span>
+                  <span className="text-xs text-slate-400">Class I es la más exigente; usa AUTO si quieres derivarla desde P/T.</span>
                 </div>
               </${Field}>
               ${
                 classMode === "manual"
-                  ? html`<${Field} label="Clase de tubería (Table 1.5.4)">
+                  ? html`<${Field} label="Clase de tubería">
                       <select className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2" value=${clazz} onChange=${(e) => setClazz(e.target.value)}>
                         <option value="I">Class I</option>
                         <option value="II">Class II</option>
@@ -908,13 +976,18 @@
             </div>
 
             <div className="grid md:grid-cols-1 gap-4">
-              <${Field} label="Diámetro exterior OD [mm]">
+              <${Field} label="Diámetro nominal – OD [mm]">
                 <div className="max-w-sm">
                   <select
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
-                    value=${String(odMM)}
-                    onChange=${(e) => setOdMM(Number(e.target.value))}
+                    value=${odMM != null ? String(odMM) : ""}
+                    onChange=${(e) => {
+                      const value = e.target.value;
+                      if (value === "") return;
+                      setOdMM(Number(value));
+                    }}
                   >
+                    <option value="" disabled>Selecciona DN / OD</option>
                     ${odSelectOptions.map((option) =>
                       html`<option key=${option.od} value=${option.od}>${option.label}</option>`
                     )}
@@ -939,7 +1012,7 @@
                 ? html`<p className="text-slate-400 text-sm">Configura y pulsa Evaluar para ver las uniones permitidas y notas normativas (en español).</p>`
                 : html`<div className="space-y-4">
                     <div className="text-sm text-slate-300">
-                      Sistema: <b>${tGroup(evaluation.sys.group)} → ${tSystem(evaluation.sys)}</b> · Condición del sistema (tabla): <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo fuego: <b>${evaluation.sys.fireTest}</b>
+                      Sistema: <b>${tGroup(evaluation.sys.group)} → ${tSystem(evaluation.sys)}</b> · Condición del sistema: <b>${evaluation.sys.pipeSystemClass}</b> · Ensayo de fuego: <b>${evaluation.sys.fireTest}</b>
                     </div>
 
                     <div className="result-row">
@@ -1034,12 +1107,25 @@
                       />
                     </div>
 
-                    <div className="text-sm bg-slate-900 border border-slate-700 rounded-xl p-3">
-                      <div className="font-semibold mb-1">Notas y condiciones que aplican</div>
-                      <ul className="list-disc list-inside">
-                        ${evaluation.notes.map((n, i) => html`<li key=${i}>${n}</li>`)}
-                      </ul>
-                    </div>
+                    <section className="notes">
+                      <details open>
+                        <summary className="notes-title">Notas específicas del sistema (Nota 1–7)</summary>
+                        <ul className="notes-list">
+                          ${notasSistema.length
+                            ? notasSistema.map((n, i) => html`<li key=${`sys-${i}`}>${n}</li>`)
+                            : html`<li>No aplica.</li>`}
+                        </ul>
+                      </details>
+
+                      <details>
+                        <summary className="notes-title">Recomendaciones y requisitos LR</summary>
+                        <ul className="notes-list">
+                          ${notasLR.length
+                            ? notasLR.map((n, i) => html`<li key=${`lr-${i}`}>${n}</li>`)
+                            : html`<li>Sin notas adicionales.</li>`}
+                        </ul>
+                      </details>
+                    </section>
 
                     <div className="text-xs text-slate-400">
                       Grupo de medio: <b>${sys.mediumGroup}</b>. Límites Class II: P≤${CLASS_LIMITS[sys.mediumGroup].classII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classII.T} °C; Class III: P≤${CLASS_LIMITS[sys.mediumGroup].classIII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classIII.T} °C. Si P/T superan Class II, norma exige Class I (2.3.2).
@@ -1084,9 +1170,14 @@
       </div>`;
     }
 
+    function cleanLabel(text) {
+      return typeof text === "string" ? text.replace(/\s*\((Tabla|Table)[^)]+\)/gi, "") : text;
+    }
+
     function Field({ label, children }) {
+      const displayLabel = cleanLabel(label);
       return html`<label className="block text-sm">
-        <div className="mb-1 text-slate-300">${label}</div>
+        <div className="mb-1 text-slate-300">${displayLabel}</div>
         ${children}
       </label>`;
     }
@@ -1101,7 +1192,7 @@
         "Slip-on Joints": "card-SLIP",
       };
       const cardId = cardIds[title];
-      const cardStateClass = allowed ? " result-card--allowed" : " result-card--blocked";
+      const cardStateClass = allowed ? " result-card--allowed card-allowed" : " result-card--blocked card-denied";
 
       return html`<div className=${`result-card${cardStateClass}`} id=${cardId || undefined}>
         <div className="result-header" aria-live="polite">
