@@ -83,6 +83,13 @@
     max-width: 720px;
     line-height: 1.6;
   }
+  .sublead {
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    max-width: 720px;
+    margin: 0 0 24px;
+  }
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
@@ -339,7 +346,7 @@
   <div class="page-header">
     <div class="header-copy">
       <h1>¿Puede pasar una <em>tubería</em> a través de una <em>ubicación</em>?</h1>
-      <p class="small">Norma referencia GL (Tabla 11.5) y espesores mínimos por material (Tablas 11.6–11.8). Resultado inmediato y visual.</p>
+      <p id="pageSublead" class="sublead"></p>
     </div>
     <div class="header-brand">
       <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
@@ -414,6 +421,7 @@
         <h2 class="result-title">Resultado de análisis</h2>
         <div id="headline" class="result-status">—</div>
         <div id="explain" class="small">—</div>
+        <div id="outSummary" class="small muted">—</div>
       </div>
 
       <table class="tbl" id="outTbl" style="display:none">
@@ -478,6 +486,54 @@ const SYSTEMS = [
 ];
 
 const ALLOWED_SYMBOLS = new Set(['M','D','N','X','-']);
+
+// ===== Etiquetas ES (sin cambiar las claves internas) =====
+const MATERIAL_ES = {
+  steel: 'Acero al carbono',
+  stainless: 'Acero inoxidable austenítico',
+  inox: 'Acero inoxidable austenítico',
+  copper_family: 'Aleaciones de cobre',
+  copper: 'Cobre',
+  copper_alloy: 'Aleaciones de cobre',
+};
+
+function stripTableRefs(text) {
+  if (typeof text !== 'string') return '';
+  const cleaned = text
+    .replace(/(?:·\s*)?Tabla\s+11\.\d\s*(?:·)?/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return cleaned;
+}
+
+const sublead = document.getElementById('pageSublead');
+if (sublead) {
+  sublead.textContent =
+    'Basado en norma GL para compatibilidad de rutas de tuberías; ' +
+    'para agua potable se considera IMO. Criterios complementados con la experiencia del astillero COTECMAR.';
+}
+
+const summaryEl = document.getElementById('outSummary');
+
+function setSummary(content) {
+  if (!summaryEl) return;
+  if (!content) {
+    summaryEl.textContent = '—';
+    return;
+  }
+  const clean = stripTableRefs(content);
+  summaryEl.innerHTML = clean || '—';
+}
+
+function cleanseLegacyTableRefs(){
+  document.querySelectorAll('#pageSublead, #outSummary, .muted, .note, .help')
+    .forEach(el=>{
+      if(!el) return;
+      const current=el.innerHTML || '';
+      const clean=stripTableRefs(current);
+      el.innerHTML = clean || '';
+    });
+}
 
 function normalizeSymbol(value){
   if(value==null) return 'X';
@@ -949,6 +1005,7 @@ function resetResults(){
   document.getElementById('outTbl').style.display='none';
   setSLineValue(null);
   setSchLineValue('');
+  setSummary('');
 }
 
 function toggleCopperSub(){
@@ -1022,6 +1079,7 @@ function calc(){
   const system=document.getElementById('system').value;
   const locationSel=document.getElementById('location').value;
   const mat=materialSel.value;
+  const matLabelBase=MATERIAL_ES?.[mat] || materialSel.options[materialSel.selectedIndex]?.text || 'Material';
   const table=document.getElementById('outTbl');
   const {key:daKeyRaw,label:daLabel}=getDaSelection();
 
@@ -1048,17 +1106,19 @@ function calc(){
     setSLineValue(null);
     setSchLineValue('SCH NO disponible');
     table.style.display='none';
+    setSummary('');
     return;
   }
 
   if(symbol==='X'){
     drawViz({status:'bad',place:locationSel,system});
     document.getElementById('headline').innerHTML='<span class="pill bad">No compatible</span>';
-    document.getElementById('explain').innerHTML='La tabla normativa (11.5) marca “X”: la tubería no debe instalarse en esta ubicación.';
+    document.getElementById('explain').textContent='La normativa vigente marca “X”: la tubería no debe instalarse en esta ubicación.';
     updateGroupHint('—');
     setSLineValue(null);
     setSchLineValue('SCH NO disponible');
     table.style.display='none';
+    setSummary('');
     return;
   }
 
@@ -1066,6 +1126,7 @@ function calc(){
   let rule='';
   let selectionLabel=daLabel||'';
   let odValue=null;
+  let subtypeLabel='';
 
   if(mat==='steel'){
     group=symbol;
@@ -1073,11 +1134,12 @@ function calc(){
     const rec=findScheduleByOd(Number(daKey));
     if(!rec){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
-      document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.6 para este grupo.';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (acero)</span>';
+      document.getElementById('explain').textContent='La selección no coincide con los diámetros de referencia disponibles para este grupo.';
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
     odValue=rec.od;
@@ -1085,24 +1147,26 @@ function calc(){
     s=tSteel(group,odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (steel)</span>';
-      document.getElementById('explain').innerHTML=`El diámetro seleccionado (${selectionLabel}) no se encuentra en los intervalos de la Tabla 11.6 para el grupo ${group}.`;
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (acero)</span>';
+      document.getElementById('explain').textContent=`El diámetro seleccionado (${selectionLabel}) no se encuentra en los intervalos permitidos para el grupo ${group}.`;
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
-    rule=`Steel grupo <b>${group}</b> · Selección: ${selectionLabel}.`;
+    rule=`${matLabelBase} · grupo ${group}.`;
   } else if(mat==='stainless'){
     updateGroupHint('—');
     const rec=findScheduleByOd(Number(daKey));
     if(!rec){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
-      document.getElementById('explain').innerHTML='La selección no coincide con los diámetros disponibles de la Tabla 11.7.';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (inox)</span>';
+      document.getElementById('explain').textContent='La selección no coincide con los diámetros normativos disponibles para este material.';
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
     odValue=rec.od;
@@ -1110,48 +1174,67 @@ function calc(){
     s=tInox(odValue);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (inox)</span>';
-      document.getElementById('explain').innerHTML='El diámetro seleccionado no cae en los intervalos de la Tabla 11.7.';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (inox)</span>';
+      document.getElementById('explain').textContent='El diámetro seleccionado no cae en los intervalos normativos definidos para el material.';
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
-    rule=`Austenitic stainless steel · Selección: ${selectionLabel}.`;
+    rule=`${matLabelBase}.`;
   } else if(mat==='copper_family'){
     updateGroupHint('—');
     const sub=copperTypeSel.value;
     const rangeRow=findTable118Range(String(daKey));
     if(!rangeRow){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
-      document.getElementById('explain').innerHTML='El rango seleccionado no figura en la Tabla 11.8.';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (cobre)</span>';
+      document.getElementById('explain').textContent='El rango seleccionado no figura en la referencia normativa.';
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
     selectionLabel=selectionLabel || `${formatMM(rangeRow.daMin)} – ${formatMM(rangeRow.daMax)} mm`;
     s=getSFrom118(String(daKey),sub);
     if(s==null){
       drawViz({status:'bad',place:locationSel,system});
-      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de tabla (Tabla 11.8)</span>';
-      document.getElementById('explain').innerHTML='No existe espesor disponible para el subtipo seleccionado en ese rango.';
+      document.getElementById('headline').innerHTML='<span class="pill bad">Fuera de rango (cobre)</span>';
+      document.getElementById('explain').textContent='No existe espesor disponible para el subtipo seleccionado en ese rango.';
       setSLineValue(null);
       setSchLineValue('SCH NO disponible');
       table.style.display='none';
+      setSummary('');
       return;
     }
-    const subtypeText=copperTypeSel.options[copperTypeSel.selectedIndex].text;
-    rule=`Cobre y aleaciones · Rango: ${selectionLabel}. Subtipo: ${subtypeText}.`;
+    subtypeLabel=MATERIAL_ES?.[sub] || copperTypeSel.options[copperTypeSel.selectedIndex]?.text || '';
+    rule=`${matLabelBase}. ${subtypeLabel?`Subtipo: ${subtypeLabel}.`:''}`.trim();
   } else {
     updateGroupHint('—');
+    rule=`${matLabelBase}.`;
   }
 
   drawViz({status:'ok',place:locationSel,system,s});
   document.getElementById('headline').innerHTML='<span class="pill ok">Compatible</span>';
-  document.getElementById('explain').innerHTML=`Espesor mínimo <b>s = ${s.toFixed(1)} mm</b>. ${rule}`;
+  const explainHTML=`Espesor mínimo <b>s = ${s.toFixed(1)} mm</b>. ${rule}`;
+  document.getElementById('explain').innerHTML=stripTableRefs(explainHTML);
   setSLineValue(s);
+
+  const groupLetter=(mat==='steel')?(group||'—'):'';
+  const selDaLabel=selectionLabel || '—';
+  let leftPart=`Espesor mínimo s = ${s.toFixed(1)} mm. `;
+  if(mat==='steel'){
+    leftPart+=`${matLabelBase} · grupo ${groupLetter||'—'}.`;
+  } else {
+    leftPart+=`${matLabelBase}.`;
+  }
+  if(mat==='copper_family' && subtypeLabel){
+    leftPart+=` Subtipo: ${subtypeLabel}.`;
+  }
+  const summaryHTML=`${leftPart}<br>Selección: ${selDaLabel}.`;
+  setSummary(summaryHTML);
 
   // === Obtener SCH sugerido solo para acero/inox ===
   let schSuggested=null;
@@ -1167,8 +1250,8 @@ function calc(){
   const sysES=SYSTEMS_LABELS[system]||system;
   const locES=SPACES_LABELS[locationSel]||locationSel;
   const materialText=mat==='copper_family'
-    ? `Cobre y aleaciones (Tabla 11.8) – ${copperTypeSel.options[copperTypeSel.selectedIndex].text}`
-    : materialSel.options[materialSel.selectedIndex].text;
+    ? `${matLabelBase}${subtypeLabel?` – ${subtypeLabel}`:''}`
+    : matLabelBase;
 
   // === Construcción de filas para #outTbl ===
   const rows=[];
@@ -1214,7 +1297,7 @@ function calc(){
       ? `SCH recomendado: SCH ${schSuggested} [t = ${schData.t.toFixed(2)} mm]`
       : 'SCH NO disponible');
   } else {
-    setSchLineValue('Tabla GL 11.8 (sin schedule)');
+    setSchLineValue('Referencia GL (sin schedule)');
   }
 }
 
@@ -1313,6 +1396,7 @@ resetResults();
 
 window.addEventListener('DOMContentLoaded',()=>{
   resetNotes();
+  cleanseLegacyTableRefs();
 });
 </script>
 </body>
