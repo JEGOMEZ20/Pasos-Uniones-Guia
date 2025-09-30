@@ -264,6 +264,12 @@
       padding: 6px 0;
     }
 
+    .notes-list {
+      list-style: disc;
+      padding-left: 1.25rem;
+      margin: 0;
+    }
+
     .notes-list li {
       font-size: 0.95rem;
       line-height: 1.45;
@@ -885,7 +891,9 @@
 
       const allNotes = Array.isArray(evaluation?.notes) ? evaluation.notes : [];
       const notasSistema = allNotes.filter((n) => /^Nota\s*[1-7]/i.test(n));
-      const notasLR = allNotes.filter((n) => !/^Nota\s*[1-7]/i.test(n));
+      const notasLR = allNotes
+        .filter((n) => !/^Nota\s*[1-7]/i.test(n))
+        .map((n) => stripNormReferencePrefix(n));
 
       return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
 
@@ -1195,7 +1203,16 @@
             }
           </section>
 
-          <footer className="pb-10 text-xs text-slate-400">v0.7 • Naval Ships – Motor de decisión con notas en español y visor de referencias gráficas (imágenes) por tipo de unión.</footer>
+          <footer className="pb-10 text-xs text-slate-400 text-center space-y-2">
+            <p>
+              Por Jhon Eric Gomez - DVMPR-GEDIN<br />
+              Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com" className="text-sky-300 hover:text-sky-100">jegomez@cotecmar.com</a>.
+            </p>
+            <div>
+              v0.7 • Naval Ships – Motor de decisión con notas en español y visor de referencias gráficas (imágenes) por tipo de
+              unión.
+            </div>
+          </footer>
         </main>
 
         ${
@@ -1233,6 +1250,11 @@
 
     function cleanLabel(text) {
       return typeof text === "string" ? text.replace(/\s*\((Tabla|Table)[^)]+\)/gi, "") : text;
+    }
+
+    function stripNormReferencePrefix(text) {
+      if (typeof text !== "string") return text;
+      return text.replace(/^\s*(?:\d+(?:\.\d+)*)(?:\s*[:.\-–]\s*|\s+-\s*)?/, "").trim();
     }
 
     function Field({ label, children }) {
