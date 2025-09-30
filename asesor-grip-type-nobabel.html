@@ -21,6 +21,49 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* ===== Mejoras de presentación (no tocan la lógica) ===== */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .page-header .header-copy {
+      flex: 1 1 360px;
+      min-width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .page-header .header-brand {
+      flex: 0 0 auto;
+      max-width: 200px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 12px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
+    }
+
+    .page-header .header-brand img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 14px;
+    }
+
+    .sublead {
+      font-size: 1rem;
+      line-height: 1.5;
+      opacity: 0.9;
+      margin: 0;
+      max-width: 720px;
+    }
+
     .result-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -775,28 +818,26 @@
 
       return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
         <header className="sticky top-0 z-10 backdrop-blur bg-slate-900/75 border-b border-slate-700/70">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-              <div className="md:max-w-3xl">
-                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-100 text-left">
-                  Asesor Grip‑Type LR (Slip‑on Joints) – v0.7 · Naval Ships
+          <div className="max-w-7xl mx-auto px-4 py-6 w-full">
+            <div className="page-header">
+              <div className="header-copy md:max-w-3xl text-left">
+                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-100">
+                  Asesor de juntas mecánicas – Grip Type
                 </h1>
-                <div className="mt-3 hidden md:flex items-center gap-2 text-sm text-slate-300">
+                <p className="sublead text-slate-300">
+                  Basado en norma GL para compatibilidad de rutas de tuberías; para agua potable se considera IMO. Criterios
+                  complementados con la experiencia del astillero COTECMAR.
+                </p>
+                <div className="hidden md:flex items-center gap-2 text-sm text-slate-300">
                   ${h(ShieldIcon, { className: "w-5 h-5" })}
                   <span>Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.</span>
                 </div>
-                <p className="mt-3 text-xs text-slate-300 md:hidden text-left">
+                <p className="text-xs text-slate-300 md:hidden text-left">
                   Lógica: 1.5.3 → ubicación → 1.5.4 (clase/OD). Notas en español.
                 </p>
               </div>
-              <div className="md:ml-auto flex-shrink-0 self-center md:self-start">
-                <div className="flex justify-end rounded-[22px] bg-slate-900/60 backdrop-blur-xl shadow-2xl ring-1 ring-slate-700/60 p-3">
-                  <img
-                    src="./assets/joints/cotec.jpg"
-                    alt="COTECMAR"
-                    className="w-20 md:w-24 rounded-2xl shadow-lg"
-                  />
-                </div>
+              <div className="header-brand">
+                <img src="{% static 'img/cotecmar_logo.png' %}" alt="COTECMAR" id="logoCotecmar" />
               </div>
             </div>
           </div>
