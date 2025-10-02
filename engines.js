@@ -276,18 +276,17 @@ export class NavalEngine extends BaseEngine {
 export class ShipsEngine extends BaseEngine {
   applyLocationConstraints(ctx) {
     const tableNotes = this.ruleset?.TABLE_NOTES_ES || {};
+    // Nota 2: solo bloquea Slip-on dentro de Cat. A y alojamientos.
     if (["category_a", "accommodation"].includes(ctx.space)) {
       ctx.currentAllowances.slipOn = false;
       const note2 = tableNotes["2"];
       ctx.observations.push(note2 ? `Nota 2: ${note2}` : "Slip-on bloqueado por la ubicación seleccionada (Nota 2).");
     } else if (ctx.space === "other_machinery") {
-      const note2 = tableNotes["2"];
+      // En otros espacios de maquinaria no se debe agregar Nota 2 como nota del sistema.
       const isFuelOil = (ctx.system?.id || "").includes("fuel_oil") || /fuel oil/i.test(ctx.system?.system || "");
       if (isFuelOil) {
         ctx.currentAllowances.slipOn = false;
-        ctx.observations.push("Nota 2: Slip-on no aceptadas en líneas de fuel oil dentro de otros espacios de maquinaria.");
-      } else if (note2) {
-        ctx.observations.push(`Nota 2: ${note2}`);
+        ctx.observations.push("Slip-on no aceptadas en líneas de fuel oil dentro de otros espacios de maquinaria.");
       }
     }
     return ctx;
