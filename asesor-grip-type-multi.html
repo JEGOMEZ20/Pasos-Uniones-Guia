@@ -177,28 +177,48 @@
       slip_slip: "./assets/joints/slip_slip.jpg",
     };
 
-    const JOINT_LABELS = {
-      pipe_welded_brazed: "Welded and Brazed Types (uniones soldadas y por braseado)",
-      compression_swage: "Swage Type (swage)",
-      compression_press: "Press Type (prensado)",
-      compression_typical: "Typical Compression Type (férula)",
-      compression_bite: "Bite Type (anillo mordedor)",
-      compression_flared: "Flared Type (abocardado/abocinado)",
-      slip_machine_grooved: "Machine Grooved Type — Roll Groove / Cut Groove (ranura laminada / mecanizada)",
-      slip_grip: "Grip Type (tipo grip / agarre)",
-      slip_slip: "Slip Type (tipo slip / deslizante)",
+    const JOINT_VIEWER_LABELS = {
+      pipe_welded_brazed: "Uniones soldadas y por braseado",
+      compression_swage: "Acople de compresión tipo swage",
+      compression_press: "Acople de compresión tipo press",
+      compression_typical: "Acople de compresión estándar (férula)",
+      compression_bite: "Acople de compresión tipo mordida",
+      compression_flared: "Acople de compresión abocardado",
+      slip_machine_grooved: "Junta Slip-on ranurada mecánicamente",
+      slip_grip: "Junta Grip Type",
+      slip_slip: "Junta Slip Type",
     };
 
-    const JOINT_CATEGORY_TITLES = {
-      pipe_welded_brazed: "Pipe unions",
-      compression_swage: "Compression couplings",
-      compression_press: "Compression couplings",
-      compression_typical: "Compression couplings",
-      compression_bite: "Compression couplings",
-      compression_flared: "Compression couplings",
-      slip_machine_grooved: "Slip-on Joints",
-      slip_grip: "Slip-on Joints",
-      slip_slip: "Slip-on Joints",
+    const JOINT_VIEWER_CATEGORY_LABELS = {
+      pipe_welded_brazed: "Uniones para tubería",
+      compression_swage: "Acoples de compresión",
+      compression_press: "Acoples de compresión",
+      compression_typical: "Acoples de compresión",
+      compression_bite: "Acoples de compresión",
+      compression_flared: "Acoples de compresión",
+      slip_machine_grooved: "Juntas tipo Slip-on",
+      slip_grip: "Juntas tipo Slip-on",
+      slip_slip: "Juntas tipo Slip-on",
+    };
+
+    const JOINT_CATEGORY_LABELS = {
+      pipeUnions: "Uniones para tubería",
+      compression: "Acoples de compresión",
+      slipOn: "Juntas tipo Slip-on",
+    };
+
+    const COMPRESSION_SUBTYPE_LABELS = {
+      swage: "Tipo swage (deformado)",
+      bite: "Tipo mordedor (bite)",
+      typical: "Tipo férula",
+      flared: "Tipo abocardado",
+      press: "Tipo press",
+    };
+
+    const SLIP_ON_SUBTYPE_LABELS = {
+      machine_grooved: "Ranurado mecánico (laminado/mecanizado)",
+      grip: "Tipo grip (restringido)",
+      slip: "Tipo slip (deslizante)",
     };
 
     const SPACES = [
@@ -209,6 +229,7 @@
       { id: "cargo_hold", label: "Bodega de carga" },
       { id: "tank", label: "Interior de tanque" },
       { id: "open_deck", label: "Cubierta expuesta / intemperie" },
+      { id: "weather_deck_oil_chem_tanker", label: "Cubierta a la intemperie (petroleros/quimiqueros)" },
       { id: "passenger_below_bulkhead", label: "Bajo cubierta de mamparo (buques de pasaje)" },
     ];
 
@@ -235,20 +256,11 @@
       return value.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
     }
 
-    function dictionaryFor(ruleId) {
-      const dict = I18N[ruleId];
-      return dict || { groups: {}, systems: {}, conditions: {}, fireTest: {} };
-    }
-
-    function translate(dict, type, key) {
-      if (!key) return key;
-      const table = dict[type] || {};
-      return table[key] || key;
-    }
+    const EMPTY_DICT = { groups: {}, systems: {}, conditions: {}, fireTest: {} };
 
     function buildViewerTitle(kind) {
-      const label = JOINT_LABELS[kind] || kind;
-      const category = JOINT_CATEGORY_TITLES[kind];
+      const label = JOINT_VIEWER_LABELS[kind] || kind;
+      const category = JOINT_VIEWER_CATEGORY_LABELS[kind];
       return category ? `${category} · ${label}` : label;
     }
 
@@ -312,9 +324,15 @@
       const [viewerImageStatus, setViewerImageStatus] = useState('idle');
       const viewerHistoryRef = useRef(false);
 
-      const activeRules = RULESETS[ruleId] || RULESETS.naval;
-      const dict = useMemo(() => dictionaryFor(ruleId), [ruleId]);
-      const systems = activeRules.SYSTEMS || [];
+      const rules = RULESETS[ruleId] ?? RULESETS.naval;
+      const dict = useMemo(() => I18N[ruleId] ?? EMPTY_DICT, [ruleId]);
+      const EngineClass = RegulationEngines[ruleId] ?? RegulationEngines.naval;
+      const systems = rules.SYSTEMS || [];
+
+      const tGroup = (key) => (key ? dict?.groups?.[key] ?? key : key);
+      const tSystem = (id) => (id ? dict?.systems?.[id] ?? id : id);
+      const tCondition = (value) => (value ? dict?.conditions?.[value] ?? value : value);
+      const tFireTest = (value) => (value ? dict?.fireTest?.[value] ?? value : value);
 
       useEffect(() => {
         localStorage.setItem('rule', ruleId);
@@ -363,8 +381,7 @@
 
       function computeEvaluation() {
         if (!selectedSystemId) return;
-        const engineClass = RegulationEngines[ruleId] || RegulationEngines.naval;
-        const engine = engineClass.use(activeRules);
+        const engine = EngineClass.use(rules);
         const context = engine.initContext({
           systemId: selectedSystemId,
           classMode,
@@ -421,17 +438,24 @@
       }, [viewer]);
 
       const system = systems.find((item) => item.id === selectedSystemId) || systems[0] || null;
-      const translatedGroup = translate(dict, 'groups', system?.group);
-      const translatedSystem = translate(dict, 'systems', system?.id);
-      const translatedCondition = translate(dict, 'conditions', evaluation?.details?.pipeSystemClass || system?.pipeSystemClass);
-      const translatedFireTest = translate(dict, 'fireTest', evaluation?.details?.fireTest || system?.fireTest);
-      const requirements = activeRules.LR_REQUIREMENTS_ES || [];
+      const requirements = rules.LR_REQUIREMENTS_ES || [];
+      const evaluationSystem = evaluation?.system || system;
+      const systemLabel = evaluationSystem
+        ? `${tGroup(evaluationSystem.group)} — ${tSystem(evaluationSystem.id)}`
+        : '';
+      const conditionLabel = tCondition(evaluation?.pipeSystemClass || evaluationSystem?.pipeSystemClass);
+      const fireTestLabel = tFireTest(evaluation?.fireTest || evaluationSystem?.fireTest);
+      const usedClassLabel = evaluation?.usedClass ? evaluation.usedClass.replace('Class', 'Clase') : null;
+      const odDisplay = formatNumber(evaluation?.odMM ?? odMM);
+      const evaluationSpaceId = evaluation?.space || space;
+      const spaceLabel = SPACES.find((opt) => opt.id === evaluationSpaceId)?.label ?? evaluationSpaceId;
+      const ruleLabel = rules.subtitle || rules.title;
 
       return html`
         <div className="max-w-6xl mx-auto px-4 pb-16">
           <header className="page-header py-10">
             <div className="header-copy">
-              <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Slip-on joints</p>
+              <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Juntas mecánicas</p>
               <h1 className="text-3xl sm:text-4xl font-semibold">
                 Evaluador multi-norma para juntas mecánicas Grip-Type / Slip-on
               </h1>
@@ -441,9 +465,9 @@
               </p>
               <div className="flex flex-wrap gap-3 text-sm text-slate-300">
                 <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" />
-                  Pipeline unificado por norma (Strategy Pattern)</span>
+                  Flujo unificado por norma (patrón estrategia)</span>
                 <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" />
-                  Datos y notas aislados por ruleset</span>
+                  Datos y notas aislados por conjunto de reglas</span>
               </div>
             </div>
             <div className="header-brand">
@@ -464,7 +488,7 @@
                     <option key=${key} value=${key}>${rule.title}</option>
                   `)}
                 </select>
-                <small className="text-slate-400">${activeRules.subtitle}</small>
+                  <small className="text-slate-400">${rules.subtitle}</small>
               </label>
 
               <label className="flex flex-col gap-1 text-sm">
@@ -475,9 +499,9 @@
                   onChange=${(e) => { setSelectedSystemId(e.target.value); markPendingChanges(); }}
                 >
                   ${groupedSystems.order.map((groupKey) => html`
-                    <optgroup key=${groupKey} label=${translate(dict, 'groups', groupKey)}>
+                    <optgroup key=${groupKey} label=${tGroup(groupKey)}>
                       ${groupedSystems.byGroup.get(groupKey).map((item) => html`
-                        <option value=${item.id}>${translate(dict, 'systems', item.id)}</option>
+                        <option value=${item.id}>${`${tGroup(groupKey)} — ${tSystem(item.id)}`}</option>
                       `)}
                     </optgroup>
                   `)}
@@ -517,9 +541,9 @@
                   onChange=${(e) => { setClazz(e.target.value); markPendingChanges(); }}
                   disabled=${classMode === 'auto'}
                 >
-                  <option value="I">Class I</option>
-                  <option value="II">Class II</option>
-                  <option value="III">Class III</option>
+                  <option value="I">Clase I</option>
+                  <option value="II">Clase II</option>
+                  <option value="III">Clase III</option>
                 </select>
               </label>
 
@@ -606,12 +630,44 @@
 
           ${evaluation ? html`
             <section className="space-y-8">
+              <article className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
+                <h2 className="text-lg font-semibold mb-3">Datos del sistema evaluado</h2>
+                <dl className="grid gap-4 text-sm text-slate-200 sm:grid-cols-2">
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Reglamento</dt>
+                    <dd className="text-base text-slate-100">${ruleLabel}</dd>
+                  </div>
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Ubicación seleccionada</dt>
+                    <dd className="text-base text-slate-100">${spaceLabel}</dd>
+                  </div>
+                  <div className="flex flex-col sm:col-span-2">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Sistema / servicio</dt>
+                    <dd className="text-base text-slate-100">${systemLabel || '—'}</dd>
+                  </div>
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Condición del sistema</dt>
+                    <dd className="text-base text-slate-100">${conditionLabel || '—'}</dd>
+                  </div>
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Ensayo de fuego</dt>
+                    <dd className="text-base text-slate-100">${fireTestLabel || '—'}</dd>
+                  </div>
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Clase utilizada</dt>
+                    <dd className="text-base text-slate-100">${usedClassLabel || '—'}</dd>
+                  </div>
+                  <div className="flex flex-col">
+                    <dt className="text-xs uppercase tracking-wide text-slate-400">Diámetro exterior (mm)</dt>
+                    <dd className="text-base text-slate-100">${odDisplay}</dd>
+                  </div>
+                </dl>
+              </article>
               <div className="result-row">
                 ${['pipeUnions', 'compression', 'slipOn'].map((category) => {
-                  const allowed = evaluation.categories?.[category];
+                  const allowed = evaluation.allowed?.[category];
                   const cardClass = allowed ? 'result-card result-card--allowed' : 'result-card result-card--blocked';
-                  const titleEn = category === 'pipeUnions' ? 'Pipe unions' : category === 'compression' ? 'Compression couplings' : 'Slip-on joints';
-                  const titleEs = category === 'pipeUnions' ? 'Uniones para tubería' : category === 'compression' ? 'Acoples de compresión' : 'Juntas Slip-on';
+                  const title = JOINT_CATEGORY_LABELS[category] || category;
 
                   const content = (() => {
                     if (category === 'pipeUnions') {
@@ -625,7 +681,7 @@
                       return html`<>
                         ${Object.entries(subs).map(([subId, enabled]) => html`
                           <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
-                            <span className="text-sm font-medium text-slate-200">${JOINT_LABELS[`compression_${subId}`]}</span>
+                            <span className="text-sm font-medium text-slate-200">${COMPRESSION_SUBTYPE_LABELS[subId] || subId}</span>
                           </li>
                         `)}
                       </>`;
@@ -634,7 +690,7 @@
                     return html`<>
                       ${Object.entries(subs).map(([subId, enabled]) => html`
                         <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
-                          <span className="text-sm font-medium text-slate-200">${JOINT_LABELS[`slip_${subId}`]}</span>
+                          <span className="text-sm font-medium text-slate-200">${SLIP_ON_SUBTYPE_LABELS[subId] || subId}</span>
                         </li>
                       `)}
                     </>`;
@@ -643,8 +699,7 @@
                   return html`
                     <article className=${cardClass} key=${category}>
                       <header className="result-header text-center mb-4">
-                        <span className="result-title-es">${titleEs}</span>
-                        <span className="result-title-en">${titleEn}</span>
+                        <span className="result-title-es">${title}</span>
                       </header>
                       <ul className="option-list">${content}</ul>
                     </article>
