@@ -5,6 +5,7 @@ function normalizeLRShipsContext(ctx) {
     return {
         ...ctx,
         accessibility: ctx.accessibility ?? "easy",
+        location: ctx.location ?? "visible_accessible",
         mediumInPipeSameAsTank: mediumSame,
         sameMediumInTank: ctx.sameMediumInTank ?? mediumSame,
         directToShipSideBelowLimit: ctx.directToShipSideBelowLimit ?? false,
@@ -177,7 +178,7 @@ function base(allowed, row, group) {
     const baseMessage = `Tabla 12.2.8 (${row.label_es}): ${allowed ? "+" : "–"} para ${describeJointGroup(group)}; clasificación '${row.class_of_pipe_system}'.`;
     result.trace.push(baseMessage);
     if (!allowed) {
-        result.reasons.push("Tabla de sistema: ‘-’");
+        result.reasons.push(`Tabla 12.2.8: la fila indica ‘-’ para ${describeJointGroup(group)}`);
     }
     return result;
 }
@@ -207,7 +208,8 @@ function applyNote_LRShips(ctx, note, group, out) {
                 pushOnce(out.notesApplied, note);
                 pushOnce(out.trace, `Nota 2: Slip-on prohibidas en ${ctx.space}.`);
             }
-            else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
+            else if ((ctx.space === "other_machinery" || ctx.space === "other_machinery_accessible") &&
+                ctx.location !== "visible_accessible") {
                 out.status = out.status === "forbidden" ? "forbidden" : "conditional";
                 pushOnce(out.conditions, "Ubicar en posición visible/accesible (MSC/Circ.734)");
                 pushOnce(out.notesApplied, note);
@@ -282,7 +284,15 @@ function applyGeneralClauses(ctx, group, out) {
             section: "Pt 5, Ch 12, §2.12.8",
         });
     }
-    if (ctx.joint === "slip_on_slip_type" && ctx.asMainMeans) {
+    if (group === "slip_on_joints" && ctx.space === "tank" && ctx.mediumInPipeSameAsTank === false) {
+        forbidByClause(out, "Slip-on dentro de tanque: permitido sólo si el medio es el mismo", {
+            code: "SH-2.12.8.b",
+            title: "Medio en tanque debe ser el mismo",
+            section: "Pt 5, Ch 12, §2.12.8",
+        });
+    }
+    const subtype = ctx.subtype ?? ctx.joint;
+    if ((subtype === "slip_on_slip_type" || subtype === "slip_type") && ctx.asMainMeans) {
         forbidByClause(out, "Slip-type no como medio principal (sólo compensación axial)", {
             code: "SH-2.12.9",
             title: "Slip type: no como medio principal",

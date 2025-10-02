@@ -28,6 +28,7 @@ export interface LRShipsDataset {
 export type Space =
   | "machinery_cat_A"
   | "other_machinery"
+  | "other_machinery_accessible"
   | "accommodation"
   | "pump_room"
   | "open_deck"
@@ -110,6 +111,7 @@ export const LR_SHIPS_DATASET: LRShipsDataset = {
     },
     {
       id: "hydrocarbon_loading_lines",
+      group: "flammable_fluids_fp_le_60",
       label_es: "Líneas de carga de hidrocarburos",
       label_en: "Hydrocarbon loading lines",
       class_of_pipe_system: "dry",

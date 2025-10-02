@@ -40,7 +40,7 @@ export default {
     "8 min dry + 22 min wet": ["30 min wet"],
   },
   SYSTEMS: [
-    { id: "ff_le60_cargo_oil", group: "Flammable fluids (flash point ≤ 60°C)", system: "Cargo oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+    { id: "hydrocarbon_loading_lines", group: "Flammable fluids (flash point ≤ 60°C)", system: "Cargo oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
     { id: "ff_le60_crude_oil_wash", group: "Flammable fluids (flash point ≤ 60°C)", system: "Crude oil washing lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
     { id: "ff_le60_vent", group: "Flammable fluids (flash point ≤ 60°C)", system: "Vent lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 3"] },
     { id: "inert_effluent_water_seal", group: "Inert gas", system: "Water seal effluent lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)" },

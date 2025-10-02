@@ -10,7 +10,7 @@ export default {
     "Miscellaneous": "Misceláneos",
   },
   systems: {
-    ff_le60_cargo_oil: "Líneas de carga de hidrocarburos",
+    hydrocarbon_loading_lines: "Líneas de carga de hidrocarburos",
     ff_le60_crude_oil_wash: "Líneas de lavado de crudo",
     ff_le60_vent: "Líneas de venteo",
     inert_effluent_water_seal: "Efluente del sello hidráulico",
