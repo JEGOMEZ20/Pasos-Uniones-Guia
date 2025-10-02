@@ -125,3 +125,11 @@ export const LR_SHIPS_SYSTEMS: LrShipRow[] = [
 ];
 
 export const LR_SHIPS_DATA_VERSION = "2024-06-r2";
+
+export const LR_SHIPS_DATASET = {
+  standard: "LR_SHIPS",
+  version: LR_SHIPS_DATA_VERSION,
+  systems: LR_SHIPS_SYSTEMS,
+};
+
+export default LR_SHIPS_DATASET;
