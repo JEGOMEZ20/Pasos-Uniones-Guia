@@ -340,7 +340,7 @@
     import evaluateLRNavalShips, {
       evaluateGroups as evaluateLRNavalGroups,
     } from './dist/engine/evaluateLRNavalShips.js';
-    import lrShipsDataset from './dist/data/lr_ships_mech_joints.js';
+    import lrShipsDataset from './dist/data/lr_ships_mech_joints.js?v=20240620';
     import lrNavalDataset from './dist/data/lr_naval_ships_mech_joints.js';
 
     const {
@@ -838,6 +838,12 @@
       const tCondition = (value) => (value ? dict?.conditions?.[value] ?? value : value);
       const tFireTest = (value) => (value ? dict?.fireTest?.[value] ?? value : value);
 
+      const resetEvaluationState = useCallback(() => {
+        setEvaluation(null);
+        setEvaluationError(null);
+        setHasPendingChanges(true);
+      }, []);
+
       useEffect(() => {
         localStorage.setItem('rule', ruleId);
       }, [ruleId]);
@@ -860,14 +866,12 @@
       }, []);
 
       useEffect(() => {
-        setEvaluation(null);
-        setEvaluationError(null);
+        resetEvaluationState();
         setViewer(null);
         setViewerTrace([]);
         setViewerImageSrc('');
         setViewerImageStatus('idle');
-        setHasPendingChanges(true);
-      }, [ruleId, selectedSystemId, space, clazz, odMM]);
+      }, [ruleId, selectedSystemId, space, clazz, odMM, resetEvaluationState]);
 
       const groupedSystems = useMemo(() => {
         const order = [];

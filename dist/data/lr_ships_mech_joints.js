@@ -29,6 +29,19 @@ export const LR_SHIPS_DATASET = {
             },
         },
         {
+            id: "hydrocarbon_loading_lines",
+            label_es: "Líneas de carga de hidrocarburos",
+            label_en: "Hydrocarbon loading lines",
+            class_of_pipe_system: "dry",
+            fire_test: "30min_dry",
+            notes: [1],
+            allowed_joints: {
+                pipe_unions: true,
+                compression_couplings: true,
+                slip_on_joints: true,
+            },
+        },
+        {
             id: "seawater_cooling",
             label_es: "Sistema de enfriamiento por agua de mar",
             label_en: "Sea water cooling",
@@ -82,9 +95,27 @@ export const LR_SHIPS_DATASET = {
         },
     ],
     pipe_class_rules: [
-        { joint: "pipe_union_welded_brazed", class: ["I", "II", "III"], od_max_mm: 60.3 },
-        { joint: "compression_bite", class: ["I", "II", "III"], od_max_mm: 60.3 },
-        { joint: "compression_flared", class: ["I", "II", "III"], od_max_mm: 60.3 },
+        {
+            joint: "pipe_union_welded_brazed",
+            class: ["I", "II", "III"],
+            od_max_mm: { I: 60.3, II: 60.3 },
+        },
+        { joint: "compression_swage", class: ["III"] },
+        {
+            joint: "compression_bite",
+            class: ["I", "II", "III"],
+            od_max_mm: { I: 60.3, II: 60.3 },
+        },
+        {
+            joint: "compression_typical",
+            class: ["I", "II", "III"],
+            od_max_mm: { I: 60.3, II: 60.3 },
+        },
+        {
+            joint: "compression_flared",
+            class: ["I", "II", "III"],
+            od_max_mm: { I: 60.3, II: 60.3 },
+        },
         { joint: "compression_press", class: ["III"] },
         { joint: "slip_on_machine_grooved", class: ["I", "II", "III"] },
         { joint: "slip_on_grip", class: ["II", "III"] },

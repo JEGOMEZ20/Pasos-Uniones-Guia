@@ -31,22 +31,42 @@ export function evaluateLRShips(ctx, db = dataset) {
     let status = groupResult.status;
     let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
     if (status !== "forbidden") {
-        const classResult = passClassOD(normalizedCtx.joint, normalizedCtx.pipeClass, normalizedCtx.od_mm, db);
-        if (!classResult.ok) {
-            if (classResult.reason === "missing_inputs") {
+        const rulesForJoint = collectRulesForJoint(normalizedCtx.joint, db);
+        if (rulesForJoint.length) {
+            const pipeClass = normalizedCtx.pipeClass;
+            const odValue = typeof normalizedCtx.od_mm === "number" ? normalizedCtx.od_mm : undefined;
+            if (!pipeClass) {
                 reason = "Falta clase/OD para aplicar Tabla 12.2.9";
+                status = "forbidden";
+                pushOnce(reasons, reason);
             }
             else {
-                reason = "Tabla 12.2.9: límite de clase/OD";
+                let detail = null;
+                let anySubtypeOk = false;
+                let missingInputs = false;
+                for (const rule of rulesForJoint) {
+                    const limit = rule.od_max_mm?.[pipeClass];
+                    if (limit != null && odValue === undefined) {
+                        missingInputs = true;
+                        continue;
+                    }
+                    if (passClassOD(rule, pipeClass, odValue)) {
+                        anySubtypeOk = true;
+                        detail = formatRuleDetail(rule, pipeClass);
+                        break;
+                    }
+                }
+                if (!anySubtypeOk) {
+                    reason = missingInputs
+                        ? "Falta clase/OD para aplicar Tabla 12.2.9"
+                        : "Tabla 12.2.9: límite de clase/OD";
+                    status = "forbidden";
+                    pushOnce(reasons, reason);
+                }
+                if (detail) {
+                    trace.push(detail);
+                }
             }
-            status = "forbidden";
-            pushOnce(reasons, reason);
-            if (classResult.detail) {
-                trace.push(classResult.detail);
-            }
-        }
-        else if (classResult.detail) {
-            trace.push(classResult.detail);
         }
     }
     const observations = Array.from(new Set([...conditions, ...reasons]));
@@ -75,7 +95,7 @@ export function evaluateGroups(ctx, db = dataset) {
     }
     return evaluateGroupsForRow(normalizedCtx, row, db);
 }
-function evaluateGroupsForRow(ctx, row, _db) {
+function evaluateGroupsForRow(ctx, row, db) {
     const groups = {
         pipe_unions: base(Boolean(row.allowed_joints.pipe_unions), row, "pipe_unions"),
         compression_couplings: base(Boolean(row.allowed_joints.compression_couplings), row, "compression_couplings"),
@@ -83,21 +103,65 @@ function evaluateGroupsForRow(ctx, row, _db) {
     };
     const rowNotes = new Set(row?.notes ?? []);
     const fireTestLabel = row?.fire_test ? labelFire(row.fire_test) : null;
-    for (const [groupName, result] of Object.entries(groups)) {
-        if (!Boolean(row.allowed_joints[groupName])) {
-            continue;
-        }
-        if (fireTestLabel) {
-            if (result.status === "allowed") {
-                result.status = "conditional";
-            }
+    if (fireTestLabel) {
+        for (const result of Object.values(groups)) {
+            if (result.status === "forbidden")
+                continue;
+            result.status = "conditional";
             pushOnce(result.conditions, fireTestLabel);
-            result.trace.push(`Tabla 12.2.8: Ensayo base ${fireTestLabel}.`);
+            pushOnce(result.trace, `Tabla 12.2.8: Ensayo base ${fireTestLabel}.`);
         }
-        for (const note of rowNotes) {
-            applyNoteScoped_LRShips(note, ctx, row, groupName, result);
+    }
+    for (const note of rowNotes) {
+        for (const [groupName, result] of Object.entries(groups)) {
+            if (result.status === "forbidden")
+                continue;
+            if (!Boolean(row.allowed_joints[groupName]))
+                continue;
+            if (note === 1) {
+                if (ctx.space === "pump_room" || ctx.space === "open_deck") {
+                    if (fireTestLabel) {
+                        result.status = "conditional";
+                        pushOnce(result.conditions, fireTestLabel);
+                        pushOnce(result.notesApplied, note);
+                        pushOnce(result.trace, `Nota 1: espacio ${ctx.space} ⇒ ${fireTestLabel}.`);
+                    }
+                }
+                continue;
+            }
+            applyNote_LRShips(ctx, note, groupName, result);
         }
+    }
+    for (const [groupName, result] of Object.entries(groups)) {
+        if (result.status === "forbidden")
+            continue;
         applyGeneralClauses(ctx, groupName, result);
+    }
+    const pipeClass = ctx.pipeClass;
+    const odValue = typeof ctx.od_mm === "number" ? ctx.od_mm : undefined;
+    if (pipeClass) {
+        for (const [groupName, result] of Object.entries(groups)) {
+            const subtypeRules = db.pipe_class_rules.filter((rule) => groupOf(rule.joint) === groupName);
+            if (!subtypeRules.length)
+                continue;
+            let anySubtypeOk = false;
+            let missingInputs = false;
+            for (const rule of subtypeRules) {
+                const limit = rule.od_max_mm?.[pipeClass];
+                if (limit != null && odValue === undefined) {
+                    missingInputs = true;
+                    continue;
+                }
+                if (passClassOD(rule, pipeClass, odValue)) {
+                    anySubtypeOk = true;
+                    break;
+                }
+            }
+            if (!anySubtypeOk && !missingInputs) {
+                result.status = "forbidden";
+                pushOnce(result.reasons, "Tabla 12.2.9: ningún subtipo cumple clase/OD");
+            }
+        }
     }
     return groups;
 }
@@ -132,80 +196,49 @@ function forbidByClause(out, msg, clause) {
     }
     out.clauses.push(clause);
 }
-function applyNoteScoped_LRShips(note, ctx, row, group, out) {
-    if (out.status === "forbidden") {
-        // Mantener primer motivo que bloqueó la evaluación.
-        return;
-    }
+function applyNote_LRShips(ctx, note, group, out) {
     switch (note) {
-        case 1: {
-            if (ctx.space === "pump_room" || ctx.space === "open_deck") {
-                const label = row.fire_test ? labelFire(row.fire_test) : null;
-                if (label) {
-                    if (out.status === "allowed") {
-                        out.status = "conditional";
-                    }
-                    pushOnce(out.conditions, label);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push(`Nota 1: espacio ${ctx.space} ⇒ ${label}.`);
-                }
-            }
-            break;
-        }
         case 2: {
-            if (group === "slip_on_joints") {
-                if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
-                    out.status = "forbidden";
-                    const message = "Nota 2: Slip-on no aceptadas en Cat. A/aloj.";
-                    pushOnce(out.reasons, message);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
-                }
-                else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
-                    out.status = "conditional";
-                    const condition = "Ubicación visible y accesible (MSC/Circ.734)";
-                    pushOnce(out.conditions, condition);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push("Nota 2: otras máquinas ⇒ visibles/accesibles.");
-                }
-            }
-            break;
-        }
-        case 3: {
-            if (ctx.space !== "open_deck") {
-                if (out.status === "allowed") {
-                    out.status = "conditional";
-                }
-                const condition = "Tipo resistente al fuego";
-                pushOnce(out.conditions, condition);
+            if (group !== "slip_on_joints")
+                break;
+            if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
+                out.status = "forbidden";
+                pushOnce(out.reasons, "Nota 2: Slip-on no aceptadas en Cat. A / alojamientos");
                 pushOnce(out.notesApplied, note);
-                out.trace.push("Nota 3: exigir tipo resistente al fuego.");
+                pushOnce(out.trace, `Nota 2: Slip-on prohibidas en ${ctx.space}.`);
+            }
+            else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
+                out.status = out.status === "forbidden" ? "forbidden" : "conditional";
+                pushOnce(out.conditions, "Ubicar en posición visible/accesible (MSC/Circ.734)");
+                pushOnce(out.notesApplied, note);
+                pushOnce(out.trace, "Nota 2: exigir ubicación visible/accesible en otras máquinas.");
             }
             break;
         }
         case 4: {
             if (ctx.space === "machinery_cat_A") {
-                const label = row.fire_test ? labelFire(row.fire_test) : null;
-                if (label) {
-                    if (out.status === "allowed") {
-                        out.status = "conditional";
-                    }
-                    pushOnce(out.conditions, label);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push(`Nota 4: Cat. A ⇒ ${label}.`);
-                }
+                out.status = out.status === "forbidden" ? "forbidden" : "conditional";
+                pushOnce(out.conditions, "Ensayo de fuego en Cat. A (Nota 4)");
+                pushOnce(out.notesApplied, note);
+                pushOnce(out.trace, "Nota 4: Cat. A ⇒ ensayo de fuego específico.");
+            }
+            break;
+        }
+        case 3: {
+            if (ctx.space !== "open_deck") {
+                out.status = out.status === "forbidden" ? "forbidden" : "conditional";
+                pushOnce(out.conditions, "Junta de tipo resistente al fuego");
+                pushOnce(out.notesApplied, note);
+                pushOnce(out.trace, "Nota 3: exigir junta de tipo resistente al fuego.");
             }
             break;
         }
         case 5: {
             if (ctx.space !== "open_deck") {
-                if (out.status === "allowed") {
-                    out.status = "conditional";
-                }
-                const condition = "Sólo sobre cubierta de francobordo (buques de pasaje)";
-                pushOnce(out.conditions, condition);
+                out.status = out.status === "forbidden" ? "forbidden" : "conditional";
+                pushOnce(out.conditions, "Sólo sobre cubierta de francobordo (buques de pasaje)");
                 pushOnce(out.notesApplied, note);
-                out.trace.push("Nota 5: limitar a cubierta de francobordo.");
+                pushOnce(out.trace, "Nota 5: restringir a cubierta de francobordo en buques de pasaje.");
             }
             break;
         }
@@ -213,86 +246,55 @@ function applyNoteScoped_LRShips(note, ctx, row, group, out) {
             if (ctx.joint === "slip_on_slip_type" && ctx.space === "open_deck") {
                 const maxPressure = ctx.designPressure_bar ?? Number.POSITIVE_INFINITY;
                 if (maxPressure <= 10) {
-                    if (out.status === "allowed") {
-                        out.status = "conditional";
-                    }
-                    const condition = "Slip-type ≤10 bar en cubierta expuesta";
-                    pushOnce(out.conditions, condition);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push("Nota 6: Slip-type permitido ≤10 bar.");
+                    out.status = out.status === "forbidden" ? "forbidden" : "conditional";
+                    pushOnce(out.conditions, "Slip-type ≤10 bar en cubierta expuesta");
+                    pushOnce(out.trace, "Nota 6: Slip-type permitido ≤10 bar en cubierta expuesta.");
                 }
                 else {
                     out.status = "forbidden";
-                    const message = "Nota 6: Slip-type >10 bar prohibido";
-                    pushOnce(out.reasons, message);
-                    pushOnce(out.notesApplied, note);
-                    out.trace.push("Nota 6: presión excede 10 bar ⇒ prohibido.");
+                    pushOnce(out.reasons, "Nota 6: Slip-type >10 bar prohibido");
+                    pushOnce(out.trace, "Nota 6: Slip-type excede 10 bar ⇒ prohibido.");
                 }
+                pushOnce(out.notesApplied, note);
             }
             break;
         }
         case 7: {
-            out.trace.push("Nota 7: revisar equivalencias de ensayo.");
+            pushOnce(out.trace, "Nota 7: revisar equivalencias de ensayo.");
             break;
         }
         case 8: {
-            out.trace.push("Nota 8: ver §2.12.10 para slip-on restringidas.");
+            pushOnce(out.trace, "Nota 8: ver §2.12.10 para slip-on restringidas.");
             break;
         }
     }
 }
 function applyGeneralClauses(ctx, group, out) {
-    const mediumSame = ctx.mediumInPipeSameAsTank ?? ctx.sameMediumInTank;
-    if (ctx.directToShipSideBelowLimit) {
-        const clause = {
-            code: "SH-2.12.5",
-            title: "Sin juntas conectadas directamente al costado bajo el límite",
-            section: "Pt 5, Ch 12, §2.12.5",
-        };
-        const message = "Tramo conectado directamente al costado bajo el límite: juntas mecánicas prohibidas";
-        forbidByClause(out, message, clause);
-        out.trace.push("§2.12.5: prohibido conectar directamente al costado bajo el límite.");
-        return;
-    }
-    if (ctx.tankContainsFlammable) {
-        const clause = {
-            code: "SH-2.12.5.flammable",
-            title: "Juntas mecánicas prohibidas en tanques con fluidos inflamables",
-            section: "Pt 5, Ch 12, §2.12.5",
-        };
-        const message = "Tanques con fluidos inflamables: juntas mecánicas no permitidas";
-        forbidByClause(out, message, clause);
-        out.trace.push("§2.12.5: prohibido en tanques con fluidos inflamables.");
+    if (out.status === "forbidden") {
         return;
     }
     const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
     const isHardAccess = ctx.accessibility === "not_easy";
     if (group === "slip_on_joints" && (isCargoOrTank || isHardAccess)) {
-        const clause = {
+        forbidByClause(out, "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles", {
             code: "SH-2.12.8",
             title: "Slip-on no en bodegas/tanques/espacios no fácilmente accesibles",
             section: "Pt 5, Ch 12, §2.12.8",
-        };
-        forbidByClause(out, "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles", clause);
-        out.trace.push("§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles.");
-    }
-    if (group === "slip_on_joints" && ctx.space === "tank" && mediumSame === false) {
-        const clause = {
-            code: "SH-2.12.8.b",
-            title: "Dentro de tanques sólo si el medio es el mismo",
-            section: "Pt 5, Ch 12, §2.12.8",
-        };
-        forbidByClause(out, "Slip-on dentro de tanque: permitido sólo si el medio es el mismo", clause);
-        out.trace.push("§2.12.8: Slip-on en tanque sólo si el medio es el mismo.");
+        });
     }
     if (ctx.joint === "slip_on_slip_type" && ctx.asMainMeans) {
-        const clause = {
+        forbidByClause(out, "Slip-type no como medio principal (sólo compensación axial)", {
             code: "SH-2.12.9",
-            title: "Slip-type no puede ser medio principal de unión",
+            title: "Slip type: no como medio principal",
             section: "Pt 5, Ch 12, §2.12.9",
-        };
-        forbidByClause(out, "Slip-type no puede ser medio principal", clause);
-        out.trace.push("§2.12.9: Slip-type no como medio principal (sólo compensación axial).");
+        });
+    }
+    if (ctx.directToShipSideBelowLimit || ctx.tankContainsFlammable) {
+        forbidByClause(out, "Prohibido en conexión directa al costado bajo el límite / tanques con fluidos inflamables", {
+            code: "SH-2.12.5",
+            title: "Riesgo de incendio/inundación",
+            section: "Pt 5, Ch 12, §2.12.5",
+        });
     }
 }
 function forbid(ctx, trace, message) {
@@ -355,30 +357,35 @@ function describeJointGroup(group) {
             return "slip-on joints";
     }
 }
-function passClassOD(joint, pipeClass, odMM, db) {
-    const rules = db.pipe_class_rules.filter((rule) => rule.joint === joint);
-    const targetRules = rules.length ? rules : db.pipe_class_rules.filter((rule) => groupOf(rule.joint) === joint);
-    if (!targetRules.length) {
-        return { ok: true };
+function collectRulesForJoint(joint, db) {
+    const direct = db.pipe_class_rules.filter((rule) => rule.joint === joint);
+    if (direct.length) {
+        return direct;
     }
-    if (!pipeClass) {
-        return { ok: false, reason: "missing_inputs" };
+    const group = groupOf(joint);
+    if (!group) {
+        return [];
     }
-    const matchingRule = targetRules.find((rule) => rule.class.includes(pipeClass));
-    if (!matchingRule) {
-        return { ok: false };
+    return db.pipe_class_rules.filter((rule) => groupOf(rule.joint) === group);
+}
+function passClassOD(rule, pipeClass, odMM) {
+    if (!rule.class.includes(pipeClass)) {
+        return false;
     }
-    if (matchingRule.od_max_mm != null) {
-        if (typeof odMM !== "number") {
-            return { ok: false, reason: "missing_inputs" };
-        }
-        if (odMM > matchingRule.od_max_mm + 1e-6) {
-            return { ok: false };
-        }
+    const limit = rule.od_max_mm?.[pipeClass];
+    if (limit == null) {
+        return true;
     }
-    const detail = matchingRule.od_max_mm
-        ? `Tabla 12.2.9: Clase ${pipeClass} con OD ≤ ${matchingRule.od_max_mm} mm`
-        : `Tabla 12.2.9: Clase ${pipeClass}`;
-    return { ok: true, detail };
+    if (odMM === undefined) {
+        return false;
+    }
+    return odMM <= limit + 1e-6;
+}
+function formatRuleDetail(rule, pipeClass) {
+    const limit = rule.od_max_mm?.[pipeClass];
+    if (limit == null) {
+        return `Tabla 12.2.9: Clase ${pipeClass}`;
+    }
+    return `Tabla 12.2.9: Clase ${pipeClass} con OD ≤ ${limit} mm`;
 }
 export default evaluateLRShips;
