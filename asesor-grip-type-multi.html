@@ -513,7 +513,7 @@
                   ${groupedSystems.order.map((groupKey) => html`
                     <optgroup key=${groupKey} label=${tGroup(groupKey)}>
                       ${groupedSystems.byGroup.get(groupKey).map((item) => html`
-                        <option value=${item.id}>${`${tGroup(groupKey)} — ${tSystem(item.id)}`}</option>
+                        <option value=${item.id}>${tSystem(item.id)}</option>
                       `)}
                     </optgroup>
                   `)}
