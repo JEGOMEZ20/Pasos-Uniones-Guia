@@ -38,6 +38,7 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
+    expect(result.observations.some((msg) => msg.includes("Nota 2"))).toBe(false);
   });
 
   it("bloquea slip-on en acomodaciones por Nota 2", () => {
