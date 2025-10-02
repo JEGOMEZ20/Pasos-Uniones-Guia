@@ -543,60 +543,216 @@
         h("path", { d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" })
       );
 
+    // ---------------------------------------------------------------------------
+    // REGLAMENTOS (rulesets)
+    // ---------------------------------------------------------------------------
+    const RULESETS = {
+      naval: {
+        id: "naval",
+        title: "LR Naval Ships",
+        subtitle:
+          "Basado en LR Vol. 2 – Machinery & Engineering Systems, Pt 7: Piping Systems, Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones en español.",
+        CLASS_LIMITS: {
+          steam: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 170 } },
+          thermal_oil: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 150 } },
+          flammable_liquids: { classII: { P: 16, T: 150 }, classIII: { P: 7, T: 60 } },
+          other_media: { classII: { P: 40, T: 300 }, classIII: { P: 16, T: 200 } },
+        },
+        TABLE_NOTES_ES: {
+          "1": "Las juntas mecánicas que incluyan componentes que se deterioran fácilmente en caso de incendio deben ser de tipo resistente al fuego aprobado cuando se instalen en espacios de maquinaria de Categoría A. Los acoplamientos del ‘bilge main’ en espacios de Categoría A deben ser de acero, CuNi o material equivalente.",
+          "2": "Los slip‑on joints no se aceptan dentro de espacios de maquinaria de Categoría A, depósitos de munición ni espacios de alojamiento. Se aceptan en otros espacios de maquinaria y servicio siempre que queden en posiciones fácilmente visibles y accesibles.",
+          "3": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, salvo cuando estén en cubiertas abiertas con poco o ningún riesgo de incendio según SOLAS II‑2/9.2.3.3.2.2(10).",
+          "4": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado.",
+          "5": "Ver Vol 2, Pt 7, Ch 1, 5.10 – Other mechanical couplings (remisión normativa).",
+          "6": "Las juntas mecánicas solo se permiten por encima del límite de integridad estanca (WTI).",
+          "7": "Requisitos para HVAC trunking y para entradas/salidas de turbina de gas se tratan en las secciones correspondientes de las Reglas.",
+        },
+        LR_REQUIREMENTS_ES: [
+          { id: "5.10.5", text: "Las juntas mecánicas para tuberías a presión deben resistir una presión de rotura ≥ 4 × la presión de diseño." },
+          { id: "5.10.6", text: "Se prohíben juntas mecánicas en líneas conectadas directamente al costado por debajo del límite de integridad estanca o en tanques con fluidos inflamables cuando el daño pueda causar incendio o inundación." },
+          { id: "5.10.9", text: "No instalar slip-on joints en bodegas, tanques u otros espacios no accesibles; dentro de tanques solo si el medio es el mismo." },
+          { id: "5.10.10", text: "Los slip type joints no deben emplearse como medio principal de unión, salvo cuando se requieran para absorber deformaciones axiales." },
+          { id: "5.10.11", text: "En buques tanque (oil/chemical), se permiten restrained slip-on joints en líneas de vapor con P ≤ 10 bar en cubierta expuesta para absorber movimiento axial." },
+          { id: "5.10.12", text: "Las juntas mecánicas deben someterse a los ensayos de tipo del LR Type Approval Test Spec. No. 2 según la aplicación prevista." },
+        ],
+        GENERAL_COMMENTS: {
+          slipOnInaccessible: "5.10.9: Slip‑on joints no en bodegas/tanques o espacios no accesibles; dentro de tanques solo si el medio es el mismo.",
+          slipOnNotMain: "5.10.10: El tipo Slip no debe usarse como medio principal de conexión (salvo compensación axial).",
+          burstPressure: "5.10.5: Las juntas mecánicas deben resistir presión de rotura ≥ 4 × presión de diseño.",
+          typeApproval: "5.10.12: Ensayos de tipo conforme a LR Type Approval Test Spec No. 2, según servicio.",
+          hullSide: "5.10.6: Si el tramo está conectado directamente al costado por debajo del límite de integridad estanca, las juntas mecánicas están prohibidas.",
+          steamDeck: "5.10.11: En buques tanque (oil/chemical), permitido 'restrained slip‑on' para vapor ≤ 10 bar en cubierta expuesta para absorber movimiento axial.",
+        },
+        SYSTEMS: [
+          { id: "ff_le60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point ≤ 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
+          { id: "ff_le60_vent_lines", group: "Flammable fluids (flash point ≤ 60°C)", system: "Vent lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 3"] },
+          { id: "ff_gt60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
+          { id: "ff_gt60_ship_machinery_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Ship’s machinery fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+          { id: "ff_gt60_lubricating_oil", group: "Flammable fluids (flash point > 60°C)", system: "Lubricating oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+          { id: "ff_gt60_hydraulic_oil", group: "Flammable fluids (flash point > 60°C)", system: "Hydraulic oil", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
+          { id: "sw_bilge", group: "Sea water", system: "Bilge lines", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+          { id: "sw_hp_spray", group: "Sea water", system: "HP sea water and water spray (not permanently filled)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)" },
+          { id: "sw_perm_fireext", group: "Sea water", system: "Permanent water filled fire‑extinguishing systems (fire main, sprinklers)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Note 3"] },
+          { id: "sw_nonperm_fireext", group: "Sea water", system: "Non‑permanent water filled fire‑extinguishing systems (foam, drencher, fire main)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*) – Foam: comply FSS Code", notes: ["Note 3"] },
+          { id: "sw_ballast", group: "Sea water", system: "Ballast system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+          { id: "sw_cooling", group: "Sea water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
+          { id: "sw_tank_cleaning", group: "Sea water", system: "Tank cleaning services", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "sw_non_essential", group: "Sea water", system: "Non‑essential systems", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "fw_cooling", group: "Fresh water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+          { id: "fw_chilled", group: "Fresh water", system: "Chilled water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Except chilled water: 30 min wet (*)", notes: ["Note 1"] },
+          { id: "fw_condensate", group: "Fresh water", system: "Condensate return", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+          { id: "fw_made_demin", group: "Fresh water", system: "Made & demineralised water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
+          { id: "fw_ancillary", group: "Fresh water", system: "Ancillary system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "san_deck_drains", group: "Sanitary / drains / scuppers", system: "Deck drains (internal)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 6"] },
+          { id: "san_sanitary_drains", group: "Sanitary / drains / scuppers", system: "Sanitary drains", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "san_scuppers_overboard", group: "Sanitary / drains / scuppers", system: "Scuppers & discharge (overboard)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "sv_water_tanks_dry", group: "Sounding / vent", system: "Water tanks / dry spaces", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "Fire endurance test not required" },
+          { id: "sv_oil_tanks", group: "Sounding / vent", system: "Oil tanks (f.p. > 60°C)", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Notes 2 & 3"] },
+          { id: "sv_intakes_uptakes", group: "Sounding / vent", system: "Intakes and uptakes", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
+          { id: "sv_hvac", group: "Sounding / vent", system: "HVAC trunking", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
+          { id: "misc_air_hp", group: "Miscellaneous", system: "High pressure (HP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+          { id: "misc_air_mp", group: "Miscellaneous", system: "Medium pressure (MP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+          { id: "misc_air_lp", group: "Miscellaneous", system: "Low pressure (LP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
+          { id: "misc_service_air_nonessential", group: "Miscellaneous", system: "Service air (non‑essential)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
+          { id: "misc_brine", group: "Miscellaneous", system: "Brine", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
+          { id: "misc_co2", group: "Miscellaneous", system: "CO₂ system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
+          { id: "misc_n2", group: "Miscellaneous", system: "Nitrogen system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)" },
+          { id: "misc_steam", group: "Miscellaneous", system: "Steam", mediumGroup: "steam", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "-", fireTest: "Fire endurance test not required", notes: ["See Note 5 / special consideration"] },
+        ],
+      },
+
+      ships: {
+        id: "ships",
+        title: "LR Ships",
+        subtitle:
+          "Basado en LR Pt 5, Ch 12, 2.12 Other mechanical couplings. Tablas 12.2.8 y 12.2.9.",
+        // 12.2.9 es igual a Naval: reutilizamos exactamente los mismos límites/clase/OD
+        CLASS_LIMITS: null,
+
+        // --- Notas de la Tabla 12.2.8 (en español, mismas etiquetas que Naval) ---
+        TABLE_NOTES_ES: {
+          "1": "Aplicar ensayo de resistencia al fuego cuando las juntas mecánicas se instalan en salas de bombas y cubiertas abiertas.",
+          "2": "Las juntas slip-on no se aceptan dentro de espacios de máquinas de categoría A ni alojamientos. Pueden aceptarse en otros espacios de máquinas si están en posiciones visibles y accesibles (MSC/Circ.734).",
+          "3": "Las juntas mecánicas deben ser de tipos resistentes al fuego aprobados, salvo cuando se instalan en cubiertas abiertas según SOLAS II-2/9.2.3.3.2.2(10), y no sean usadas para líneas de fuel oil.",
+          "4": "Aplicar ensayo de resistencia al fuego cuando las juntas mecánicas se instalan dentro de espacios de máquinas de categoría A.",
+          "5": "Solo por encima de la cubierta de mamparo de buques de pasaje.",
+          "6": "Las juntas slip type (slip-on) como en Fig. 12.2.4/12.2.5 pueden usarse en tuberías en cubierta con presión de diseño ≤ 10 bar.",
+          "7": "Equivalencia de ensayos: si pasa '30 min dry' sirve también para '8 min dry + 22 min wet' y/o '30 min wet'. Si pasa '8+22', sirve para '30 min wet'.",
+          "8": "Ver Pt 5, Ch 12, 2.12.10. Para CO₂ en espacio protegido: materiales con punto de fusión > 925 °C (FSS Code, Cap. 5).",
+        },
+
+        // --- Recomendaciones y requisitos LR (texto 2.12.1 a 2.12.11) ---
+        LR_REQUIREMENTS_ES: [
+          { id: "2.12.1", text: "Uniones roscadas, acoples de compresión y slip-on pueden usarse si están Type Approved para el servicio y aplicación; la aprobación se basa en ensayos del propio modelo. Uso aceptable por servicio: Tabla 12.2.8. Límites de dimensiones por clase: Tabla 12.2.9." },
+          { id: "2.12.2", text: "Si la aplicación reduce el espesor (p. ej., anillos bite), considerar esa reducción para cumplir la presión de diseño." },
+          { id: "2.12.3", text: "Los materiales de las juntas deben ser compatibles con la tubería y con los medios interno/externo." },
+          { id: "2.12.4", text: "Juntas para tuberías a presión: ensayo de reventón a 4 × la presión de diseño (≥20 MPa: a considerar especialmente)." },
+          { id: "2.12.5", text: "No usar juntas mecánicas en tramos conectados al costado del buque bajo cubierta de mamparo o en tanques con fluidos inflamables cuando el daño pueda causar incendio o inundación." },
+          { id: "2.12.6", text: "Las juntas deben soportar presión interna/externa y operar bajo vacío en líneas de succión cuando aplique." },
+          { id: "2.12.7", text: "Minimizar el número de juntas mecánicas en sistemas de fluidos inflamables. En general, bridas según norma reconocida." },
+          { id: "2.12.8", text: "En general, no usar slip-on en bodegas, tanques u otros espacios de difícil acceso; dentro de tanques solo si el medio es el mismo del tanque." },
+          { id: "2.12.9", text: "No se permite usar slip type slip-on como medio principal de unión, salvo para compensar deformación axial de tuberías." },
+          { id: "2.12.10", text: "Slip-on restringidas permitidas en vapor, P ≤ 1 MPa, en cubiertas a la intemperie de petroleros/quimiqueros para acomodar dilatación (ver Pt 5, Ch 13, 2.7)." },
+          { id: "2.12.11", text: "Juntas mecánicas a ensayar conforme al LR Type Approval Test Spec. No. 2 para las condiciones de servicio previstas." },
+        ],
+
+        GENERAL_COMMENTS: {
+          slipOnInaccessible: "2.12.8: No usar slip-on en bodegas, tanques u otros espacios de difícil acceso; dentro de tanques solo si el medio coincide.",
+          slipOnNotMain: "2.12.9: No se permite usar slip type slip-on como medio principal de unión, salvo para compensar deformación axial.",
+          burstPressure: "2.12.4: Las juntas mecánicas deben ensayarse a 4 × la presión de diseño.",
+          typeApproval: "2.12.11: Ensayos conforme al LR Type Approval Test Spec. No. 2 para las condiciones de servicio previstas.",
+          hullSide: "2.12.5: Evitar juntas mecánicas en conexiones al costado bajo cubierta de mamparo o en tanques con fluidos inflamables cuando el daño pueda causar incendio/inundación.",
+          steamDeck: "2.12.10: Slip-on restringidas para vapor (P ≤ 1 MPa) en cubierta a la intemperie de petroleros/quimiqueros para acomodar dilatación.",
+        },
+
+        // --- Sistemas de la Tabla 12.2.8 (cada fila es un sistema) ---
+        SYSTEMS: [
+          // Flammable fluids (flash point ≤ 60°C)
+          { id: "ff_le60_cargo_oil", group: "Fluidos inflamables (p.i. ≤ 60°C)", system: "Cargo oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Nota 1"] },
+          { id: "ff_le60_crude_oil_wash", group: "Fluidos inflamables (p.i. ≤ 60°C)", system: "Crude oil washing lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Nota 1"] },
+          { id: "ff_le60_vent", group: "Fluidos inflamables (p.i. ≤ 60°C)", system: "Vent lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Nota 3"] },
+
+          // Inert gas
+          { id: "inert_effluent_water_seal", group: "Gas inerte", system: "Water seal effluent lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)" },
+          { id: "inert_effluent_scrubber", group: "Gas inerte", system: "Scrubber effluent lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)" },
+          { id: "inert_main", group: "Gas inerte", system: "Main lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notas 1 & 2"] },
+          { id: "inert_distribution", group: "Gas inerte", system: "Distribution lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Nota 1"] },
+
+          // Flammable fluids (flash point > 60°C)
+          { id: "ff_gt60_cargo_oil", group: "Fluidos inflamables (p.i. > 60°C)", system: "Cargo oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)" },
+          { id: "ff_gt60_fuel_oil", group: "Fluidos inflamables (p.i. > 60°C)", system: "Fuel oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notas 2 & 3"] },
+          { id: "ff_gt60_lube_oil", group: "Fluidos inflamables (p.i. > 60°C)", system: "Lubricating oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notas 2 & 3"] },
+          { id: "ff_gt60_hydraulic_oil", group: "Fluidos inflamables (p.i. > 60°C)", system: "Hydraulic oil lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notas 2 & 3"] },
+          { id: "ff_gt60_thermal_oil", group: "Fluidos inflamables (p.i. > 60°C)", system: "Thermal oil", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notas 2 & 3"] },
+
+          // Sea water
+          { id: "sw_bilge", group: "Agua de mar", system: "Bilge lines", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Nota 4"] },
+          { id: "sw_fire_perm", group: "Agua de mar", system: "Permanent water filled fire-extinguishing systems (fire main, sprinklers)", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Nota 3"] },
+          { id: "sw_fire_nonperm", group: "Agua de mar", system: "Non-permanent water filled fire-extinguishing systems (foam, drencher, fire main)", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Nota 3"], remarks: "Para sistemas de espuma aplicar FSS Code." },
+          { id: "sw_ballast", group: "Agua de mar", system: "Ballast system", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Nota 4"] },
+          { id: "sw_cooling", group: "Agua de mar", system: "Cooling water system", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Nota 4"] },
+          { id: "sw_tank_cleaning", group: "Agua de mar", system: "Tank cleaning services", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: null, remarks: "No requiere ensayo de resistencia al fuego." },
+          { id: "sw_non_essential", group: "Agua de mar", system: "Non-essential systems", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry / dry-wet / wet", fireTest: null, remarks: "No requiere ensayo de resistencia al fuego." },
+
+          // Fresh water
+          { id: "fw_cooling", group: "Agua dulce", system: "Cooling water system", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Nota 4"] },
+          { id: "fw_condensate_return", group: "Agua dulce", system: "Condensate return", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Nota 4"] },
+          { id: "fw_non_essential", group: "Agua dulce", system: "Non-essential system", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry / wet-dry / wet", fireTest: null, remarks: "No requiere ensayo de resistencia al fuego." },
+
+          // Sanitary / drains / scuppers
+          { id: "san_deck_drains_internal", group: "Saneamiento / desagües / imbornales", system: "Deck drains (internal)", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: null, notes: ["Nota 5"], remarks: "No requiere ensayo." },
+          { id: "san_sanitary_drains", group: "Saneamiento / desagües / imbornales", system: "Sanitary drains", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: null, remarks: "No requiere ensayo." },
+          { id: "san_scuppers_overboard", group: "Saneamiento / desagües / imbornales", system: "Scuppers and discharge (overboard)", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: null, remarks: "No requiere ensayo." },
+
+          // Sounding / vent
+          { id: "sv_water_tanks_dry_spaces", group: "Sondaje / venteo", system: "Water tanks / dry spaces", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry, wet", fireTest: null, remarks: "No requiere ensayo." },
+          { id: "sv_oil_tanks_gt60", group: "Sondaje / venteo", system: "Oil tanks (fp > 60°C)", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: null, notes: ["Notas 2 & 3"], remarks: "No requiere ensayo." },
+
+          // Miscellaneous
+          { id: "misc_starting_control_air", group: "Misceláneos", system: "Starting / control air", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Nota 4"] },
+          { id: "misc_service_air_non_essential", group: "Misceláneos", system: "Service air (non-essential)", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: null, remarks: "No requiere ensayo." },
+          { id: "misc_brine", group: "Misceláneos", system: "Brine", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)" },
+          { id: "misc_co2_outside_protected", group: "Misceláneos", system: "CO₂ system (outside protected space)", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)" },
+          { id: "misc_co2_inside_protected", group: "Misceláneos", system: "CO₂ system (inside protected space)", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: null, remarks: "Materiales con punto de fusión > 925 °C. FSS Code, Cap. 5." },
+          { id: "misc_steam", group: "Misceláneos", system: "Steam", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: null, notes: ["Ver Nota 8"] },
+        ],
+
+        // Regla fina opcional (ejemplo): validar slip-on en “steam” según 2.12.10
+        COUPLING_OVERRIDES: {
+          slipOn: ({ base, sys, P_design_bar, location }) => {
+            if (sys?.id !== "misc_steam") return base;
+            const okP = (P_design_bar ?? 0) <= 10;
+            const okLoc = location === "open_deck";
+            return base && okP && okLoc;
+          },
+        },
+      },
+    };
+
+    if (!RULESETS.ships.CLASS_LIMITS) {
+      RULESETS.ships.CLASS_LIMITS = RULESETS.naval.CLASS_LIMITS;
+    }
+    // ---------------------------------------------------------------------------
+
     function App() {
-      const CLASS_LIMITS = {
-        steam: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 170 } },
-        thermal_oil: { classII: { P: 16, T: 300 }, classIII: { P: 7, T: 150 } },
-        flammable_liquids: { classII: { P: 16, T: 150 }, classIII: { P: 7, T: 60 } },
-        other_media: { classII: { P: 40, T: 300 }, classIII: { P: 16, T: 200 } },
+      const getInitialRule = () => {
+        const q = new URLSearchParams(location.search);
+        return q.get("rule") || localStorage.getItem("rule") || "naval";
       };
 
-      const TABLE_NOTES_ES = {
-        "1": "Las juntas mecánicas que incluyan componentes que se deterioran fácilmente en caso de incendio deben ser de tipo resistente al fuego aprobado cuando se instalen en espacios de maquinaria de Categoría A. Los acoplamientos del ‘bilge main’ en espacios de Categoría A deben ser de acero, CuNi o material equivalente.",
-        "2": "Los slip‑on joints no se aceptan dentro de espacios de maquinaria de Categoría A, depósitos de munición ni espacios de alojamiento. Se aceptan en otros espacios de maquinaria y servicio siempre que queden en posiciones fácilmente visibles y accesibles.",
-        "3": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, salvo cuando estén en cubiertas abiertas con poco o ningún riesgo de incendio según SOLAS II‑2/9.2.3.3.2.2(10).",
-        "4": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado.",
-        "5": "Ver Vol 2, Pt 7, Ch 1, 5.10 – Other mechanical couplings (remisión normativa).",
-        "6": "Las juntas mecánicas solo se permiten por encima del límite de integridad estanca (WTI).",
-        "7": "Requisitos para HVAC trunking y para entradas/salidas de turbina de gas se tratan en las secciones correspondientes de las Reglas.",
-      };
+      const [ruleId, setRuleId] = useState(getInitialRule);
+      const activeRules = RULESETS[ruleId] || RULESETS.naval;
 
-      const NAVAL_SYSTEMS = [
-        { id: "ff_le60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point ≤ 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
-        { id: "ff_le60_vent_lines", group: "Flammable fluids (flash point ≤ 60°C)", system: "Vent lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 3"] },
-        { id: "ff_gt60_aircraft_vehicle_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Aircraft and vehicle fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Notes 2 & 4"] },
-        { id: "ff_gt60_ship_machinery_fuel", group: "Flammable fluids (flash point > 60°C)", system: "Ship’s machinery fuel oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
-        { id: "ff_gt60_lubricating_oil", group: "Flammable fluids (flash point > 60°C)", system: "Lubricating oil lines", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
-        { id: "ff_gt60_hydraulic_oil", group: "Flammable fluids (flash point > 60°C)", system: "Hydraulic oil", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Notes 2 & 3"] },
-        { id: "sw_bilge", group: "Sea water", system: "Bilge lines", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
-        { id: "sw_hp_spray", group: "Sea water", system: "HP sea water and water spray (not permanently filled)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*)" },
-        { id: "sw_perm_fireext", group: "Sea water", system: "Permanent water filled fire‑extinguishing systems (fire main, sprinklers)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "30 min wet (*)", notes: ["Note 3"] },
-        { id: "sw_nonperm_fireext", group: "Sea water", system: "Non‑permanent water filled fire‑extinguishing systems (foam, drencher, fire main)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "8 min dry + 22 min wet (*) – Foam: comply FSS Code", notes: ["Note 3"] },
-        { id: "sw_ballast", group: "Sea water", system: "Ballast system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
-        { id: "sw_cooling", group: "Sea water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "8 min dry + 22 min wet (*)", notes: ["Note 1"] },
-        { id: "sw_tank_cleaning", group: "Sea water", system: "Tank cleaning services", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "sw_non_essential", group: "Sea water", system: "Non‑essential systems", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "fw_cooling", group: "Fresh water", system: "Cooling water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
-        { id: "fw_chilled", group: "Fresh water", system: "Chilled water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Except chilled water: 30 min wet (*)", notes: ["Note 1"] },
-        { id: "fw_condensate", group: "Fresh water", system: "Condensate return", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
-        { id: "fw_made_demin", group: "Fresh water", system: "Made & demineralised water system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
-        { id: "fw_ancillary", group: "Fresh water", system: "Ancillary system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "san_deck_drains", group: "Sanitary / drains / scuppers", system: "Deck drains (internal)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 6"] },
-        { id: "san_sanitary_drains", group: "Sanitary / drains / scuppers", system: "Sanitary drains", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "san_scuppers_overboard", group: "Sanitary / drains / scuppers", system: "Scuppers & discharge (overboard)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "sv_water_tanks_dry", group: "Sounding / vent", system: "Water tanks / dry spaces", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry/wet", fireTest: "Fire endurance test not required" },
-        { id: "sv_oil_tanks", group: "Sounding / vent", system: "Oil tanks (f.p. > 60°C)", mediumGroup: "flammable_liquids", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Notes 2 & 3"] },
-        { id: "sv_intakes_uptakes", group: "Sounding / vent", system: "Intakes and uptakes", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
-        { id: "sv_hvac", group: "Sounding / vent", system: "HVAC trunking", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 7"] },
-        { id: "misc_air_hp", group: "Miscellaneous", system: "High pressure (HP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
-        { id: "misc_air_mp", group: "Miscellaneous", system: "Medium pressure (MP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
-        { id: "misc_air_lp", group: "Miscellaneous", system: "Low pressure (LP) air system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required", notes: ["Note 1"] },
-        { id: "misc_service_air_nonessential", group: "Miscellaneous", system: "Service air (non‑essential)", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "dry", fireTest: "Fire endurance test not required" },
-        { id: "misc_brine", group: "Miscellaneous", system: "Brine", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: true }, pipeSystemClass: "wet", fireTest: "Fire endurance test not required" },
-        { id: "misc_co2", group: "Miscellaneous", system: "CO₂ system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)", notes: ["Note 1"] },
-        { id: "misc_n2", group: "Miscellaneous", system: "Nitrogen system", mediumGroup: "other_media", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "dry", fireTest: "30 min dry (*)" },
-        { id: "misc_steam", group: "Miscellaneous", system: "Steam", mediumGroup: "steam", allowed: { pipeUnions: true, compression: true, slipOn: false }, pipeSystemClass: "-", fireTest: "Fire endurance test not required", notes: ["See Note 5 / special consideration"] },
-      ];
+      useEffect(() => {
+        localStorage.setItem("rule", ruleId);
+      }, [ruleId]);
+
+      const CLASS_LIMITS = activeRules.CLASS_LIMITS;
+      const TABLE_NOTES_ES = activeRules.TABLE_NOTES_ES || {};
+      const SYSTEMS = activeRules.SYSTEMS || [];
+      const LR_REQUIREMENTS = activeRules.LR_REQUIREMENTS_ES || [];
+      const GENERAL_COMMENTS = activeRules.GENERAL_COMMENTS || {};
+      const ACTIVE_OVERRIDES = activeRules.COUPLING_OVERRIDES || {};
 
       const COUPLING_RULES = {
         pipeUnions: (clazz, odMM) => {
@@ -621,7 +777,7 @@
       const defaultSchedule = SCHEDULES_DN16_200.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES_DN16_200[0] || SCHEDULES[0];
       const defaultOd = defaultSchedule ? defaultSchedule.od : 60.3;
 
-      const [selectedSystemId, setSelectedSystemId] = useState(NAVAL_SYSTEMS[0].id);
+      const [selectedSystemId, setSelectedSystemId] = useState(() => (SYSTEMS[0]?.id ?? null));
       const [classMode, setClassMode] = useState("manual");
       const [clazz, setClazz] = useState("II");
       const [odMM, setOdMM] = useState(defaultOd);
@@ -635,10 +791,20 @@
       const [viewerImageStatus, setViewerImageStatus] = useState("idle");
       const viewerHistoryRef = useRef(false);
 
+      useEffect(() => {
+        if (!SYSTEMS.length) {
+          setSelectedSystemId(null);
+          return;
+        }
+        if (!SYSTEMS.some((item) => item.id === selectedSystemId)) {
+          setSelectedSystemId(SYSTEMS[0]?.id ?? null);
+        }
+      }, [SYSTEMS, selectedSystemId]);
+
       const groupedSystems = useMemo(() => {
         const order = [];
         const byGroup = new Map();
-        for (const item of NAVAL_SYSTEMS) {
+        for (const item of SYSTEMS) {
           if (!byGroup.has(item.group)) {
             byGroup.set(item.group, []);
             order.push(item.group);
@@ -646,7 +812,7 @@
           byGroup.get(item.group).push(item);
         }
         return { order, byGroup };
-      }, []);
+      }, [SYSTEMS]);
 
       const odSelectOptions = useMemo(() => SCHEDULES_DN16_200, []);
 
@@ -655,8 +821,21 @@
         setHasPendingChanges(true);
       }
 
+      function getSystemMediumGroup(sys) {
+        if (!sys) return undefined;
+        if (sys.mediumGroup) return sys.mediumGroup;
+        const systemName = (sys.system || "").toLowerCase();
+        const groupName = (sys.group || "").toLowerCase();
+        if (systemName.includes("thermal oil")) return "thermal_oil";
+        if (systemName.includes("steam") || groupName.includes("steam")) return "steam";
+        if (groupName.includes("inflamable") || groupName.includes("flammable") || systemName.includes("oil")) {
+          return "flammable_liquids";
+        }
+        return "other_media";
+      }
+
       function suggestClass(mediumGroup, P, T) {
-        const lim = CLASS_LIMITS[mediumGroup];
+        const lim = mediumGroup ? CLASS_LIMITS[mediumGroup] : null;
         if (!lim) return "II";
         if (P > lim.classII.P || T > lim.classII.T) return "I";
         if (P > lim.classIII.P || T > lim.classIII.T) return "II";
@@ -665,7 +844,7 @@
 
       function computeUsedClass(sys) {
         if (classMode === "manual") return clazz;
-        return suggestClass(sys.mediumGroup, designPressureBar, designTemperatureC);
+        return suggestClass(getSystemMediumGroup(sys), designPressureBar, designTemperatureC);
       }
 
       function expandSystemNotes(notes) {
@@ -691,21 +870,38 @@
 
         notes.push(...expandSystemNotes(sys.notes));
 
+        if (sys.remarks) {
+          notes.push(sys.remarks);
+        }
+
         if (space === "other_machinery") {
-          notes.push("Si se emplean slip‑on joints en este espacio: deben estar en **posiciones visibles y accesibles** (Nota 2).");
+          const note2 = TABLE_NOTES_ES["2"];
+          if (note2) {
+            const noteText = `Nota 2: ${note2}`;
+            if (!catNotes.includes(noteText)) notes.push(noteText);
+          }
         }
 
-        if (["cargo_hold", "tank"].includes(space)) {
-          notes.push("5.10.9: Slip‑on joints no en bodegas/tanques o espacios no accesibles; dentro de tanques solo si el medio es el mismo.");
+        if (["cargo_hold", "tank"].includes(space) && GENERAL_COMMENTS.slipOnInaccessible) {
+          if (!catNotes.includes(GENERAL_COMMENTS.slipOnInaccessible)) {
+            notes.push(GENERAL_COMMENTS.slipOnInaccessible);
+          }
         }
 
-        notes.push("5.10.10: El tipo Slip no debe usarse como medio principal de conexión (salvo compensación axial).");
-        notes.push("5.10.5: Las juntas mecánicas deben resistir presión de rotura ≥ 4 × presión de diseño.");
-        notes.push("5.10.12: Ensayos de tipo conforme a LR Type Approval Test Spec No. 2, según servicio.");
-        notes.push("5.10.6: Si el tramo está conectado directamente al costado por debajo del límite de integridad estanca, las juntas mecánicas están prohibidas.");
+        if (GENERAL_COMMENTS.slipOnNotMain) notes.push(GENERAL_COMMENTS.slipOnNotMain);
+        if (GENERAL_COMMENTS.burstPressure) notes.push(GENERAL_COMMENTS.burstPressure);
+        if (GENERAL_COMMENTS.typeApproval) notes.push(GENERAL_COMMENTS.typeApproval);
+        if (GENERAL_COMMENTS.hullSide) notes.push(GENERAL_COMMENTS.hullSide);
 
-        const isSteam = sys.system.toLowerCase() === "steam" || sys.mediumGroup === "steam";
-        if (isSteam && designPressureBar <= 10 && space === "open_deck") notes.push("5.10.11: En buques tanque (oil/chemical), permitido 'restrained slip‑on' para vapor ≤ 10 bar en cubierta expuesta para absorber movimiento axial.");
+        const mediumGroup = getSystemMediumGroup(sys);
+        const isSteam = (sys.system || "").toLowerCase() === "steam" || mediumGroup === "steam";
+        if (GENERAL_COMMENTS.steamDeck && isSteam) {
+          if (designPressureBar <= 10 && space === "open_deck") {
+            notes.push(GENERAL_COMMENTS.steamDeck);
+          } else {
+            notes.push(`${GENERAL_COMMENTS.steamDeck} (verifica P ≤ 10 bar y ubicación en cubierta expuesta).`);
+          }
+        }
 
         notes.push(...catNotes);
         return notes;
@@ -819,8 +1015,9 @@
       }, [viewer?.open, viewer?.kind]);
 
       function evaluate() {
-        const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
+        const sys = SYSTEMS.find((s) => s.id === selectedSystemId) || SYSTEMS[0];
         const usedClass = computeUsedClass(sys);
+        const mediumGroup = getSystemMediumGroup(sys);
 
         const base = { ...sys.allowed };
 
@@ -832,12 +1029,32 @@
 
         if (["category_a", "accommodation", "munition_store"].includes(space)) {
           allowAfterLocation.slipOn = false;
-          catNotes.push("Nota 2: Slip‑on bloqueado por la ubicación seleccionada.");
+          const note2 = TABLE_NOTES_ES["2"];
+          catNotes.push(note2 ? `Nota 2: ${note2}` : "Slip-on bloqueado por la ubicación seleccionada.");
         }
         if (["cargo_hold", "tank"].includes(space)) {
           allowAfterLocation.slipOn = false;
-          catNotes.push("5.10.9: Slip‑on bloqueado en bodegas/tanques (salvo mismo medio dentro del tanque).");
+          if (GENERAL_COMMENTS.slipOnInaccessible) {
+            catNotes.push(GENERAL_COMMENTS.slipOnInaccessible);
+          }
         }
+
+        const applyOverride = (key, current) => {
+          const handler = typeof ACTIVE_OVERRIDES[key] === "function" ? ACTIVE_OVERRIDES[key] : null;
+          if (!handler) return current;
+          return handler({
+            base: current,
+            sys,
+            usedClass,
+            P_design_bar: designPressureBar,
+            T_design_C: designTemperatureC,
+            location: space,
+          });
+        };
+
+        allowAfterLocation.pipeUnions = applyOverride("pipeUnions", allowAfterLocation.pipeUnions);
+        allowAfterLocation.compression = applyOverride("compression", allowAfterLocation.compression);
+        allowAfterLocation.slipOn = applyOverride("slipOn", allowAfterLocation.slipOn);
 
         let pipeUnionsAllowed = allowAfterLocation.pipeUnions;
         let pipeUnionsRule = { allowed: false, reason: "" };
@@ -876,24 +1093,29 @@
           odMM,
           design: { P: designPressureBar, T: designTemperatureC },
           classMode,
-          suggestedClass: suggestClass(sys.mediumGroup, designPressureBar, designTemperatureC),
+          suggestedClass: suggestClass(mediumGroup, designPressureBar, designTemperatureC),
+          mediumGroup,
         };
 
         const reasons = [];
-        if (!categories.slipOn && base.slipOn) reasons.push("Slip‑on permitido por 1.5.3, pero bloqueado por ubicación (Nota 2 / 5.10.9) o por clase en 1.5.4.");
+        if (!categories.slipOn && base.slipOn)
+          reasons.push("Slip-on permitido por la tabla base, pero bloqueado por ubicación, clase u otras condiciones del reglamento.");
 
         setEvaluation({ sys, usedClass, categories, reasons, details, notes: buildComplianceNotes(sys, usedClass, catNotes) });
         setHasPendingChanges(false);
       }
 
-      const sys = NAVAL_SYSTEMS.find((s) => s.id === selectedSystemId) || NAVAL_SYSTEMS[0];
+      const sys = SYSTEMS.find((s) => s.id === selectedSystemId) || SYSTEMS[0];
       const usedClass = computeUsedClass(sys);
 
       const allNotes = Array.isArray(evaluation?.notes) ? evaluation.notes : [];
-      const notasSistema = allNotes.filter((n) => /^Nota\s*[1-7]/i.test(n));
+      const notasSistema = allNotes.filter((n) => /^Nota\s*\d+/i.test(n));
       const notasLR = allNotes
-        .filter((n) => !/^Nota\s*[1-7]/i.test(n))
+        .filter((n) => !/^Nota\s*\d+/i.test(n))
         .map((n) => stripNormReferencePrefix(n));
+
+      const currentMediumGroup = evaluation?.details?.mediumGroup ?? getSystemMediumGroup(sys);
+      const currentMediumLimits = currentMediumGroup ? CLASS_LIMITS[currentMediumGroup] : null;
 
       return html`<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
 
@@ -904,9 +1126,10 @@
                   Asesor de juntas mecánicas – Grip Type
                 </h1>
                 <p className="sublead block-subtitle text-slate-300">
-                  Basado en LR Vol. 2 – Machinery &amp; Engineering Systems, Pt 7: Piping Systems,
-                  Ch 1: Piping Design Requirements, Sec 5: Pipe joints. La interfaz usa abreviaciones
-                  en español.
+                  ${activeRules.subtitle || "Selecciona un reglamento para ver la descripción."}
+                </p>
+                <p className="text-sm text-slate-400">
+                  Reglamento activo: <strong>${activeRules.title}</strong>
                 </p>
                 <div className="hidden md:flex items-center gap-2 text-sm text-slate-300 logic-hint">
                   ${h(ShieldIcon, { className: "w-5 h-5" })}
@@ -924,7 +1147,27 @@
 
         <main className="max-w-7xl mx-auto p-4 space-y-6">
           <section className="bg-slate-950/40 rounded-2xl p-4 shadow space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
+              <${Field} label="Reglamento">
+                <select
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2"
+                  value=${ruleId}
+                  onChange=${(e) => {
+                    const v = e.target.value;
+                    if (v === ruleId) return;
+                    setRuleId(v);
+                    setSelectedSystemId(null);
+                    setEvaluation(null);
+                    setHasPendingChanges(true);
+                    const q = new URLSearchParams(location.search);
+                    q.set("rule", v);
+                    history.replaceState(null, "", `${location.pathname}?${q.toString()}`);
+                  }}
+                >
+                  <option value="naval">LR Naval Ships</option>
+                  <option value="ships">LR Ships</option>
+                </select>
+              </${Field}>
               <${Field} label="Sistema">
                 <select
                   id="select-system"
@@ -1068,7 +1311,12 @@
                 ${h(SearchIcon, { className: "w-4 h-4" })} Evaluar
               </button>
               <div className="text-xs text-slate-300">
-                Clase utilizada ahora: <b>Class ${usedClass}</b> ${classMode === "auto" ? `(calculada por P/T para ${sys.mediumGroup})` : ""}
+                Clase utilizada ahora: <b>Class ${usedClass}</b>
+                ${
+                  classMode === "auto"
+                    ? `(calculada por P/T para ${evaluation?.details?.mediumGroup ?? getSystemMediumGroup(sys) ?? "medio no definido"})`
+                    : ""
+                }
               </div>
             </div>
           </section>
@@ -1178,7 +1426,7 @@
 
                     <section className="notes">
                       <details open>
-                        <summary className="notes-title">Notas específicas del sistema (Nota 1–7)</summary>
+                        <summary className="notes-title">Notas específicas del sistema</summary>
                         <ul className="notes-list">
                           ${notasSistema.length
                             ? notasSistema.map((n, i) => html`<li key=${`sys-${i}`}>${n}</li>`)
@@ -1187,7 +1435,7 @@
                       </details>
 
                       <details>
-                        <summary className="notes-title">Recomendaciones y requisitos LR</summary>
+                        <summary className="notes-title">Observaciones adicionales (evaluación)</summary>
                         <ul className="notes-list">
                           ${notasLR.length
                             ? notasLR.map((n, i) => html`<li key=${`lr-${i}`}>${n}</li>`)
@@ -1196,8 +1444,30 @@
                       </details>
                     </section>
 
+                    ${
+                      LR_REQUIREMENTS.length > 0
+                        ? html`<section className="mt-6">
+                            <h3 className="text-lg font-semibold text-slate-100">
+                              Recomendaciones y requisitos LR
+                            </h3>
+                            <ul className="mt-2 space-y-1 text-slate-300 text-sm">
+                              ${LR_REQUIREMENTS.map((item) =>
+                                html`<li key=${item.id}><strong>${item.id}.</strong> ${item.text}</li>`
+                              )}
+                            </ul>
+                          </section>`
+                        : ""
+                    }
+
                     <div className="text-xs text-slate-400">
-                      Grupo de medio: <b>${sys.mediumGroup}</b>. Límites Class II: P≤${CLASS_LIMITS[sys.mediumGroup].classII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classII.T} °C; Class III: P≤${CLASS_LIMITS[sys.mediumGroup].classIII.P} bar / T≤${CLASS_LIMITS[sys.mediumGroup].classIII.T} °C. Si P/T superan Class II, norma exige Class I (2.3.2).
+                      ${
+                        currentMediumGroup && currentMediumLimits
+                          ? html`Grupo de medio: <b>${currentMediumGroup}</b>. Límites Class II: P≤${currentMediumLimits.classII.P}
+                              bar / T≤${currentMediumLimits.classII.T} °C; Class III: P≤${currentMediumLimits.classIII.P} bar /
+                              T≤${currentMediumLimits.classIII.T} °C. Si P/T superan Class II, norma exige Class I (2.3.2).`
+                          : html`Límites de clase: aplicar la Tabla 12.2.9 del reglamento activo para determinar las
+                              condiciones de presión y temperatura por clase.`
+                      }
                     </div>
                   </div>`
             }
@@ -1209,8 +1479,8 @@
               Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com" className="text-sky-300 hover:text-sky-100">jegomez@cotecmar.com</a>.
             </p>
             <div>
-              v0.7 • Naval Ships – Motor de decisión con notas en español y visor de referencias gráficas (imágenes) por tipo de
-              unión.
+              v0.7 • ${activeRules.title} – Motor de decisión con notas en español y visor de referencias gráficas (imágenes) por
+              tipo de unión.
             </div>
           </footer>
         </main>
