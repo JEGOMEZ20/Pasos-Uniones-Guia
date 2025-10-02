@@ -440,6 +440,7 @@
       const [designTemperatureC, setDesignTemperatureC] = useState(25);
       const [space, setSpace] = useState('other_machinery');
       const [evaluation, setEvaluation] = useState(null);
+      const [evaluationError, setEvaluationError] = useState(null);
       const [hasPendingChanges, setHasPendingChanges] = useState(false);
       const [viewer, setViewer] = useState(null);
       const [viewerImageSrc, setViewerImageSrc] = useState('');
@@ -533,35 +534,49 @@
         setRuleId(event.target.value);
         setEvaluation(null);
         setHasPendingChanges(true);
+        setEvaluationError(null);
       }
 
       function markPendingChanges() {
         setHasPendingChanges(true);
         setEvaluation(null);
+        setEvaluationError(null);
       }
 
       function computeEvaluation() {
-        if (!selectedSystemId) return;
-        const engine = EngineClass.use(rules);
-        const context = engine.initContext({
-          systemId: selectedSystemId,
-          classMode,
-          clazz,
-          manualClass: clazz,
-          odMM,
-          designPressureBar,
-          designTemperatureC,
-          space,
-        });
-        engine.baseFromSystemRow(context);
-        engine.applyLocationConstraints(context);
-        engine.applyClassAndODLimits(context);
-        engine.applyGlobalConstraints(context);
-        engine.collectSystemNotes(context);
-        engine.collectObservations(context);
-        const result = engine.finalize(context);
-        setEvaluation(result);
-        setHasPendingChanges(false);
+        if (!selectedSystemId) {
+          setEvaluationError('Selecciona un sistema antes de evaluar.');
+          return;
+        }
+        try {
+          const engine = EngineClass.use(rules);
+          const context = engine.initContext({
+            systemId: selectedSystemId,
+            classMode,
+            clazz,
+            manualClass: clazz,
+            odMM,
+            designPressureBar,
+            designTemperatureC,
+            space,
+          });
+          engine.baseFromSystemRow(context);
+          engine.applyLocationConstraints(context);
+          engine.applyClassAndODLimits(context);
+          engine.applyGlobalConstraints(context);
+          engine.collectSystemNotes(context);
+          engine.collectObservations(context);
+          const result = engine.finalize(context);
+          setEvaluation(result);
+          setHasPendingChanges(false);
+          setEvaluationError(null);
+        } catch (error) {
+          console.error('No se pudo completar la evaluación', error);
+          setEvaluation(null);
+          setEvaluationError(
+            'Hubo un problema al generar la evaluación. Verifica los datos e inténtalo nuevamente.'
+          );
+        }
       }
 
       useEffect(() => {
@@ -848,7 +863,18 @@
               >
                 <${SearchIcon} /> Evaluar compatibilidad
               </button>
-              ${hasPendingChanges ? html`<span className="text-sm text-amber-300">Hay cambios sin evaluar.</span>` : null}
+              ${hasPendingChanges || evaluationError
+                ? html`
+                    <div className="flex flex-col gap-1">
+                      ${hasPendingChanges
+                        ? html`<span className="text-sm text-amber-300">Hay cambios sin evaluar.</span>`
+                        : null}
+                      ${evaluationError
+                        ? html`<span className="text-sm text-rose-300">${evaluationError}</span>`
+                        : null}
+                    </div>
+                  `
+                : null}
             </div>
           </section>
 
