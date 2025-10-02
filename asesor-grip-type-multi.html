@@ -989,9 +989,16 @@
                 </div>
                 <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
                   <h2 className="text-lg font-semibold mb-3">Observaciones (evaluación)</h2>
-                  ${evaluation.observations?.length
-                    ? html`<ul className="observations-list">${evaluation.observations.map((obs, idx) => html`<li key=${idx}>${obs}</li>`)}</ul>`
-                    : html`<p className="text-sm text-slate-400">Sin observaciones adicionales para las condiciones ingresadas.</p>`}
+                  ${(() => {
+                    const applied = evaluation
+                      ? Array.from(
+                          new Set([...(evaluation.conditions ?? []), ...(evaluation.reasons ?? [])])
+                        )
+                      : [];
+                    return applied.length
+                      ? html`<ul className="observations-list">${applied.map((obs, idx) => html`<li key=${idx}>${obs}</li>`)}</ul>`
+                      : html`<p className="text-sm text-slate-400">Sin observaciones adicionales para las condiciones ingresadas.</p>`;
+                  })()}
                 </div>
               </section>
 

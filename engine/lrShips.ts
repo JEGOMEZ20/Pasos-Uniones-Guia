@@ -16,7 +16,6 @@ interface GroupEvalResult {
   status: EvalStatus;
   conditions: string[];
   reasons: string[];
-  observations: string[];
   notesApplied: number[];
   generalClauses: string[];
   trace: string[];
@@ -42,6 +41,7 @@ export interface LRShipsContext {
 export interface LRShipsEvaluation {
   status: EvalStatus;
   conditions: string[];
+  reasons: string[];
   normRef: string;
   reason?: string;
   systemId: string;
@@ -72,7 +72,6 @@ export function evaluateLRShips(ctx: LRShipsContext, db: LRShipsDataset = datase
   const groupResult = groups[jointGroup];
   const trace = [...groupResult.trace];
   const conditions = [...groupResult.conditions];
-  const observations = [...groupResult.observations];
   const notesApplied = [...groupResult.notesApplied];
   const generalClauses = [...groupResult.generalClauses];
   const reasons = [...groupResult.reasons];
@@ -89,17 +88,21 @@ export function evaluateLRShips(ctx: LRShipsContext, db: LRShipsDataset = datase
         reason = "Tabla 12.2.9: límite de clase/OD";
       }
       status = "forbidden";
+      pushOnce(reasons, reason);
       if (classResult.detail) {
-        pushOnce(observations, classResult.detail);
+        trace.push(classResult.detail);
       }
     } else if (classResult.detail) {
       trace.push(classResult.detail);
     }
   }
 
+  const observations = Array.from(new Set([...conditions, ...reasons]));
+
   return {
     status,
     conditions,
+    reasons,
     normRef: normReference,
     reason,
     systemId: sys.id,
@@ -125,7 +128,7 @@ export function evaluateGroups(ctx: LRShipsContext, db: LRShipsDataset = dataset
 function evaluateGroupsForRow(
   ctx: LRShipsContext,
   row: LRShipsSystem,
-  db: LRShipsDataset
+  _db: LRShipsDataset
 ): Record<Group, GroupEvalResult> {
   const groups: Record<Group, GroupEvalResult> = {
     pipe_unions: base(Boolean(row.allowed_joints.pipe_unions), row, "pipe_unions"),
@@ -133,29 +136,26 @@ function evaluateGroupsForRow(
     slip_on_joints: base(Boolean(row.allowed_joints.slip_on_joints), row, "slip_on_joints"),
   };
 
-  const rowNotes = new Set<number>(row.notes);
+  const rowNotes = new Set<number>(row?.notes ?? []);
+  const fireTestLabel = row?.fire_test ? labelFire(row.fire_test) : null;
 
-  const fireTestLabel = row.fire_test != null ? labelFire(row.fire_test) : null;
-  if (fireTestLabel) {
-    for (const result of Object.values(groups)) {
-      if (result.status === "forbidden") continue;
+  for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
+    if (!Boolean(row.allowed_joints[groupName])) {
+      continue;
+    }
+
+    if (fireTestLabel) {
       if (result.status === "allowed") {
         result.status = "conditional";
       }
       pushOnce(result.conditions, fireTestLabel);
       result.trace.push(`Tabla 12.2.8: Ensayo base ${fireTestLabel}.`);
     }
-  }
 
-  for (const note of rowNotes) {
-    for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
-      if (result.status === "forbidden") continue;
-      applyNote_LR(ctx, row, note, groupName, result);
+    for (const note of rowNotes) {
+      applyNoteScoped_LRShips(note, ctx, row, groupName, result);
     }
-  }
 
-  for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
-    if (result.status === "forbidden") continue;
     applyGeneralClauses(ctx, groupName, result);
   }
 
@@ -167,7 +167,6 @@ function base(allowed: boolean, row: LRShipsSystem, group: Group): GroupEvalResu
     status: allowed ? "allowed" : "forbidden",
     conditions: [],
     reasons: [],
-    observations: [],
     notesApplied: [],
     generalClauses: [],
     trace: [],
@@ -190,26 +189,28 @@ function pushOnce<T>(arr: T[], value: T | null | undefined) {
   }
 }
 
-function applyNote_LR(
+function applyNoteScoped_LRShips(
+  note: number,
   ctx: LRShipsContext,
   row: LRShipsSystem,
-  note: number,
   group: Group,
   out: GroupEvalResult
 ) {
+  if (out.status === "forbidden") {
+    // Mantener primer motivo que bloqueó la evaluación.
+    return;
+  }
+
   switch (note) {
     case 1: {
       if (ctx.space === "pump_room" || ctx.space === "open_deck") {
-        const label = row.fire_test != null ? labelFire(row.fire_test) : null;
+        const label = row.fire_test ? labelFire(row.fire_test) : null;
         if (label) {
           if (out.status === "allowed") {
             out.status = "conditional";
           }
           pushOnce(out.conditions, label);
           pushOnce(out.notesApplied, note);
-          const locationLabel = ctx.space === "pump_room" ? "sala de bombas" : "cubierta abierta";
-          const message = `Nota 1: exige ${label} en ${locationLabel}.`;
-          pushOnce(out.observations, message);
           out.trace.push(`Nota 1: espacio ${ctx.space} ⇒ ${label}.`);
         }
       }
@@ -219,18 +220,14 @@ function applyNote_LR(
       if (group === "slip_on_joints") {
         if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
           out.status = "forbidden";
-          const message = "Nota 2: slip-on no aceptadas en Cat. A/aloj.";
+          const message = "Nota 2: Slip-on no aceptadas en Cat. A/aloj.";
           pushOnce(out.reasons, message);
-          pushOnce(out.observations, message);
           pushOnce(out.notesApplied, note);
           out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
         } else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
-          if (out.status !== "forbidden") {
-            out.status = "conditional";
-          }
-          const condition = "Ubicar en posiciones visibles y accesibles (MSC/Circ.734)";
+          out.status = "conditional";
+          const condition = "Ubicación visible y accesible (MSC/Circ.734)";
           pushOnce(out.conditions, condition);
-          pushOnce(out.observations, "Nota 2: requiere ubicación visible y accesible en otras máquinas.");
           pushOnce(out.notesApplied, note);
           out.trace.push("Nota 2: otras máquinas ⇒ visibles/accesibles.");
         }
@@ -238,30 +235,26 @@ function applyNote_LR(
       break;
     }
     case 3: {
-      const exceptOpenDeck = ctx.space === "open_deck";
-      const exceptFuel = ctx.lineType && ctx.lineType !== "fuel_oil";
-      if (!(exceptOpenDeck && exceptFuel)) {
+      if (ctx.space !== "open_deck") {
         if (out.status === "allowed") {
           out.status = "conditional";
         }
-        const condition = "Junta de tipo resistente al fuego";
+        const condition = "Tipo resistente al fuego";
         pushOnce(out.conditions, condition);
         pushOnce(out.notesApplied, note);
-        pushOnce(out.observations, "Nota 3: requiere junta de tipo resistente al fuego (salvo cubierta abierta).");
         out.trace.push("Nota 3: exigir tipo resistente al fuego.");
       }
       break;
     }
     case 4: {
       if (ctx.space === "machinery_cat_A") {
-        const label = row.fire_test != null ? labelFire(row.fire_test) : null;
+        const label = row.fire_test ? labelFire(row.fire_test) : null;
         if (label) {
           if (out.status === "allowed") {
             out.status = "conditional";
           }
           pushOnce(out.conditions, label);
           pushOnce(out.notesApplied, note);
-          pushOnce(out.observations, "Nota 4: Cat. A exige ensayo de fuego del sistema.");
           out.trace.push(`Nota 4: Cat. A ⇒ ${label}.`);
         }
       }
@@ -269,32 +262,31 @@ function applyNote_LR(
     }
     case 5: {
       if (ctx.space !== "open_deck") {
-        const condition = "Solo sobre cubierta de francobordo en buques de pasaje";
         if (out.status === "allowed") {
           out.status = "conditional";
         }
+        const condition = "Sólo sobre cubierta de francobordo (buques de pasaje)";
         pushOnce(out.conditions, condition);
         pushOnce(out.notesApplied, note);
-        pushOnce(out.observations, "Nota 5: limitar a cubierta de francobordo en buques de pasaje.");
-        out.trace.push("Nota 5: limitar ubicación a cubierta de francobordo.");
+        out.trace.push("Nota 5: limitar a cubierta de francobordo.");
       }
       break;
     }
     case 6: {
-      if (ctx.joint === "slip_on_slip_type") {
-        if (ctx.space === "open_deck" && (ctx.designPressure_bar ?? Number.POSITIVE_INFINITY) <= 10) {
+      if (ctx.joint === "slip_on_slip_type" && ctx.space === "open_deck") {
+        const maxPressure = ctx.designPressure_bar ?? Number.POSITIVE_INFINITY;
+        if (maxPressure <= 10) {
           if (out.status === "allowed") {
             out.status = "conditional";
           }
+          const condition = "Slip-type ≤10 bar en cubierta expuesta";
+          pushOnce(out.conditions, condition);
           pushOnce(out.notesApplied, note);
-          pushOnce(out.conditions, "Slip-type ≤10 bar en cubierta expuesta");
-          pushOnce(out.observations, "Nota 6: Slip-type restringido a cubierta abierta ≤10 bar.");
-          out.trace.push("Nota 6: Slip-type permitido en cubierta abierta con P ≤10 bar.");
-        } else if (ctx.space === "open_deck") {
+          out.trace.push("Nota 6: Slip-type permitido ≤10 bar.");
+        } else {
           out.status = "forbidden";
-          const message = "Nota 6: presión de diseño supera 10 bar";
+          const message = "Nota 6: Slip-type >10 bar prohibido";
           pushOnce(out.reasons, message);
-          pushOnce(out.observations, message);
           pushOnce(out.notesApplied, note);
           out.trace.push("Nota 6: presión excede 10 bar ⇒ prohibido.");
         }
@@ -302,17 +294,11 @@ function applyNote_LR(
       break;
     }
     case 7: {
-      pushOnce(out.notesApplied, note);
-      const message = "Nota 7: equivalencias de ensayo disponibles";
-      pushOnce(out.observations, message);
-      out.trace.push(message);
+      out.trace.push("Nota 7: revisar equivalencias de ensayo.");
       break;
     }
     case 8: {
-      pushOnce(out.notesApplied, note);
-      const message = "Nota 8: ver §2.12.10 para slip-on restringidas";
-      pushOnce(out.observations, message);
-      out.trace.push(message);
+      out.trace.push("Nota 8: ver §2.12.10 para slip-on restringidas.");
       break;
     }
   }
@@ -322,21 +308,19 @@ function applyGeneralClauses(ctx: LRShipsContext, group: Group, out: GroupEvalRe
   const mediumSame = ctx.mediumInPipeSameAsTank ?? ctx.sameMediumInTank;
 
   if (ctx.directToShipSideBelowLimit) {
-    const message = "§2.12.5: no usar juntas en conexión directa al costado bajo el límite";
+    const message = "§2.12.5: prohibido conectar directamente al costado bajo el límite";
     out.status = "forbidden";
     pushOnce(out.generalClauses, message);
     pushOnce(out.reasons, message);
-    pushOnce(out.observations, message);
     out.trace.push(message);
     return;
   }
 
   if (ctx.tankContainsFlammable) {
-    const message = "§2.12.5: prohibidas en tanques con fluidos inflamables";
+    const message = "§2.12.5: prohibido en tanques con fluidos inflamables";
     out.status = "forbidden";
     pushOnce(out.generalClauses, message);
     pushOnce(out.reasons, message);
-    pushOnce(out.observations, message);
     out.trace.push(message);
     return;
   }
@@ -347,36 +331,25 @@ function applyGeneralClauses(ctx: LRShipsContext, group: Group, out: GroupEvalRe
       out.status = "forbidden";
       pushOnce(out.generalClauses, message);
       pushOnce(out.reasons, message);
-      pushOnce(out.observations, message);
       out.trace.push(message);
       return;
     }
 
-    if (ctx.space === "tank") {
-      if (mediumSame === false) {
-        const message = "§2.12.8: slip-on en tanques solo si el medio es el mismo";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        pushOnce(out.observations, message);
-        out.trace.push(message);
-        return;
-      }
-      if (mediumSame === true) {
-        const message = "§2.12.8: confirmar mismo medio en tanque";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.observations, message);
-        out.trace.push(message);
-      }
+    if (ctx.space === "tank" && mediumSame === false) {
+      const message = "§2.12.8: slip-on en tanques sólo si el medio es el mismo";
+      out.status = "forbidden";
+      pushOnce(out.generalClauses, message);
+      pushOnce(out.reasons, message);
+      out.trace.push(message);
+      return;
     }
   }
 
   if (ctx.joint === "slip_on_slip_type" && ctx.asMainMeans) {
-    const message = "§2.12.9: slip-type no puede ser medio principal (solo compensación axial)";
+    const message = "§2.12.9: Slip-type no como medio principal (sólo compensación axial)";
     out.status = "forbidden";
     pushOnce(out.generalClauses, message);
     pushOnce(out.reasons, message);
-    pushOnce(out.observations, message);
     out.trace.push(message);
   }
 }
@@ -389,6 +362,7 @@ function forbid(
   return {
     status: "forbidden",
     conditions: [],
+    reasons: [message],
     normRef: normReference,
     reason: message,
     systemId: ctx.systemId,
@@ -397,7 +371,7 @@ function forbid(
     od_mm: ctx.od_mm,
     designPressure_bar: ctx.designPressure_bar,
     trace: [...trace],
-    observations: [],
+    observations: [message],
     notesApplied: [],
     generalClauses: [],
   };
