@@ -27,6 +27,7 @@ export interface LRShipsContext {
   asMainMeans?: boolean;
   directToShipSideBelowLimit?: boolean;
   tankContainsFlammable?: boolean;
+  designPressure_bar?: number;
   joint?: Joint;
 }
 
@@ -175,9 +176,8 @@ function evaluateGroupsWithRow(
     forEachOpen(groups, (ev) => makeConditional(ev, fireLabel));
   }
 
-  applySlipOnSpaceRestrictions(ctx, groups);
   applyRowNotes(ctx, row, groups);
-  applyClauses(ctx, groups);
+  applyGeneralClauses(ctx, groups);
   applySubtypeLimits(ctx, groups);
 
   return { groups, row };
@@ -269,8 +269,26 @@ function labelFire(test: LrShipRow["fire_test"]): string | null {
 function applyRowNotes(ctx: LRShipsContext, row: LrShipRow, out: GroupEvaluations) {
   if (!row.notes.length) return;
 
+  const note1Spaces = ctx.space === "open_deck" || ctx.space === "pump_room";
+  if (row.notes.includes(1) && note1Spaces) {
+    forEachOpen(out, (ev) => makeConditional(ev, "Ensayo de fuego (Nota 1)"));
+    noteAll(out, 1);
+  }
+
+  if (row.notes.includes(2)) {
+    const slip = out.slip_on_joints;
+    if (slip.status !== "forbidden") {
+      if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
+        block(slip, "Nota 2: Slip-on no aceptadas en Cat. A / alojamientos");
+      } else if (ctx.space === "other_machinery_accessible") {
+        makeConditional(slip, "Ubicar en posición visible/accesible (MSC/Circ.734)");
+      }
+      note(slip, 2);
+    }
+  }
+
   if (row.notes.includes(3) && ctx.space !== "open_deck") {
-    forEachOpen(out, (ev) => makeConditional(ev, "Junta de tipo resistente al fuego"));
+    forEachOpen(out, (ev) => makeConditional(ev, "Junta de tipo resistente al fuego (Nota 3)"));
     noteAll(out, 3);
   }
 
@@ -278,33 +296,16 @@ function applyRowNotes(ctx: LRShipsContext, row: LrShipRow, out: GroupEvaluation
     forEachOpen(out, (ev) => makeConditional(ev, "Ensayo adicional en Cat. A (Nota 4)"));
     noteAll(out, 4);
   }
-}
 
-function applySlipOnSpaceRestrictions(ctx: LRShipsContext, out: GroupEvaluations) {
-  const ev = out.slip_on_joints;
-  if (ev.status === "forbidden") {
-    return;
-  }
-
-  if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
-    block(ev, "Slip-on no aceptadas en espacios de máquinas de categoría A ni alojamientos.");
-    note(ev, 2);
-    return;
-  }
-
-  if (ctx.space === "other_machinery") {
-    block(ev, "Slip-on en espacios de máquinas sólo si están visibles y accesibles (MSC/Circ.734).");
-    note(ev, 2);
-    return;
-  }
-
-  if (ctx.space === "other_machinery_accessible") {
-    makeConditional(ev, "Ubicar en posición visible/accesible (MSC/Circ.734)");
-    note(ev, 2);
+  // Nota 5 en LR Ships aplica como condición operativa. Sin información adicional,
+  // se deja como marcador para futuros desarrollos.
+  if (row.notes.includes(5)) {
+    forEachOpen(out, (ev) => makeConditional(ev, "Condiciones especiales de instalación (Nota 5)"));
+    noteAll(out, 5);
   }
 }
 
-function applyClauses(ctx: LRShipsContext, out: GroupEvaluations) {
+function applyGeneralClauses(ctx: LRShipsContext, out: GroupEvaluations) {
   const addClause = (
     ev: Eval,
     code: string,
@@ -318,9 +319,9 @@ function applyClauses(ctx: LRShipsContext, out: GroupEvaluations) {
 
   const slip = out.slip_on_joints;
   if (slip.status !== "forbidden") {
-    const hardAccess =
+    const restrictedSpace =
       ctx.space === "cargo_hold" || ctx.space === "tank" || ctx.accessibility === "not_easy";
-    if (hardAccess) {
+    if (restrictedSpace) {
       addClause(
         slip,
         "SH-2.12.8",
@@ -328,15 +329,17 @@ function applyClauses(ctx: LRShipsContext, out: GroupEvaluations) {
         "Accesibilidad Slip-on",
         "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles",
       );
-    } else if (ctx.space === "tank" && ctx.mediumInPipeSameAsTank === false) {
-      addClause(
-        slip,
-        "SH-2.12.8.b",
-        "Pt 5, Ch 12, §2.12.8",
-        "Medio en tanque",
-        "Slip-on dentro de tanque: permitido sólo si el medio es el mismo",
-      );
     }
+  }
+
+  if (out.slip_on_joints.status !== "forbidden" && ctx.space === "tank" && ctx.mediumInPipeSameAsTank === false) {
+    addClause(
+      out.slip_on_joints,
+      "SH-2.12.8.b",
+      "Pt 5, Ch 12, §2.12.8",
+      "Medio en tanque",
+      "Slip-on dentro de tanque: permitido sólo si el medio es el mismo",
+    );
   }
 
   if (ctx.asMainMeans && out.slip_on_joints.status !== "forbidden") {
