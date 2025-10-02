@@ -1,15 +1,27 @@
 import dataset from "../data/lr_ships_mech_joints.js";
 const normReference = "LR Ships Pt5 Ch12 §2.12, Tablas 12.2.8–12.2.9";
+function normalizeLRShipsContext(ctx) {
+    const mediumSame = ctx.mediumInPipeSameAsTank ?? ctx.sameMediumInTank ?? true;
+    return {
+        ...ctx,
+        accessibility: ctx.accessibility ?? "easy",
+        mediumInPipeSameAsTank: mediumSame,
+        sameMediumInTank: ctx.sameMediumInTank ?? mediumSame,
+        directToShipSideBelowLimit: ctx.directToShipSideBelowLimit ?? false,
+        asMainMeans: ctx.asMainMeans ?? false,
+    };
+}
 export function evaluateLRShips(ctx, db = dataset) {
-    const sys = db.systems.find((s) => s.id === ctx.systemId);
+    const normalizedCtx = normalizeLRShipsContext(ctx);
+    const sys = db.systems.find((s) => s.id === normalizedCtx.systemId);
     if (!sys) {
-        return forbid(ctx, [], "Sistema no reconocido");
+        return forbid(normalizedCtx, [], "Sistema no reconocido");
     }
-    const jointGroup = groupOf(ctx.joint);
+    const jointGroup = groupOf(normalizedCtx.joint);
     if (!jointGroup) {
-        return forbid(ctx, [], "Tipo de junta desconocido");
+        return forbid(normalizedCtx, [], "Tipo de junta desconocido");
     }
-    const groups = evaluateGroupsForRow(ctx, sys, db);
+    const groups = evaluateGroupsForRow(normalizedCtx, sys, db);
     const groupResult = groups[jointGroup];
     const trace = [...groupResult.trace];
     const conditions = [...groupResult.conditions];
@@ -19,7 +31,7 @@ export function evaluateLRShips(ctx, db = dataset) {
     let status = groupResult.status;
     let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
     if (status !== "forbidden") {
-        const classResult = passClassOD(ctx.joint, ctx.pipeClass, ctx.od_mm, db);
+        const classResult = passClassOD(normalizedCtx.joint, normalizedCtx.pipeClass, normalizedCtx.od_mm, db);
         if (!classResult.ok) {
             if (classResult.reason === "missing_inputs") {
                 reason = "Falta clase/OD para aplicar Tabla 12.2.9";
@@ -45,10 +57,10 @@ export function evaluateLRShips(ctx, db = dataset) {
         normRef: normReference,
         reason,
         systemId: sys.id,
-        joint: ctx.joint,
-        pipeClass: ctx.pipeClass,
-        od_mm: ctx.od_mm,
-        designPressure_bar: ctx.designPressure_bar,
+        joint: normalizedCtx.joint,
+        pipeClass: normalizedCtx.pipeClass,
+        od_mm: normalizedCtx.od_mm,
+        designPressure_bar: normalizedCtx.designPressure_bar,
         trace,
         observations,
         notesApplied,
@@ -56,11 +68,12 @@ export function evaluateLRShips(ctx, db = dataset) {
     };
 }
 export function evaluateGroups(ctx, db = dataset) {
-    const row = db.systems.find((s) => s.id === ctx.systemId);
+    const normalizedCtx = normalizeLRShipsContext(ctx);
+    const row = db.systems.find((s) => s.id === normalizedCtx.systemId);
     if (!row) {
         throw new Error("Sistema no reconocido");
     }
-    return evaluateGroupsForRow(ctx, row, db);
+    return evaluateGroupsForRow(normalizedCtx, row, db);
 }
 function evaluateGroupsForRow(ctx, row, _db) {
     const groups = {
@@ -239,8 +252,10 @@ function applyGeneralClauses(ctx, group, out) {
         return;
     }
     if (group === "slip_on_joints") {
-        if (ctx.accessibility === "not_easy") {
-            const message = "§2.12.8: slip-on no en espacios de difícil acceso";
+        const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
+        const isHardAccessSpace = ctx.accessibility === "not_easy";
+        if (isCargoOrTank || isHardAccessSpace) {
+            const message = "§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles (2.12.8 / 5.10.9)";
             out.status = "forbidden";
             pushOnce(out.generalClauses, message);
             pushOnce(out.reasons, message);
