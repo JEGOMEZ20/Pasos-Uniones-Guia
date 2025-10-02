@@ -1,4 +1,4 @@
-import dataset from "../data/lr_naval_ships_mech_joints.json";
+import dataset from "../data/lr_naval_ships_mech_joints.js";
 import type { Joint, PipeClass } from "../data/lr_ships_mech_joints.js";
 
 export type Space =

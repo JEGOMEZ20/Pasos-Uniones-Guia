@@ -1,4 +1,4 @@
-import dataset from "../data/lr_naval_ships_mech_joints.json";
+import dataset from "../data/lr_naval_ships_mech_joints.js";
 const normReference = "LR Naval Ships Vol2 Pt7 Ch1 §5.10, Tablas 1.5.3–1.5.4";
 const FIRE_TEST_LABELS = {
     "30min_dry": "Ensayo de fuego: 30 min seco",
