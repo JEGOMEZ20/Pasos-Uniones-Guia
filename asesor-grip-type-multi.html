@@ -512,9 +512,10 @@
                 >
                   ${groupedSystems.order.map((groupKey) => html`
                     <optgroup key=${groupKey} label=${tGroup(groupKey)}>
-                      ${groupedSystems.byGroup.get(groupKey).map((item) => html`
-                        <option value=${item.id}>${`${tGroup(groupKey)} — ${tSystem(item.id)}`}</option>
-                      `)}
+                      ${groupedSystems.byGroup.get(groupKey).map((item) => {
+                        const systemLabel = tSystem(item.id) || item.system || item.id;
+                        return html`<option value=${item.id}>${systemLabel}</option>`;
+                      })}
                     </optgroup>
                   `)}
                 </select>
