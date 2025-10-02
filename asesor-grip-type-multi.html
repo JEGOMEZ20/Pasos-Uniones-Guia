@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asesor Grip-Type (Slip-on Joints) · Multi-norma LR</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "Segoe UI", "system-ui", "-apple-system", "sans-serif"],
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .page-header .header-copy {
+      flex: 1 1 360px;
+      min-width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .page-header .header-brand {
+      flex: 0 0 auto;
+      width: 200px;
+      max-width: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 12px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
+    }
+
+    .page-header .header-brand img {
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .result-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 420px;
+      padding: 18px 18px 20px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .result-card--allowed {
+      border-color: rgba(34, 197, 94, 0.65);
+      box-shadow: 0 12px 28px rgba(34, 197, 94, 0.22), 0 0 0 1px rgba(34, 197, 94, 0.45);
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.16), rgba(14, 116, 144, 0.05));
+    }
+
+    .result-card--blocked {
+      border-color: rgba(239, 68, 68, 0.7);
+      box-shadow: 0 12px 28px rgba(239, 68, 68, 0.24), 0 0 0 1px rgba(239, 68, 68, 0.5);
+      background: linear-gradient(145deg, rgba(127, 29, 29, 0.3), rgba(67, 20, 20, 0.12));
+    }
+
+    .result-title-es {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .result-title-en {
+      display: block;
+      font-size: 0.95rem;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    .option-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-item {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .option-item.disabled {
+      opacity: 0.55;
+      filter: grayscale(10%);
+      text-decoration: line-through;
+    }
+
+    .notes-list, .observations-list, .requirements-list {
+      list-style: disc;
+      padding-left: 1.25rem;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .result-row {
+        grid-template-columns: 1fr;
+      }
+
+      .result-card {
+        min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+  <div class="p-4">
+    <a href="./index.html" class="inline-flex items-center gap-2 text-sm text-sky-300 hover:text-sky-100">
+      <span aria-hidden="true">←</span>
+      Volver al inicio
+    </a>
+  </div>
+  <div id="root"></div>
+
+  <script type="module">
+    import htm from 'https://unpkg.com/htm?module';
+    import { createElement as h, useEffect, useMemo, useRef, useState } from 'https://esm.sh/react@18';
+    import ReactDOM from 'https://esm.sh/react-dom@18/client';
+    import { RULESETS } from './rulesets/index.js';
+    import { RegulationEngines } from './engines.js';
+    import { I18N } from './i18n/index.js';
+
+    const html = htm.bind(h);
+
+    const DEFAULT_JOINT_IMAGE = "./assets/joints/not-found.jpg";
+    const JOINT_IMAGES = {
+      pipe_welded_brazed: "./assets/joints/pipe_welded_brazed.jpg",
+      compression_swage: "./assets/joints/compression_swage.jpg",
+      compression_press: "./assets/joints/compression_press.jpg",
+      compression_typical: "./assets/joints/compression_typical.jpg",
+      compression_bite: "./assets/joints/compression_bite.jpg",
+      compression_flared: "./assets/joints/compression_flared.jpg",
+      slip_machine_grooved: "./assets/joints/slip_machine_grooved.jpg",
+      slip_grip: "./assets/joints/slip_grip.jpg",
+      slip_slip: "./assets/joints/slip_slip.jpg",
+    };
+
+    const JOINT_LABELS = {
+      pipe_welded_brazed: "Welded and Brazed Types (uniones soldadas y por braseado)",
+      compression_swage: "Swage Type (swage)",
+      compression_press: "Press Type (prensado)",
+      compression_typical: "Typical Compression Type (férula)",
+      compression_bite: "Bite Type (anillo mordedor)",
+      compression_flared: "Flared Type (abocardado/abocinado)",
+      slip_machine_grooved: "Machine Grooved Type — Roll Groove / Cut Groove (ranura laminada / mecanizada)",
+      slip_grip: "Grip Type (tipo grip / agarre)",
+      slip_slip: "Slip Type (tipo slip / deslizante)",
+    };
+
+    const JOINT_CATEGORY_TITLES = {
+      pipe_welded_brazed: "Pipe unions",
+      compression_swage: "Compression couplings",
+      compression_press: "Compression couplings",
+      compression_typical: "Compression couplings",
+      compression_bite: "Compression couplings",
+      compression_flared: "Compression couplings",
+      slip_machine_grooved: "Slip-on Joints",
+      slip_grip: "Slip-on Joints",
+      slip_slip: "Slip-on Joints",
+    };
+
+    const SPACES = [
+      { id: "category_a", label: "Espacio de máquinas de categoría A" },
+      { id: "other_machinery", label: "Otros espacios de maquinaria/servicio (accesibles)" },
+      { id: "accommodation", label: "Acomodaciones" },
+      { id: "munition_store", label: "Depósitos de municiones" },
+      { id: "cargo_hold", label: "Bodega de carga" },
+      { id: "tank", label: "Interior de tanque" },
+      { id: "open_deck", label: "Cubierta expuesta / intemperie" },
+      { id: "passenger_below_bulkhead", label: "Bajo cubierta de mamparo (buques de pasaje)" },
+    ];
+
+    const SCHEDULES = [
+      { nps: "1/8", dn: 6, od: 10.3, label: "DN6 (1/8) – OD 10,3" },
+      { nps: "1/4", dn: 8, od: 13.7, label: "DN8 (1/4) – OD 13,7" },
+      { nps: "3/8", dn: 10, od: 17.2, label: "DN10 (3/8) – OD 17,2" },
+      { nps: "1/2", dn: 15, od: 21.3, label: "DN15 (1/2) – OD 21,3" },
+      { nps: "3/4", dn: 20, od: 26.7, label: "DN20 (3/4) – OD 26,7" },
+      { nps: "1", dn: 25, od: 33.4, label: "DN25 (1) – OD 33,4" },
+      { nps: "1 1/4", dn: 32, od: 42.2, label: "DN32 (1¼) – OD 42,2" },
+      { nps: "1 1/2", dn: 40, od: 48.3, label: "DN40 (1½) – OD 48,3" },
+      { nps: "2", dn: 50, od: 60.3, label: "DN50 (2) – OD 60,3" },
+      { nps: "2 1/2", dn: 65, od: 73.0, label: "DN65 (2½) – OD 73,0" },
+      { nps: "3", dn: 80, od: 88.9, label: "DN80 (3) – OD 88,9" },
+      { nps: "4", dn: 100, od: 114.3, label: "DN100 (4) – OD 114,3" },
+      { nps: "5", dn: 125, od: 141.3, label: "DN125 (5) – OD 141,3" },
+      { nps: "6", dn: 150, od: 168.3, label: "DN150 (6) – OD 168,3" },
+      { nps: "8", dn: 200, od: 219.1, label: "DN200 (8) – OD 219,1" },
+    ];
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return value;
+      return value.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+    }
+
+    function dictionaryFor(ruleId) {
+      const dict = I18N[ruleId];
+      return dict || { groups: {}, systems: {}, conditions: {}, fireTest: {} };
+    }
+
+    function translate(dict, type, key) {
+      if (!key) return key;
+      const table = dict[type] || {};
+      return table[key] || key;
+    }
+
+    function buildViewerTitle(kind) {
+      const label = JOINT_LABELS[kind] || kind;
+      const category = JOINT_CATEGORY_TITLES[kind];
+      return category ? `${category} · ${label}` : label;
+    }
+
+    function parseViewerHash(hash) {
+      if (!hash) return null;
+      const match = hash.match(/^#view:([\w-]+)/i);
+      return match ? match[1] : null;
+    }
+
+    const SearchIcon = ({ className = "w-4 h-4", ...props }) =>
+      h(
+        "svg",
+        {
+          className,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          ...props,
+        },
+        h("circle", { cx: 11, cy: 11, r: 7 }),
+        h("line", { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+      );
+
+    const ShieldIcon = ({ className = "w-6 h-6", ...props }) =>
+      h(
+        "svg",
+        {
+          className,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          ...props,
+        },
+        h("path", { d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" })
+      );
+
+    function App() {
+      const getInitialRule = () => {
+        const params = new URLSearchParams(location.search);
+        return params.get('rule') || localStorage.getItem('rule') || 'naval';
+      };
+
+      const [ruleId, setRuleId] = useState(getInitialRule);
+      const [selectedSystemId, setSelectedSystemId] = useState(null);
+      const [classMode, setClassMode] = useState('manual');
+      const [clazz, setClazz] = useState('II');
+      const [odMM, setOdMM] = useState(60.3);
+      const [designPressureBar, setDesignPressureBar] = useState(7.5);
+      const [designTemperatureC, setDesignTemperatureC] = useState(25);
+      const [space, setSpace] = useState('other_machinery');
+      const [evaluation, setEvaluation] = useState(null);
+      const [hasPendingChanges, setHasPendingChanges] = useState(false);
+      const [viewer, setViewer] = useState(null);
+      const [viewerImageSrc, setViewerImageSrc] = useState('');
+      const [viewerImageStatus, setViewerImageStatus] = useState('idle');
+      const viewerHistoryRef = useRef(false);
+
+      const activeRules = RULESETS[ruleId] || RULESETS.naval;
+      const dict = useMemo(() => dictionaryFor(ruleId), [ruleId]);
+      const systems = activeRules.SYSTEMS || [];
+
+      useEffect(() => {
+        localStorage.setItem('rule', ruleId);
+      }, [ruleId]);
+
+      useEffect(() => {
+        if (!systems.length) {
+          setSelectedSystemId(null);
+          return;
+        }
+        if (!systems.some((item) => item.id === selectedSystemId)) {
+          setSelectedSystemId(systems[0]?.id ?? null);
+        }
+      }, [systems, selectedSystemId]);
+
+      useEffect(() => {
+        const defaultSchedule = SCHEDULES.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES[0];
+        if (defaultSchedule) {
+          setOdMM(defaultSchedule.od);
+        }
+      }, []);
+
+      const groupedSystems = useMemo(() => {
+        const order = [];
+        const byGroup = new Map();
+        for (const item of systems) {
+          if (!byGroup.has(item.group)) {
+            byGroup.set(item.group, []);
+            order.push(item.group);
+          }
+          byGroup.get(item.group).push(item);
+        }
+        return { order, byGroup };
+      }, [systems]);
+
+      function handleRuleChange(event) {
+        setRuleId(event.target.value);
+        setEvaluation(null);
+        setHasPendingChanges(true);
+      }
+
+      function markPendingChanges() {
+        setHasPendingChanges(true);
+        setEvaluation(null);
+      }
+
+      function computeEvaluation() {
+        if (!selectedSystemId) return;
+        const engineClass = RegulationEngines[ruleId] || RegulationEngines.naval;
+        const engine = engineClass.use(activeRules);
+        const context = engine.initContext({
+          systemId: selectedSystemId,
+          classMode,
+          clazz,
+          manualClass: clazz,
+          odMM,
+          designPressureBar,
+          designTemperatureC,
+          space,
+        });
+        engine.baseFromSystemRow(context);
+        engine.applyLocationConstraints(context);
+        engine.applyClassAndODLimits(context);
+        engine.applyGlobalConstraints(context);
+        engine.collectSystemNotes(context);
+        engine.collectObservations(context);
+        const result = engine.finalize(context);
+        setEvaluation(result);
+        setHasPendingChanges(false);
+      }
+
+      useEffect(() => {
+        const kind = parseViewerHash(window.location.hash);
+        if (kind) {
+          setViewer({ open: true, kind, title: buildViewerTitle(kind) });
+        } else {
+          setViewer(null);
+          viewerHistoryRef.current = false;
+        }
+      }, []);
+
+      useEffect(() => {
+        if (!viewer?.open) return;
+        const desiredSrc = JOINT_IMAGES[viewer.kind] || DEFAULT_JOINT_IMAGE;
+        setViewerImageStatus('loading');
+        const loader = new Image();
+        let cancelled = false;
+        loader.src = desiredSrc;
+        loader.onload = () => {
+          if (!cancelled) {
+            setViewerImageSrc(desiredSrc);
+            setViewerImageStatus('loaded');
+          }
+        };
+        loader.onerror = () => {
+          if (!cancelled) {
+            setViewerImageSrc(DEFAULT_JOINT_IMAGE);
+            setViewerImageStatus('error');
+          }
+        };
+        return () => {
+          cancelled = true;
+        };
+      }, [viewer]);
+
+      const system = systems.find((item) => item.id === selectedSystemId) || systems[0] || null;
+      const translatedGroup = translate(dict, 'groups', system?.group);
+      const translatedSystem = translate(dict, 'systems', system?.id);
+      const translatedCondition = translate(dict, 'conditions', evaluation?.details?.pipeSystemClass || system?.pipeSystemClass);
+      const translatedFireTest = translate(dict, 'fireTest', evaluation?.details?.fireTest || system?.fireTest);
+      const requirements = activeRules.LR_REQUIREMENTS_ES || [];
+
+      return html`
+        <div className="max-w-6xl mx-auto px-4 pb-16">
+          <header className="page-header py-10">
+            <div className="header-copy">
+              <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Slip-on joints</p>
+              <h1 className="text-3xl sm:text-4xl font-semibold">
+                Evaluador multi-norma para juntas mecánicas Grip-Type / Slip-on
+              </h1>
+              <p className="sublead text-slate-200">
+                Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño
+                para evaluar la compatibilidad de uniones mecánicas tipo Grip/Slip y sus alternativas.
+              </p>
+              <div className="flex flex-wrap gap-3 text-sm text-slate-300">
+                <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" />
+                  Pipeline unificado por norma (Strategy Pattern)</span>
+                <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" />
+                  Datos y notas aislados por ruleset</span>
+              </div>
+            </div>
+            <div className="header-brand">
+              <img src="./assets/brand/lr-glass.jpg" alt="Lloyd's Register" loading="lazy" />
+            </div>
+          </header>
+
+          <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Reglamento activo</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  value={ruleId}
+                  onChange=${handleRuleChange}
+                >
+                  ${Object.entries(RULESETS).map(([key, rule]) => html`
+                    <option key=${key} value=${key}>${rule.title}</option>
+                  `)}
+                </select>
+                <small className="text-slate-400">${activeRules.subtitle}</small>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Sistema / Servicio</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${selectedSystemId ?? ''}
+                  onChange=${(e) => { setSelectedSystemId(e.target.value); markPendingChanges(); }}
+                >
+                  ${groupedSystems.order.map((groupKey) => html`
+                    <optgroup key=${groupKey} label=${translate(dict, 'groups', groupKey)}>
+                      ${groupedSystems.byGroup.get(groupKey).map((item) => html`
+                        <option value=${item.id}>${translate(dict, 'systems', item.id)}</option>
+                      `)}
+                    </optgroup>
+                  `)}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Ubicación / espacio</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${space}
+                  onChange=${(e) => { setSpace(e.target.value); markPendingChanges(); }}
+                >
+                  ${SPACES.map((opt) => html`
+                    <option key=${opt.id} value=${opt.id}>${opt.label}</option>
+                  `)}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Modo de clase de tubería</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${classMode}
+                  onChange=${(e) => { setClassMode(e.target.value); markPendingChanges(); }}
+                >
+                  <option value="manual">Manual</option>
+                  <option value="auto">Sugerida por P/T</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Clase (I / II / III)</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${clazz}
+                  onChange=${(e) => { setClazz(e.target.value); markPendingChanges(); }}
+                  disabled=${classMode === 'auto'}
+                >
+                  <option value="I">Class I</option>
+                  <option value="II">Class II</option>
+                  <option value="III">Class III</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">OD (mm)</span>
+                <select
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${odMM}
+                  onChange=${(e) => { setOdMM(parseFloat(e.target.value)); markPendingChanges(); }}
+                >
+                  ${SCHEDULES.map((opt) => html`
+                    <option key=${opt.od} value=${opt.od}>${opt.label}</option>
+                  `)}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Presión de diseño (bar)</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${designPressureBar}
+                  onChange=${(e) => { setDesignPressureBar(parseFloat(e.target.value)); markPendingChanges(); }}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-slate-300">Temperatura de diseño (°C)</span>
+                <input
+                  type="number"
+                  step="1"
+                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                  value=${designTemperatureC}
+                  onChange=${(e) => { setDesignTemperatureC(parseFloat(e.target.value)); markPendingChanges(); }}
+                />
+              </label>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-900 font-semibold px-5 py-2 rounded-lg transition"
+                onClick=${computeEvaluation}
+                disabled=${!selectedSystemId || !systems.length}
+              >
+                <${SearchIcon} /> Evaluar compatibilidad
+              </button>
+              ${hasPendingChanges ? html`<span className="text-sm text-amber-300">Hay cambios sin evaluar.</span>` : null}
+            </div>
+          </section>
+
+          ${system ? html`
+            <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="text-sm text-slate-400 uppercase tracking-wide">Grupo</p>
+                  <p className="text-lg font-semibold">${translatedGroup}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400 uppercase tracking-wide">Sistema</p>
+                  <p className="text-lg font-semibold">${translatedSystem}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400 uppercase tracking-wide">Clase usada</p>
+                  <p className="text-lg font-semibold">${evaluation?.usedClass ?? clazz}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3 text-sm text-slate-300">
+                <div>
+                  <span className="block text-slate-400">Condición</span>
+                  <span className="font-medium">${translatedCondition || '—'}</span>
+                </div>
+                <div>
+                  <span className="block text-slate-400">Ensayo de fuego</span>
+                  <span className="font-medium">${translatedFireTest || '—'}</span>
+                </div>
+                <div>
+                  <span className="block text-slate-400">OD seleccionado</span>
+                  <span className="font-medium">${formatNumber(odMM)} mm</span>
+                </div>
+              </div>
+            </section>
+          ` : null}
+
+          ${evaluation ? html`
+            <section className="space-y-8">
+              <div className="result-row">
+                ${['pipeUnions', 'compression', 'slipOn'].map((category) => {
+                  const allowed = evaluation.categories?.[category];
+                  const cardClass = allowed ? 'result-card result-card--allowed' : 'result-card result-card--blocked';
+                  const titleEn = category === 'pipeUnions' ? 'Pipe unions' : category === 'compression' ? 'Compression couplings' : 'Slip-on joints';
+                  const titleEs = category === 'pipeUnions' ? 'Uniones para tubería' : category === 'compression' ? 'Acoples de compresión' : 'Juntas Slip-on';
+
+                  const content = (() => {
+                    if (category === 'pipeUnions') {
+                      const rule = evaluation.details?.pipeUnionsRule;
+                      return html`<li className=${`option-item ${allowed ? '' : 'disabled'}`}>
+                        <div className="text-sm text-slate-200">${rule?.reason || 'Aplicable según Tabla 12.2.9'}</div>
+                      </li>`;
+                    }
+                    if (category === 'compression') {
+                      const subs = evaluation.details?.compressionSubs || {};
+                      return html`<>
+                        ${Object.entries(subs).map(([subId, enabled]) => html`
+                          <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
+                            <span className="text-sm font-medium text-slate-200">${JOINT_LABELS[`compression_${subId}`]}</span>
+                          </li>
+                        `)}
+                      </>`;
+                    }
+                    const subs = evaluation.details?.slipOnSubs || {};
+                    return html`<>
+                      ${Object.entries(subs).map(([subId, enabled]) => html`
+                        <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
+                          <span className="text-sm font-medium text-slate-200">${JOINT_LABELS[`slip_${subId}`]}</span>
+                        </li>
+                      `)}
+                    </>`;
+                  })();
+
+                  return html`
+                    <article className=${cardClass} key=${category}>
+                      <header className="result-header text-center mb-4">
+                        <span className="result-title-es">${titleEs}</span>
+                        <span className="result-title-en">${titleEn}</span>
+                      </header>
+                      <ul className="option-list">${content}</ul>
+                    </article>
+                  `;
+                })}
+              </div>
+
+              <section className="grid gap-6 md:grid-cols-2">
+                <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
+                  <h2 className="text-lg font-semibold mb-3">Notas específicas del sistema</h2>
+                  ${evaluation.systemNotes?.length
+                    ? html`<ul className="notes-list">${evaluation.systemNotes.map((note, idx) => html`<li key=${idx}>${note}</li>`)}</ul>`
+                    : html`<p className="text-sm text-slate-400">La fila seleccionada no incluye notas adicionales.</p>`}
+                </div>
+                <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
+                  <h2 className="text-lg font-semibold mb-3">Observaciones (evaluación)</h2>
+                  ${evaluation.observations?.length
+                    ? html`<ul className="observations-list">${evaluation.observations.map((obs, idx) => html`<li key=${idx}>${obs}</li>`)}</ul>`
+                    : html`<p className="text-sm text-slate-400">Sin observaciones adicionales para las condiciones ingresadas.</p>`}
+                </div>
+              </section>
+
+              <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
+                <h2 className="text-lg font-semibold mb-3">Recomendaciones y requisitos LR</h2>
+                ${requirements.length
+                  ? html`<ul className="requirements-list">${requirements.map((req) => html`<li key=${req.id}><strong>${req.id}</strong>: ${req.text}</li>`)}</ul>`
+                  : html`<p className="text-sm text-slate-400">Sin requisitos adicionales configurados para esta norma.</p>`}
+              </section>
+            </section>
+          ` : html`
+            <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 text-sm text-slate-300">
+              Configura los parámetros y pulsa <strong>Evaluar compatibilidad</strong> para generar el informe.
+            </div>
+          `}
+        </div>
+
+        ${viewer?.open ? html`
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+                <h3 className="text-lg font-semibold">${viewer.title}</h3>
+                <button
+                  className="text-slate-300 hover:text-slate-100"
+                  onClick=${() => {
+                    const expectedHash = viewer?.kind ? `#view:${viewer.kind}` : null;
+                    if (expectedHash && viewerHistoryRef.current && window.location.hash === expectedHash && window.history.length > 1) {
+                      history.back();
+                    } else {
+                      const baseUrl = `${window.location.pathname}${window.location.search}`;
+                      history.replaceState(null, '', baseUrl);
+                      setViewer(null);
+                    }
+                  }}
+                >Cerrar</button>
+              </div>
+              <div className="p-4">
+                ${viewerImageStatus === 'loading'
+                  ? html`<p className="text-sm text-slate-400">Cargando imagen…</p>`
+                  : html`<img src=${viewerImageSrc || DEFAULT_JOINT_IMAGE} alt=${viewer.title} className="w-full h-auto rounded-lg" />`}
+              </div>
+            </div>
+          </div>
+        ` : null}
+      `;
+    }
+
+    const root = document.getElementById('root');
+    ReactDOM.createRoot(root).render(html`<${App} />`);
+  </script>
+</body>
+</html>
