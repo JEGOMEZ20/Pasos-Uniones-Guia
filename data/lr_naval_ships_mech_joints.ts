@@ -10,8 +10,7 @@ export const LR_NAVAL_DATASET = {
       "fire_test": "30min_dry",
       "notes": [
         2,
-        4,
-        3
+        4
       ],
       "allowed_joints": {
         "pipe_unions": true,

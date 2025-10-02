@@ -336,8 +336,10 @@
     import { RULESETS } from './rulesets/index.js';
     import { RegulationEngines } from './engines.js';
     import { I18N } from './i18n/index.js';
-    import evaluateLRShips from './dist/engine/lrShips.js';
-    import evaluateLRNavalShips from './dist/engine/evaluateLRNavalShips.js';
+    import evaluateLRShips, { evaluateGroups as evaluateLRShipsGroups } from './dist/engine/lrShips.js';
+    import evaluateLRNavalShips, {
+      evaluateGroups as evaluateLRNavalGroups,
+    } from './dist/engine/evaluateLRNavalShips.js';
     import lrShipsDataset from './dist/data/lr_ships_mech_joints.js';
     import lrNavalDataset from './dist/data/lr_naval_ships_mech_joints.js';
 
@@ -399,6 +401,22 @@
       pipeUnions: "pipe_unions",
       compression: "compression_couplings",
       slipOn: "slip_on_joints",
+    };
+
+    const CATEGORY_SUBTYPE_JOINTS = {
+      pipeUnions: ["pipe_union_welded_brazed"],
+      compression: [
+        "compression_swage",
+        "compression_press",
+        "compression_typical",
+        "compression_bite",
+        "compression_flared",
+      ],
+      slipOn: [
+        "slip_on_machine_grooved",
+        "slip_on_grip",
+        "slip_on_slip_type",
+      ],
     };
 
     const STATUS_LABELS = {
@@ -603,6 +621,12 @@
     function computeCategoryEvaluations({ ruleId, system, spaceId, usedClass, odMM, designPressureBar }) {
       const dataset = ruleId === "ships" ? lrShipsDataset : ruleId === "naval" ? lrNavalDataset : null;
       const evaluator = ruleId === "ships" ? evaluateLRShips : ruleId === "naval" ? evaluateLRNavalShips : null;
+      const groupsEvaluator =
+        ruleId === "ships"
+          ? evaluateLRShipsGroups
+          : ruleId === "naval"
+          ? evaluateLRNavalGroups
+          : null;
       if (!dataset || typeof evaluator !== "function" || !system) {
         return {};
       }
@@ -638,11 +662,86 @@
       }
 
       const evaluations = {};
-      for (const [category, joint] of Object.entries(JOINT_BY_CATEGORY)) {
-        try {
-          evaluations[category] = evaluator({ ...baseInput, joint });
-        } catch (error) {
-          console.warn(`No se pudo evaluar ${category}`, error);
+      const CLASS_LIMIT_MESSAGE = "Tabla 1.5.4/12.2.9: ningún subtipo cumple clase/OD";
+      const CLASS_LIMIT_KEYWORDS = ["Tabla 1.5.4", "Tabla 12.2.9"];
+
+      const pushUnique = (list, value) => {
+        if (!Array.isArray(list)) return;
+        if (!list.includes(value)) {
+          list.push(value);
+        }
+      };
+
+      const reasonMatchesLimit = (result) => {
+        if (!result) return false;
+        const directReason = typeof result.reason === "string" ? result.reason : "";
+        const reasonList = Array.isArray(result.reasons) ? result.reasons : [];
+        return CLASS_LIMIT_KEYWORDS.some((keyword) =>
+          directReason.includes(keyword) || reasonList.some((msg) => typeof msg === "string" && msg.includes(keyword))
+        );
+      };
+
+      for (const [category, groupJoint] of Object.entries(JOINT_BY_CATEGORY)) {
+        const subtypeJoints = CATEGORY_SUBTYPE_JOINTS[category] || [];
+        const groupInput = { ...baseInput, joint: groupJoint };
+        let groupDetail = null;
+
+        if (typeof groupsEvaluator === "function") {
+          try {
+            const groupResults = groupsEvaluator(groupInput, dataset);
+            if (groupResults && groupResults[groupJoint]) {
+              const raw = groupResults[groupJoint];
+              groupDetail = {
+                ...raw,
+                conditions: Array.isArray(raw.conditions) ? [...raw.conditions] : [],
+                reasons: Array.isArray(raw.reasons) ? [...raw.reasons] : [],
+                notesApplied: Array.isArray(raw.notesApplied) ? [...raw.notesApplied] : [],
+                generalClauses: Array.isArray(raw.generalClauses) ? [...raw.generalClauses] : [],
+                trace: Array.isArray(raw.trace) ? [...raw.trace] : [],
+              };
+            }
+          } catch (error) {
+            console.warn(`No se pudo calcular estado base del grupo ${category}`, error);
+          }
+        }
+
+        const subtypeResults = {};
+        for (const subtypeJoint of subtypeJoints) {
+          try {
+            subtypeResults[subtypeJoint] = evaluator({ ...baseInput, joint: subtypeJoint });
+          } catch (error) {
+            console.warn(`No se pudo evaluar subtipo ${subtypeJoint}`, error);
+          }
+        }
+
+        const subtypeValues = Object.values(subtypeResults);
+        const anySubtypeAllowed = subtypeValues.some((entry) => entry && entry.status !== "forbidden");
+        const allForbiddenByClassLimit =
+          subtypeValues.length > 0 &&
+          subtypeValues.every((entry) => entry && entry.status === "forbidden" && reasonMatchesLimit(entry));
+
+        if (groupDetail) {
+          if (allForbiddenByClassLimit) {
+            groupDetail.status = "forbidden";
+            pushUnique(groupDetail.reasons, CLASS_LIMIT_MESSAGE);
+            pushUnique(groupDetail.trace, CLASS_LIMIT_MESSAGE);
+            groupDetail.reason = CLASS_LIMIT_MESSAGE;
+          } else {
+            groupDetail.reason = groupDetail.reasons.length
+              ? groupDetail.reasons[groupDetail.reasons.length - 1]
+              : undefined;
+            if (!anySubtypeAllowed && subtypeValues.length > 0 && !groupDetail.reasons.length) {
+              groupDetail.reason = undefined;
+            }
+          }
+          groupDetail.subtypeResults = subtypeResults;
+          evaluations[category] = groupDetail;
+          continue;
+        }
+
+        if (subtypeValues.length) {
+          const fallback = { ...subtypeValues[0], subtypeResults };
+          evaluations[category] = fallback;
         }
       }
 
@@ -667,6 +766,9 @@
       }
       return { kind: raw, mode: "image" };
     }
+
+    const canInspectSubtype = (groupStatus, subtypeAllowed) =>
+      groupStatus !== "forbidden" && Boolean(subtypeAllowed);
 
     const SearchIcon = ({ className = "w-4 h-4", ...props }) =>
       h(
@@ -754,6 +856,16 @@
           setOdMM(defaultSchedule.od);
         }
       }, []);
+
+      useEffect(() => {
+        setEvaluation(null);
+        setEvaluationError(null);
+        setViewer(null);
+        setViewerTrace([]);
+        setViewerImageSrc('');
+        setViewerImageStatus('idle');
+        setHasPendingChanges(true);
+      }, [ruleId, selectedSystemId, space, clazz, odMM]);
 
       const groupedSystems = useMemo(() => {
         const order = [];
@@ -1039,7 +1151,7 @@
                 ${items.map((item, idx) => {
                   if (!item?.kind) return null;
                   const labels = getJointLabels(item.kind);
-                  const disabled = !item.enabled;
+                  const disabled = !canInspectSubtype(status, item.enabled);
                   return html`
                     <li className=${`option-item${disabled ? ' disabled' : ''}`} key=${`${item.kind}-${idx}`}>
                       <div className="option-text">
