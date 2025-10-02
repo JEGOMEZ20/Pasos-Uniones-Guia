@@ -431,7 +431,7 @@
         return params.get('rule') || localStorage.getItem('rule') || 'naval';
       };
 
-      const [ruleId, setRuleId] = useState(getInitialRule);
+      const [ruleId, setRuleId] = useState(() => getInitialRule());
       const [selectedSystemId, setSelectedSystemId] = useState(null);
       const [classMode, setClassMode] = useState('manual');
       const [clazz, setClazz] = useState('II');
@@ -535,6 +535,12 @@
         setEvaluation(null);
         setHasPendingChanges(true);
         setEvaluationError(null);
+      }
+
+      function handleClassModeChange(nextMode) {
+        if (nextMode === classMode) return;
+        setClassMode(nextMode);
+        markPendingChanges();
       }
 
       function markPendingChanges() {
@@ -753,7 +759,7 @@
                 <span className="text-slate-300">Reglamento activo</span>
                 <select
                   className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  value={ruleId}
+                  value=${ruleId}
                   onChange=${handleRuleChange}
                 >
                   ${Object.entries(RULESETS).map(([key, rule]) => html`
@@ -793,31 +799,51 @@
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1 text-sm">
+              <div className="flex flex-col gap-1 text-sm">
                 <span className="text-slate-300">Modo de clase de tubería</span>
-                <select
-                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-                  value=${classMode}
-                  onChange=${(e) => { setClassMode(e.target.value); markPendingChanges(); }}
-                >
-                  <option value="manual">Manual</option>
-                  <option value="auto">Sugerida por P/T</option>
-                </select>
-              </label>
+                <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-1 flex gap-1">
+                  <button
+                    type="button"
+                    className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'manual'
+                      ? 'bg-sky-500 text-slate-900 shadow'
+                      : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
+                    onClick=${() => handleClassModeChange('manual')}
+                  >
+                    Clase
+                  </button>
+                  <button
+                    type="button"
+                    className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'auto'
+                      ? 'bg-sky-500 text-slate-900 shadow'
+                      : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
+                    onClick=${() => handleClassModeChange('auto')}
+                  >
+                    Manual
+                  </button>
+                </div>
+                <small className="text-slate-400">
+                  ${classMode === 'manual'
+                    ? 'Selecciona Clase I / II / III.'
+                    : 'Ingresa presión y temperatura de diseño.'}
+                </small>
+              </div>
 
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-slate-300">Clase (I / II / III)</span>
-                <select
-                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-                  value=${clazz}
-                  onChange=${(e) => { setClazz(e.target.value); markPendingChanges(); }}
-                  disabled=${classMode === 'auto'}
-                >
-                  <option value="I">Clase I</option>
-                  <option value="II">Clase II</option>
-                  <option value="III">Clase III</option>
-                </select>
-              </label>
+              ${classMode === 'manual'
+                ? html`
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="text-slate-300">Clase (I / II / III)</span>
+                      <select
+                        className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                        value=${clazz}
+                        onChange=${(e) => { setClazz(e.target.value); markPendingChanges(); }}
+                      >
+                        <option value="I">Clase I</option>
+                        <option value="II">Clase II</option>
+                        <option value="III">Clase III</option>
+                      </select>
+                    </label>
+                  `
+                : null}
 
               <label className="flex flex-col gap-1 text-sm">
                 <span className="text-slate-300">OD (mm)</span>
@@ -832,27 +858,31 @@
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-slate-300">Presión de diseño (bar)</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-                  value=${designPressureBar}
-                  onChange=${(e) => { setDesignPressureBar(parseFloat(e.target.value)); markPendingChanges(); }}
-                />
-              </label>
+              ${classMode === 'auto'
+                ? html`
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="text-slate-300">Presión de diseño (bar)</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                        value=${designPressureBar}
+                        onChange=${(e) => { setDesignPressureBar(parseFloat(e.target.value)); markPendingChanges(); }}
+                      />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-slate-300">Temperatura de diseño (°C)</span>
-                <input
-                  type="number"
-                  step="1"
-                  className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-                  value=${designTemperatureC}
-                  onChange=${(e) => { setDesignTemperatureC(parseFloat(e.target.value)); markPendingChanges(); }}
-                />
-              </label>
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="text-slate-300">Temperatura de diseño (°C)</span>
+                      <input
+                        type="number"
+                        step="1"
+                        className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                        value=${designTemperatureC}
+                        onChange=${(e) => { setDesignTemperatureC(parseFloat(e.target.value)); markPendingChanges(); }}
+                      />
+                    </label>
+                  `
+                : null}
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
