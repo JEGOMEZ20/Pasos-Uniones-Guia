@@ -1,12 +1,12 @@
 const BASE_COUPLING_RULES = {
   pipeUnions: (clazz, odMM) => {
     if (clazz === "III") {
-      return { allowed: true, reason: "+ (sin límite de OD en Class III)" };
+      return { allowed: true, reason: "+ (sin límite de OD en Clase III)" };
     }
     const ok = odMM <= 60.3;
     return {
       allowed: ok,
-      reason: ok ? "+ (OD ≤ 60,3 mm en Class I/II)" : "En Class I/II solo se permite OD ≤ 60,3 mm.",
+      reason: ok ? "+ (OD ≤ 60,3 mm en Clase I/II)" : "En Clase I/II solo se permite OD ≤ 60,3 mm.",
     };
   },
   compressionSubtypes: (clazz, odMM) => ({
@@ -62,16 +62,19 @@ export class BaseEngine {
       designPressureBar,
       designTemperatureC,
       space: ctx.space,
-      baseAllowances: system ? { ...system.allowed } : { pipeUnions: false, compression: false, slipOn: false },
-      currentAllowances: system ? { ...system.allowed } : { pipeUnions: false, compression: false, slipOn: false },
+      baseAllowances: { pipeUnions: false, compression: false, slipOn: false },
+      currentAllowances: { pipeUnions: false, compression: false, slipOn: false },
       details: {
-        pipeSystemClass: system?.pipeSystemClass ?? null,
-        fireTest: system?.fireTest ?? null,
+        pipeSystemClass: null,
+        fireTest: null,
         suggestedClass: this.suggestClass(mediumGroup, designPressureBar, designTemperatureC),
         mediumGroup,
         odMM,
         design: { P: designPressureBar, T: designTemperatureC },
         classMode,
+        pipeUnionsRule: { allowed: false, reason: "" },
+        compressionSubs: { swage: false, bite: false, typical: false, flared: false, press: false },
+        slipOnSubs: { machine_grooved: false, grip: false, slip: false },
       },
       systemNotes: [],
       observations: [],
@@ -81,6 +84,24 @@ export class BaseEngine {
   }
 
   baseFromSystemRow(ctx) {
+    const sys = ctx.system;
+    if (!sys) {
+      ctx.baseAllowances = { pipeUnions: false, compression: false, slipOn: false };
+      ctx.currentAllowances = { ...ctx.baseAllowances };
+      ctx.details.pipeSystemClass = null;
+      ctx.details.fireTest = null;
+      return ctx;
+    }
+
+    const allowed = sys.allowed || {};
+    ctx.baseAllowances = {
+      pipeUnions: Boolean(allowed.pipeUnions),
+      compression: Boolean(allowed.compression),
+      slipOn: Boolean(allowed.slipOn),
+    };
+    ctx.currentAllowances = { ...ctx.baseAllowances };
+    ctx.details.pipeSystemClass = sys.pipeSystemClass ?? null;
+    ctx.details.fireTest = sys.fireTest ?? null;
     return ctx;
   }
 
@@ -123,13 +144,13 @@ export class BaseEngine {
       if (!compressionAllowed) {
         const odDisplay = formatNumber(ctx.odMM);
         ctx.observations.push(
-          `En Class ${ctx.usedClass}${ctx.usedClass !== "III" ? ` y OD ${odDisplay} mm` : ""} no queda ningún subtipo de compresión permitido.`
+          `En Clase ${ctx.usedClass}${ctx.usedClass !== "III" ? ` y OD ${odDisplay} mm` : ""} no queda ningún subtipo de compresión permitido.`
         );
       } else {
         if (ctx.usedClass !== "III") {
-          ctx.observations.push("Swage/Press solo en Class III.");
+          ctx.observations.push("Swage/Press solo en Clase III.");
           if (ctx.odMM > 60.3) {
-            ctx.observations.push("En Class I/II, Bite/Typical/Flared solo hasta OD 60,3 mm.");
+            ctx.observations.push("En Clase I/II, Bite/Typical/Flared solo hasta OD 60,3 mm.");
           }
         }
       }
@@ -142,9 +163,9 @@ export class BaseEngine {
       slipOnAllowed = slipOnAllowed && Object.values(slipOnSubs).some(Boolean);
       slipOnAllowed = applyOverride("slipOn", slipOnAllowed);
       if (!slipOnAllowed) {
-        ctx.observations.push("Slip type Grip/Slip no se permiten en Class I.");
+        ctx.observations.push("Slip type Grip/Slip no se permiten en Clase I.");
       } else if (ctx.usedClass === "I") {
-        ctx.observations.push("Grip/Slip no se permiten en Class I.");
+        ctx.observations.push("Grip/Slip no se permiten en Clase I.");
       }
     }
 
@@ -211,28 +232,36 @@ export class BaseEngine {
       notes.push(ctx.system.remarks);
     }
     ctx.systemNotes = notes;
-    return notes;
+    return ctx;
   }
 
   collectObservations(ctx) {
-    return ctx.observations;
+    return ctx;
   }
 
   finalize(ctx) {
-    const categories = { ...ctx.currentAllowances };
-    if (!categories.slipOn && ctx.baseAllowances?.slipOn) {
+    const allowed = { ...ctx.currentAllowances };
+    if (!allowed.slipOn && ctx.baseAllowances?.slipOn) {
       ctx.reasons.push(
         "Slip-on permitido por la tabla base, pero bloqueado por ubicación, clase u otras condiciones del reglamento."
       );
     }
+
+    const classLabel =
+      ctx.usedClass === "I" ? "Class I" : ctx.usedClass === "II" ? "Class II" : ctx.usedClass === "III" ? "Class III" : ctx.usedClass;
+
     return {
-      sys: ctx.system,
-      usedClass: ctx.usedClass,
-      categories,
-      reasons: ctx.reasons,
+      allowed,
+      fireTest: ctx.details.fireTest ?? null,
+      systemNotes: [...ctx.systemNotes],
+      observations: [...ctx.observations],
+      usedClass: classLabel,
+      odMM: ctx.odMM,
+      system: ctx.system,
+      pipeSystemClass: ctx.details.pipeSystemClass ?? null,
+      space: ctx.space,
+      reasons: [...ctx.reasons],
       details: ctx.details,
-      systemNotes: ctx.systemNotes,
-      observations: ctx.observations,
       extras: ctx.extras,
     };
   }
@@ -274,59 +303,105 @@ export class NavalEngine extends BaseEngine {
 }
 
 export class ShipsEngine extends BaseEngine {
+  baseFromSystemRow(ctx) {
+    super.baseFromSystemRow(ctx);
+    return ctx;
+  }
+
   applyLocationConstraints(ctx) {
-    const tableNotes = this.ruleset?.TABLE_NOTES_ES || {};
-    // Nota 2: solo bloquea Slip-on dentro de Cat. A y alojamientos.
-    if (["category_a", "accommodation"].includes(ctx.space)) {
-      ctx.currentAllowances.slipOn = false;
-      const note2 = tableNotes["2"];
-      ctx.observations.push(note2 ? `Nota 2: ${note2}` : "Slip-on bloqueado por la ubicación seleccionada (Nota 2).");
-    } else if (ctx.space === "other_machinery") {
-      // En otros espacios de maquinaria no se debe agregar Nota 2 como nota del sistema.
-      const isFuelOil = (ctx.system?.id || "").includes("fuel_oil") || /fuel oil/i.test(ctx.system?.system || "");
-      if (isFuelOil) {
+    const isCatA = ctx.space === "category_a";
+    const isAccom = ctx.space === "accommodation";
+    const isOtherM = ctx.space === "other_machinery";
+    const isFuelOil =
+      /fuel oil/i.test(ctx.system?.system || "") || (ctx.system?.id || "").includes("fuel_oil");
+
+    if (isCatA || isAccom) {
+      if (ctx.currentAllowances.slipOn) {
         ctx.currentAllowances.slipOn = false;
-        ctx.observations.push("Slip-on no aceptadas en líneas de fuel oil dentro de otros espacios de maquinaria.");
+      }
+      ctx.observations.push(
+        "Nota 2: Slip-on no se aceptan en espacios de máquinas de categoría A ni alojamientos."
+      );
+      return ctx;
+    }
+
+    if (isOtherM) {
+      if (isFuelOil) {
+        if (ctx.currentAllowances.slipOn) {
+          ctx.currentAllowances.slipOn = false;
+        }
+        ctx.observations.push(
+          "Slip-on no aceptadas para fuel oil en otros espacios de maquinaria (criterio prudencial basado en Nota 2)."
+        );
+      } else {
+        ctx.observations.push(
+          "Nota 2: En otros espacios de maquinaria, slip-on solo si quedan en posiciones visibles y accesibles."
+        );
       }
     }
     return ctx;
   }
 
   applyGlobalConstraints(ctx) {
-    super.applyGlobalConstraints(ctx);
     const comments = this.ruleset?.GENERAL_COMMENTS || {};
-    if (comments.steamDeck) {
-      if (ctx.system?.id === "misc_steam" && ctx.space === "open_deck" && ctx.designPressureBar <= 10) {
-        ctx.observations.push(comments.steamDeck);
-      } else if (ctx.system?.id === "misc_steam") {
-        ctx.observations.push(`${comments.steamDeck} (verifica P ≤ 1 MPa y ubicación en cubierta expuesta).`);
+    const pushUnique = (message) => {
+      if (message && !ctx.observations.includes(message)) {
+        ctx.observations.push(message);
+      }
+    };
+
+    super.applyGlobalConstraints(ctx);
+
+    const groupName = (ctx.system?.group || "").toLowerCase();
+    const isFlammableGroup = groupName.includes("flammable") || ctx.mediumGroup === "flammable_liquids";
+
+    if (comments.hullSide && !isFlammableGroup) {
+      ctx.observations = ctx.observations.filter((obs) => obs !== comments.hullSide);
+    }
+
+    if (ctx.space === "category_a") {
+      pushUnique(
+        "Nota 4: Aplicar ensayo de resistencia al fuego cuando se instalan juntas dentro de espacios de máquinas de categoría A."
+      );
+    }
+
+    if (ctx.system?.id === "misc_steam" && ctx.space === "weather_deck_oil_chem_tanker") {
+      const pressure = Number.isFinite(ctx.designPressureBar) ? ctx.designPressureBar : 999;
+      if (pressure <= 10) {
+        pushUnique(
+          "2.12.10: Permitidas 'restrained slip-on' en vapor en cubierta a la intemperie para P ≤ 1 MPa."
+        );
+      } else {
+        pushUnique("2.12.10: P > 1 MPa → no aplica permiso de 'restrained slip-on' en cubierta.");
       }
     }
-    if (comments.slipOnInaccessible && ["cargo_hold", "tank"].includes(ctx.space)) {
-      ctx.currentAllowances.slipOn = false;
-      ctx.observations.push(comments.slipOnInaccessible);
-    }
+
     if (ctx.space === "passenger_below_bulkhead") {
       ctx.currentAllowances.pipeUnions = false;
       ctx.currentAllowances.compression = false;
       ctx.currentAllowances.slipOn = false;
-      ctx.observations.push(
-        "Nota 5 / 2.12.5: Bajo la cubierta de mamparo de buques de pasaje deben evitarse juntas mecánicas que puedan propagar fuego o inundación."
+      pushUnique(
+        "Nota 5 / 2.12.5: Bajo la cubierta de mamparo en buques de pasaje deben evitarse juntas que puedan propagar incendio o inundación."
+      );
+    }
+
+    if (isFlammableGroup) {
+      pushUnique(
+        "2.12.7: Minimizar juntas mecánicas; preferir bridas según norma reconocida."
+      );
+      pushUnique(
+        "2.12.5: Evitar juntas mecánicas en tramos conectados al costado bajo cubierta o en tanques con fluidos inflamables."
       );
     }
     return ctx;
   }
 
   collectSystemNotes(ctx) {
-    const notes = super.collectSystemNotes(ctx);
-    if (ctx.system?.fireTest && /not required/i.test(ctx.system.fireTest) === false) {
-      ctx.observations.push(`Requiere ensayo de resistencia al fuego: ${ctx.system.fireTest}.`);
-      ctx.observations.push("La junta seleccionada debe ser de tipo resistente al fuego aprobado.");
-    }
+    super.collectSystemNotes(ctx);
     if (this.ruleset?.FIRE_TEST_EQUIVALENCE) {
       ctx.extras.fireTestEquivalence = this.ruleset.FIRE_TEST_EQUIVALENCE;
     }
-    return notes;
+    return ctx;
   }
 }
 
