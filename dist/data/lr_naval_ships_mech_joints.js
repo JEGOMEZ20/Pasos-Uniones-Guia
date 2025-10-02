@@ -553,23 +553,19 @@ export const LR_NAVAL_DATASET = {
         {
             "joint": "slip_on_machine_grooved",
             "class": [
-                "I",
-                "II",
-                "III"
+                "I"
             ]
         },
         {
             "joint": "slip_on_grip",
             "class": [
-                "II",
-                "III"
+                "I"
             ]
         },
         {
             "joint": "slip_on_slip_type",
             "class": [
-                "II",
-                "III"
+                "I"
             ]
         }
     ],
