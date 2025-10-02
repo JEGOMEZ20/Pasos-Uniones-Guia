@@ -1,7 +1,6 @@
 import dataset, {
   LRShipsDataset,
   LRShipsJointGroup,
-  LRShipsPipeClassRule,
   LRShipsSystem,
   Space,
   Joint,
@@ -12,6 +11,57 @@ import type { ClauseRef, EvalResult, EvalStatus } from "./evalTypes.js";
 export type { Space, Joint, PipeClass } from "../data/lr_ships_mech_joints.js";
 
 type Group = "pipe_unions" | "compression_couplings" | "slip_on_joints";
+
+type SubtypeJoint = Exclude<Joint, Group>;
+
+export interface LRShipsSubtypeRule {
+  id: string;
+  joint: SubtypeJoint;
+  classes: PipeClass[];
+  od_max_mm?: Partial<Record<PipeClass, number>>;
+}
+
+export const SUBTYPE_RULES: Record<Group, LRShipsSubtypeRule[]> = {
+  pipe_unions: [
+    {
+      id: "welded_brazed",
+      joint: "pipe_union_welded_brazed",
+      classes: ["I", "II", "III"],
+      od_max_mm: { I: 60.3, II: 60.3 },
+    },
+  ],
+  compression_couplings: [
+    { id: "swage", joint: "compression_swage", classes: ["I", "II", "III"] },
+    {
+      id: "bite",
+      joint: "compression_bite",
+      classes: ["I", "II", "III"],
+      od_max_mm: { I: 60.3, II: 60.3 },
+    },
+    {
+      id: "typical",
+      joint: "compression_typical",
+      classes: ["I", "II", "III"],
+      od_max_mm: { I: 60.3, II: 60.3 },
+    },
+    {
+      id: "flared",
+      joint: "compression_flared",
+      classes: ["I", "II", "III"],
+      od_max_mm: { I: 60.3, II: 60.3 },
+    },
+    { id: "press", joint: "compression_press", classes: ["III"] },
+  ],
+  slip_on_joints: [
+    {
+      id: "machine_grooved",
+      joint: "slip_on_machine_grooved",
+      classes: ["I", "II", "III"],
+    },
+    { id: "grip", joint: "slip_on_grip", classes: ["II", "III"] },
+    { id: "slip_type", joint: "slip_on_slip_type", classes: ["II", "III"] },
+  ],
+};
 
 interface GroupEvalResult extends EvalResult {
   clauses: ClauseRef[];
@@ -93,7 +143,7 @@ export function evaluateLRShips(ctx: LRShipsContext, db: LRShipsDataset = datase
   let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
 
   if (status !== "forbidden") {
-    const rulesForJoint = collectRulesForJoint(normalizedCtx.joint, db);
+    const rulesForJoint = collectRulesForJoint(normalizedCtx.joint);
     if (rulesForJoint.length) {
       const pipeClass = normalizedCtx.pipeClass;
       const odValue = typeof normalizedCtx.od_mm === "number" ? normalizedCtx.od_mm : undefined;
@@ -176,7 +226,7 @@ function evaluateGroupsForRow(
   };
 
   const rowNotes = new Set<number>(row?.notes ?? []);
-  const fireTestLabel = row?.fire_test ? labelFire(row.fire_test) : null;
+  const fireTestLabel = labelFire(row.fire_test);
 
   if (fireTestLabel) {
     for (const result of Object.values(groups)) {
@@ -218,9 +268,7 @@ function evaluateGroupsForRow(
 
   if (pipeClass) {
     for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
-      const subtypeRules = db.pipe_class_rules.filter(
-        (rule) => groupOf(rule.joint) === groupName
-      );
+      const subtypeRules = SUBTYPE_RULES[groupName] ?? [];
       if (!subtypeRules.length) continue;
 
       let anySubtypeOk = false;
@@ -296,7 +344,7 @@ function applyNote_LRShips(
       if (group !== "slip_on_joints") break;
       if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
         out.status = "forbidden";
-        pushOnce(out.reasons, "Nota 2: Slip-on no aceptadas en Cat. A / alojamientos");
+        pushOnce(out.reasons, "Nota 2: Slip-on prohibidas en Cat. A / alojamientos");
         pushOnce(out.notesApplied, note);
         pushOnce(out.trace, `Nota 2: Slip-on prohibidas en ${ctx.space}.`);
       } else if (
@@ -306,7 +354,7 @@ function applyNote_LRShips(
         out.status = out.status === "forbidden" ? "forbidden" : "conditional";
         pushOnce(
           out.conditions,
-          "Ubicar en posición visible/accesible (MSC/Circ.734)"
+          "Ubicar en posición visible/accesible (Nota 2)"
         );
         pushOnce(out.notesApplied, note);
         pushOnce(out.trace, "Nota 2: exigir ubicación visible/accesible en otras máquinas.");
@@ -316,7 +364,7 @@ function applyNote_LRShips(
     case 4: {
       if (ctx.space === "machinery_cat_A") {
         out.status = out.status === "forbidden" ? "forbidden" : "conditional";
-        pushOnce(out.conditions, "Ensayo de fuego en Cat. A (Nota 4)");
+        pushOnce(out.conditions, "Ensayo adicional en Cat. A (Nota 4)");
         pushOnce(out.notesApplied, note);
         pushOnce(out.trace, "Nota 4: Cat. A ⇒ ensayo de fuego específico.");
       }
@@ -325,7 +373,7 @@ function applyNote_LRShips(
     case 3: {
       if (ctx.space !== "open_deck") {
         out.status = out.status === "forbidden" ? "forbidden" : "conditional";
-        pushOnce(out.conditions, "Junta de tipo resistente al fuego");
+        pushOnce(out.conditions, "Junta de tipo resistente al fuego (Nota 3)");
         pushOnce(out.notesApplied, note);
         pushOnce(out.trace, "Nota 3: exigir junta de tipo resistente al fuego.");
       }
@@ -471,16 +519,17 @@ function groupOf(joint: Joint): LRShipsJointGroup | null {
   return null;
 }
 
-function labelFire(value: NonNullable<LRShipsSystem["fire_test"]>) {
+function labelFire(value: LRShipsSystem["fire_test"]): string | null {
   switch (value) {
     case "30min_dry":
-      return "Ensayo fuego 30 min seco";
+      return "30 min seco";
     case "30min_wet":
-      return "Ensayo fuego 30 min húmedo";
-    case "8min_dry_plus_22min_wet":
-      return "Ensayo fuego 8 min seco + 22 min húmedo";
+      return "30 min húmedo";
+    case "8+22":
+      return "8 min seco + 22 min húmedo";
+    case "not_required":
     default:
-      return value;
+      return null;
   }
 }
 
@@ -495,24 +544,24 @@ function describeJointGroup(group: LRShipsJointGroup) {
   }
 }
 
-function collectRulesForJoint(joint: Joint, db: LRShipsDataset): LRShipsPipeClassRule[] {
-  const direct = db.pipe_class_rules.filter((rule) => rule.joint === joint);
-  if (direct.length) {
-    return direct;
-  }
+function collectRulesForJoint(joint: Joint): LRShipsSubtypeRule[] {
   const group = groupOf(joint);
   if (!group) {
     return [];
   }
-  return db.pipe_class_rules.filter((rule) => groupOf(rule.joint) === group);
+  const rules = SUBTYPE_RULES[group] ?? [];
+  if (joint === group) {
+    return rules;
+  }
+  return rules.filter((rule) => rule.joint === joint);
 }
 
-function passClassOD(
-  rule: LRShipsPipeClassRule,
+export function passClassOD(
+  rule: LRShipsSubtypeRule,
   pipeClass: PipeClass,
   odMM: number | undefined
 ): boolean {
-  if (!rule.class.includes(pipeClass)) {
+  if (!rule.classes.includes(pipeClass)) {
     return false;
   }
   const limit = rule.od_max_mm?.[pipeClass];
@@ -522,10 +571,10 @@ function passClassOD(
   if (odMM === undefined) {
     return false;
   }
-  return odMM <= limit + 1e-6;
+  return odMM <= limit;
 }
 
-function formatRuleDetail(rule: LRShipsPipeClassRule, pipeClass: PipeClass): string {
+function formatRuleDetail(rule: LRShipsSubtypeRule, pipeClass: PipeClass): string {
   const limit = rule.od_max_mm?.[pipeClass];
   if (limit == null) {
     return `Tabla 12.2.9: Clase ${pipeClass}`;

@@ -20,7 +20,7 @@ export const LR_SHIPS_DATASET = {
             label_es: "Líneas de achique",
             label_en: "Bilge lines",
             class_of_pipe_system: "dry/wet",
-            fire_test: "8min_dry_plus_22min_wet",
+            fire_test: "8+22",
             notes: [4],
             allowed_joints: {
                 pipe_unions: true,
@@ -86,7 +86,7 @@ export const LR_SHIPS_DATASET = {
             label_es: "Sistema sanitario",
             label_en: "Sanitary system",
             class_of_pipe_system: "wet",
-            fire_test: null,
+            fire_test: "not_required",
             notes: [],
             allowed_joints: {
                 pipe_unions: true,
@@ -101,7 +101,7 @@ export const LR_SHIPS_DATASET = {
             class: ["I", "II", "III"],
             od_max_mm: { I: 60.3, II: 60.3 },
         },
-        { joint: "compression_swage", class: ["III"] },
+        { joint: "compression_swage", class: ["I", "II", "III"] },
         {
             joint: "compression_bite",
             class: ["I", "II", "III"],
@@ -139,8 +139,8 @@ export const LR_SHIPS_DATASET = {
         "7": {
             type: "test_equivalence",
             equivalences: {
-                "30min_dry": "8min_dry_plus_22min_wet",
-                "8min_dry_plus_22min_wet": "30min_dry",
+                "30min_dry": "8+22",
+                "8+22": "30min_dry",
                 "30min_wet": "30min_wet",
             },
         },

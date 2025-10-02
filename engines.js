@@ -1,16 +1,18 @@
 const BASE_COUPLING_RULES = {
   pipeUnions: (clazz, odMM) => {
     if (clazz === "III") {
-      return { allowed: true, reason: "+ (sin límite de OD en Clase III)" };
+      return { allowed: true, reason: "Tabla 12.2.9: Clase III sin límite de OD" };
     }
     const ok = odMM <= 60.3;
     return {
       allowed: ok,
-      reason: ok ? "+ (OD ≤ 60,3 mm en Clase I/II)" : "En Clase I/II solo se permite OD ≤ 60,3 mm.",
+      reason: ok
+        ? "Tabla 12.2.9: Clase I/II con OD ≤ 60,3 mm"
+        : "Tabla 12.2.9: Clase I/II sólo hasta OD 60,3 mm",
     };
   },
   compressionSubtypes: (clazz, odMM) => ({
-    swage: clazz === "III",
+    swage: true,
     bite: clazz === "III" ? true : odMM <= 60.3,
     typical: clazz === "III" ? true : odMM <= 60.3,
     flared: clazz === "III" ? true : odMM <= 60.3,
@@ -144,13 +146,13 @@ export class BaseEngine {
       if (!compressionAllowed) {
         const odDisplay = formatNumber(ctx.odMM);
         ctx.observations.push(
-          `En Clase ${ctx.usedClass}${ctx.usedClass !== "III" ? ` y OD ${odDisplay} mm` : ""} no queda ningún subtipo de compresión permitido.`
+          `Tabla 12.2.9: En Clase ${ctx.usedClass}${ctx.usedClass !== "III" ? ` y OD ${odDisplay} mm` : ""} no queda ningún subtipo de compresión permitido.`
         );
       } else {
         if (ctx.usedClass !== "III") {
-          ctx.observations.push("Swage/Press solo en Clase III.");
+          ctx.observations.push("Tabla 12.2.9: Press solo permitido en Clase III.");
           if (ctx.odMM > 60.3) {
-            ctx.observations.push("En Clase I/II, Bite/Typical/Flared solo hasta OD 60,3 mm.");
+            ctx.observations.push("Tabla 12.2.9: En Clase I/II, Bite/Typical/Flared solo hasta OD 60,3 mm.");
           }
         }
       }
