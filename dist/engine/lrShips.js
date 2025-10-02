@@ -172,7 +172,11 @@ function groupOf(joint) {
     }
     if (joint === "pipe_union_welded_brazed")
         return "pipe_unions";
-    if (joint === "compression_bite" || joint === "compression_flared" || joint === "compression_press") {
+    if (joint === "compression_swage" ||
+        joint === "compression_typical" ||
+        joint === "compression_bite" ||
+        joint === "compression_flared" ||
+        joint === "compression_press") {
         return "compression_couplings";
     }
     if (joint === "slip_on_machine_grooved" ||

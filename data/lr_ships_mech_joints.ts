@@ -41,6 +41,8 @@ export type Joint =
   | "compression_couplings"
   | "slip_on_joints"
   | "pipe_union_welded_brazed"
+  | "compression_swage"
+  | "compression_typical"
   | "compression_bite"
   | "compression_flared"
   | "compression_press"
