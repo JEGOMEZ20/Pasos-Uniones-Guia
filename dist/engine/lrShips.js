@@ -187,13 +187,21 @@ function applyRowNotes(ctx, row, out) {
         return;
     if (row.notes.includes(2)) {
         const ev = out.slip_on_joints;
-        if (ev.status !== "forbidden") {
-            if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
-                block(ev, "Nota 2: Slip-on no aceptadas en Cat. A / alojamientos");
+        let applied = false;
+        if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
+            if (ev.status !== "forbidden") {
+                ev.status = "forbidden";
             }
-            else if (ctx.space === "other_machinery_accessible") {
+            pushUnique(ev.reasons, "Slip-on no aceptadas en espacios de máquinas de categoría A ni alojamientos.");
+            applied = true;
+        }
+        else if (ctx.space === "other_machinery_accessible") {
+            if (ev.status !== "forbidden") {
                 makeConditional(ev, "Ubicar en posición visible/accesible (MSC/Circ.734)");
+                applied = true;
             }
+        }
+        if (applied) {
             note(ev, 2);
         }
     }
