@@ -16,6 +16,14 @@ const NOTE7_INFO_CHIP = "HVAC/intakes: ver secciones específicas de las Reglas"
 const SLIP_TYPE_WARNING = "No como medio principal (slip-type)";
 const TAILORING_CHIP_PREFIX = "Tailoring Doc: validar";
 const db = dataset;
+function markConditional(result, condition) {
+    if (result.status === "allowed") {
+        result.status = "conditional";
+    }
+    if (condition) {
+        pushOnce(result.conditions, condition);
+    }
+}
 function normalizeNavalContext(ctx) {
     const mediumSame = ctx.mediumInPipeSameAsTank ?? true;
     return {
@@ -185,13 +193,13 @@ function applyNoteScoped_LRNavalShips(noteId, ctx, row, datasetOverride, group, 
             break;
         }
         case 3: {
-            if (ctx.space !== "open_deck_low_risk_SOLAS_9_2_3_3_2_2_10") {
-                if (out.status === "allowed") {
-                    out.status = "conditional";
+            const rowNotes = new Set(row?.notes ?? []);
+            if (rowNotes.has(3)) {
+                if (ctx.space !== "open_deck_low_risk_SOLAS_9_2_3_3_2_2_10") {
+                    markConditional(out, NOTE3_FIRE_CHIP);
+                    pushOnce(out.notesApplied, noteId);
+                    out.trace.push("Nota 3: exigir juntas resistentes al fuego.");
                 }
-                pushOnce(out.conditions, NOTE3_FIRE_CHIP);
-                pushOnce(out.notesApplied, noteId);
-                out.trace.push("Nota 3: exigir juntas resistentes al fuego.");
             }
             break;
         }

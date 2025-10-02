@@ -107,6 +107,7 @@ describe("evaluateLRShips", () => {
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
     expect(result.notesApplied).toContain(4);
+    expect(result.notesApplied).not.toContain(2);
     expect(result.reasons).toHaveLength(0);
     expect(result.generalClauses).toHaveLength(0);
   });

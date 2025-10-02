@@ -138,6 +138,15 @@ type NavalDataset = {
 
 const db = dataset as NavalDataset;
 
+function markConditional(result: GroupEvalResult, condition?: string) {
+  if (result.status === "allowed") {
+    result.status = "conditional";
+  }
+  if (condition) {
+    pushOnce(result.conditions, condition);
+  }
+}
+
 type ClassCheckResult =
   | { ok: true; detail?: string }
   | { ok: false; reason: "missing_inputs" | "limit"; detail?: string };
@@ -354,13 +363,13 @@ function applyNoteScoped_LRNavalShips(
       break;
     }
     case 3: {
-      if (ctx.space !== "open_deck_low_risk_SOLAS_9_2_3_3_2_2_10") {
-        if (out.status === "allowed") {
-          out.status = "conditional";
+      const rowNotes = new Set<number>(row?.notes ?? []);
+      if (rowNotes.has(3)) {
+        if (ctx.space !== "open_deck_low_risk_SOLAS_9_2_3_3_2_2_10") {
+          markConditional(out, NOTE3_FIRE_CHIP);
+          pushOnce(out.notesApplied, noteId);
+          out.trace.push("Nota 3: exigir juntas resistentes al fuego.");
         }
-        pushOnce(out.conditions, NOTE3_FIRE_CHIP);
-        pushOnce(out.notesApplied, noteId);
-        out.trace.push("Nota 3: exigir juntas resistentes al fuego.");
       }
       break;
     }

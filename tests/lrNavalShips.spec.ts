@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import evaluateLRNavalShips, {
+  evaluateGroups as evaluateLRNavalGroups,
   type Joint,
   type PipeClass,
   type Space,
@@ -60,6 +61,19 @@ describe("evaluateLRNavalShips", () => {
     expect(result.notesApplied).toContain(1);
   });
 
+  it("no aplica Nota 3 en fuel oil lines accesibles", () => {
+    const groups = evaluateLRNavalGroups({
+      systemId: "aircraft_vehicle_fuel_lt60",
+      space: "other_machinery",
+      joint: "slip_on_joints",
+      location: "normal",
+    });
+
+    const group = groups.slip_on_joints;
+    expect(group.status).toBe("conditional");
+    expect([...group.notesApplied].sort()).toEqual([2, 4]);
+  });
+
   it("bloquea slip-on en Cat. A para sistemas con Nota 2", () => {
     const result = evaluate({
       systemId: "machinery_fuel_oil_gt60",
@@ -104,6 +118,26 @@ describe("evaluateLRNavalShips", () => {
     expect(result.status).toBe("forbidden");
     expect(result.reason).toContain("Nota 5");
     expect(result.reasons.some((msg) => msg.includes("Nota 5"))).toBe(true);
+  });
+
+  it("mantiene slip-on machine grooved disponible en bilge Cat. A al agrupar", () => {
+    const group = evaluateLRNavalGroups({
+      systemId: "bilge_lines",
+      space: "machinery_cat_A",
+      joint: "slip_on_joints",
+    }).slip_on_joints;
+
+    expect(group.status).toBe("conditional");
+
+    const subtype = evaluate({
+      systemId: "bilge_lines",
+      space: "machinery_cat_A",
+      joint: "slip_on_machine_grooved",
+      pipeClass: "III",
+      od_mm: 76,
+    });
+
+    expect(subtype.status).not.toBe("forbidden");
   });
 
   it("prohíbe slip-on en tanque con medio diferente", () => {
