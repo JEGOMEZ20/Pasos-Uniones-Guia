@@ -103,7 +103,7 @@ type NavalNote =
   | {
       type: "no_slip_on_in_catA_munitions_accommodation";
       prohibit_spaces: Space[];
-      allow_other_machinery_if_visible_accessible: boolean;
+      require_visible_accessible_spaces?: Space[];
     }
   | {
       type: "fire_resistant_except_open_deck_low_fire_risk";
@@ -348,22 +348,33 @@ function applyNoteScoped_LRNavalShips(
       break;
     }
     case 2: {
-      if (group === "slip_on_joints") {
-        if (
-          ctx.space === "machinery_cat_A" ||
-          ctx.space === "munitions_store" ||
-          ctx.space === "accommodation"
-        ) {
-          out.status = "forbidden";
-          const message = "Nota 2: Slip-on no aceptadas en Cat. A/municiones/aloj.";
-          pushOnce(out.reasons, message);
-          pushOnce(out.notesApplied, noteId);
-          out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
-        } else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
-          out.status = "conditional";
-          pushOnce(out.conditions, NOTE2_LOCATION_CHIP);
-          pushOnce(out.notesApplied, noteId);
-          out.trace.push("Nota 2: otras máquinas ⇒ visibles/accesibles.");
+      if (group !== "slip_on_joints") {
+        break;
+      }
+
+      const note = datasetOverride.notes[String(noteId)];
+      if (!note || note.type !== "no_slip_on_in_catA_munitions_accommodation") {
+        break;
+      }
+
+      const prohibitedSpaces = new Set(note.prohibit_spaces ?? []);
+      if (prohibitedSpaces.has(ctx.space)) {
+        out.status = "forbidden";
+        const message = "Nota 2: Slip-on no aceptadas en espacios restringidos.";
+        pushOnce(out.reasons, message);
+        pushOnce(out.notesApplied, noteId);
+        out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
+        break;
+      }
+
+      const requireVisible = new Set(note.require_visible_accessible_spaces ?? []);
+      if (requireVisible.has(ctx.space)) {
+        markConditional(out, NOTE2_LOCATION_CHIP);
+        pushOnce(out.notesApplied, noteId);
+        if (ctx.location === "visible_accessible") {
+          out.trace.push("Nota 2: Condición de visibilidad/acceso satisfecha.");
+        } else {
+          out.trace.push("Nota 2: Exigir ubicación visible y accesible.");
         }
       }
       break;

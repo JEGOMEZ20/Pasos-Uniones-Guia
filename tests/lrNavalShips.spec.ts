@@ -74,7 +74,7 @@ describe("evaluateLRNavalShips", () => {
     expect([...group.notesApplied].sort()).toEqual([2, 4]);
   });
 
-  it("bloquea slip-on en Cat. A para sistemas con Nota 2", () => {
+  it("mantiene slip-on condicionado en Cat. A para sistemas con Nota 2", () => {
     const result = evaluate({
       systemId: "machinery_fuel_oil_gt60",
       space: "machinery_cat_A",
@@ -83,8 +83,9 @@ describe("evaluateLRNavalShips", () => {
       od_mm: 40,
     });
 
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("Nota 2");
+    expect(result.status).toBe("conditional");
+    expect(result.notesApplied).not.toContain(2);
+    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
   });
 
   it("condiciona steam con restrained slip-on en cubierta expuesta ≤10 bar", () => {
@@ -120,7 +121,7 @@ describe("evaluateLRNavalShips", () => {
     expect(result.reasons.some((msg) => msg.includes("Nota 5"))).toBe(true);
   });
 
-  it("bloquea slip-on Clase II por Tabla 1.5.4", () => {
+  it("admite slip-on Clase II según Tabla 1.5.4", () => {
     const result = evaluate({
       systemId: "aircraft_vehicle_fuel_lt60",
       space: "other_machinery",
@@ -129,8 +130,9 @@ describe("evaluateLRNavalShips", () => {
       od_mm: 50,
     });
 
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("Tabla 1.5.4");
+    expect(result.status).toBe("conditional");
+    expect(result.reasons.some((msg) => msg.includes("Tabla 1.5.4"))).toBe(false);
+    expect(result.notesApplied).toContain(2);
   });
 
   it("mantiene slip-on machine grooved disponible en bilge Cat. A al agrupar", () => {
