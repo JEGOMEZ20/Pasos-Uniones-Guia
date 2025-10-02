@@ -553,19 +553,22 @@ export const LR_NAVAL_DATASET = {
         {
             "joint": "slip_on_machine_grooved",
             "class": [
-                "I"
+                "I",
+                "II"
             ]
         },
         {
             "joint": "slip_on_grip",
             "class": [
-                "I"
+                "I",
+                "II"
             ]
         },
         {
             "joint": "slip_on_slip_type",
             "class": [
-                "I"
+                "I",
+                "II"
             ]
         }
     ],
@@ -582,11 +585,12 @@ export const LR_NAVAL_DATASET = {
         "2": {
             "type": "no_slip_on_in_catA_munitions_accommodation",
             "prohibit_spaces": [
-                "machinery_cat_A",
                 "munitions_store",
                 "accommodation"
             ],
-            "allow_other_machinery_if_visible_accessible": true
+            "require_visible_accessible_spaces": [
+                "other_machinery"
+            ]
         },
         "3": {
             "type": "fire_resistant_except_open_deck_low_fire_risk",
