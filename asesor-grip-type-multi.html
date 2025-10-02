@@ -696,7 +696,7 @@
                 conditions: Array.isArray(raw.conditions) ? [...raw.conditions] : [],
                 reasons: Array.isArray(raw.reasons) ? [...raw.reasons] : [],
                 notesApplied: Array.isArray(raw.notesApplied) ? [...raw.notesApplied] : [],
-                generalClauses: Array.isArray(raw.generalClauses) ? [...raw.generalClauses] : [],
+                clauses: Array.isArray(raw.clauses) ? [...raw.clauses] : [],
                 trace: Array.isArray(raw.trace) ? [...raw.trace] : [],
               };
             }
@@ -767,8 +767,10 @@
       return { kind: raw, mode: "image" };
     }
 
-    const canInspectSubtype = (groupStatus, subtypeAllowed) =>
-      groupStatus !== "forbidden" && Boolean(subtypeAllowed);
+    const canInspect = (group, subtypeAllowed) => {
+      if (!group) return Boolean(subtypeAllowed);
+      return group.status !== 'forbidden' && Boolean(subtypeAllowed);
+    };
 
     const SearchIcon = ({ className = "w-4 h-4", ...props }) =>
       h(
@@ -1120,10 +1122,11 @@
         const cardClass = `result-card result-card--${status}`;
         const statusLabel = STATUS_LABELS[status] || status;
         const traceAvailable = detail?.trace?.length;
-        const conditions = detail?.conditions ?? [];
-        const notesApplied = detail?.notesApplied ?? [];
-        const reasons = detail?.reasons ?? [];
-        const generalClauses = detail?.generalClauses ?? [];
+        const conditions = Array.isArray(detail?.conditions) ? detail.conditions : [];
+        const notesApplied = Array.isArray(detail?.notesApplied) ? detail.notesApplied : [];
+        const reasons = Array.isArray(detail?.reasons) ? detail.reasons : [];
+        const clauses = Array.isArray(detail?.clauses) ? detail.clauses : [];
+        const groupEval = detail ?? { status };
 
         return html`
           <article className=${cardClass} key=${category}>
@@ -1151,7 +1154,7 @@
                 ${items.map((item, idx) => {
                   if (!item?.kind) return null;
                   const labels = getJointLabels(item.kind);
-                  const disabled = !canInspectSubtype(status, item.enabled);
+                  const disabled = !canInspect(groupEval, item.enabled);
                   return html`
                     <li className=${`option-item${disabled ? ' disabled' : ''}`} key=${`${item.kind}-${idx}`}>
                       <div className="option-text">
@@ -1213,13 +1216,15 @@
                             </ul>
                           </div>`
                         : null}
-                      ${generalClauses.length
+                      ${clauses.length
                         ? html`<div className="detail-block">
                             <span className="detail-title">Cláusulas</span>
                             <ul className="chip-list">
-                              ${generalClauses.map(
-                                (item, idx) => html`<li className="chip" key=${`clause-${idx}`}>${item}</li>`
-                              )}
+                              ${clauses.map((item, idx) => {
+                                if (!item) return null;
+                                const label = item.section ? `${item.section}: ${item.title}` : item.title;
+                                return html`<li className="chip" key=${`clause-${idx}`}>${label}</li>`;
+                              })}
                             </ul>
                           </div>`
                         : null}
@@ -1492,13 +1497,50 @@
                 <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-5">
                   <h2 className="text-lg font-semibold mb-3">Observaciones (evaluación)</h2>
                   ${(() => {
+                    const groups = evaluation?.categoryEvaluations ?? {};
+                    const blocked = Object.values(groups).filter((group) => group?.status === 'forbidden');
+
+                    if (blocked.length) {
+                      const lines = [];
+                      blocked.forEach((group) => {
+                        const groupReasons = Array.isArray(group?.reasons) ? group.reasons : [];
+                        const groupClauses = Array.isArray(group?.clauses) ? group.clauses : [];
+                        groupReasons.forEach((reason) => {
+                          if (reason) {
+                            lines.push(`• ${reason}`);
+                          }
+                        });
+                        groupClauses.forEach((clause) => {
+                          if (clause) {
+                            const label = clause.section ? `${clause.section}: ${clause.title}` : clause.title;
+                            lines.push(`• ${label}`);
+                          }
+                        });
+                        if (!groupReasons.length && !groupClauses.length) {
+                          lines.push('• Uso condicionado o bloqueado por otras condiciones del reglamento.');
+                        }
+                      });
+
+                      return html`<ul className="observations-list">${lines.map(
+                        (text, idx) => html`<li key=${`blocked-${idx}`}>${text}</li>`
+                      )}</ul>`;
+                    }
+
                     const applied = evaluation
                       ? Array.from(
-                          new Set([...(evaluation.conditions ?? []), ...(evaluation.reasons ?? [])])
+                          new Set(
+                            [
+                              ...(Array.isArray(evaluation.observations) ? evaluation.observations : []),
+                              ...(Array.isArray(evaluation.conditions) ? evaluation.conditions : []),
+                              ...(Array.isArray(evaluation.reasons) ? evaluation.reasons : []),
+                            ].filter(Boolean)
+                          )
                         )
                       : [];
                     return applied.length
-                      ? html`<ul className="observations-list">${applied.map((obs, idx) => html`<li key=${idx}>${obs}</li>`)}</ul>`
+                      ? html`<ul className="observations-list">${applied.map(
+                          (obs, idx) => html`<li key=${`obs-${idx}`}>• ${obs}</li>`
+                        )}</ul>`
                       : html`<p className="text-sm text-slate-400">Sin observaciones adicionales para las condiciones ingresadas.</p>`;
                   })()}
                 </div>

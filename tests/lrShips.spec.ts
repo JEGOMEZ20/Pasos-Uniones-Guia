@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import evaluateLRShips, { type Joint, type PipeClass, type Space } from "../dist/engine/lrShips.js";
+import evaluateLRShips, {
+  evaluateGroups as evaluateLRShipsGroups,
+  type Joint,
+  type PipeClass,
+  type Space,
+} from "../dist/engine/lrShips.js";
 
 function evaluate(options: {
   systemId: string;
@@ -28,7 +33,7 @@ describe("evaluateLRShips", () => {
     expect(result.conditions).toContain("Ensayo fuego 30 min húmedo");
     expect(result.notesApplied).toContain(4);
     expect(result.reasons).toHaveLength(0);
-    expect(result.generalClauses).toHaveLength(0);
+    expect(result.clauses).toHaveLength(0);
   });
 
   it("aplica ensayo combinado para líneas de achique en Cat. A con compresión", () => {
@@ -43,7 +48,7 @@ describe("evaluateLRShips", () => {
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
     expect(result.notesApplied).toContain(4);
     expect(result.reasons).toHaveLength(0);
-    expect(result.generalClauses).toHaveLength(0);
+    expect(result.clauses).toHaveLength(0);
   });
 
   it("bloquea slip-on en acomodaciones por Nota 2", () => {
@@ -93,7 +98,7 @@ describe("evaluateLRShips", () => {
       sameMediumInTank: false,
     });
     expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("tanques");
+    expect(result.reason).toContain("medio es el mismo");
   });
 
   it("marca ensayo combinado y Nota 4 para slip-on en bilge Cat. A (Clase III)", () => {
@@ -109,7 +114,7 @@ describe("evaluateLRShips", () => {
     expect(result.notesApplied).toContain(4);
     expect(result.notesApplied).not.toContain(2);
     expect(result.reasons).toHaveLength(0);
-    expect(result.generalClauses).toHaveLength(0);
+    expect(result.clauses).toHaveLength(0);
   });
 
   it("mantiene condicional slip-on en bilge Cat. A con joint genérico", () => {
@@ -124,7 +129,7 @@ describe("evaluateLRShips", () => {
     expect(result.status).toBe("conditional");
     expect(result.notesApplied).toContain(4);
     expect(result.reasons).toHaveLength(0);
-    expect(result.generalClauses).toHaveLength(0);
+    expect(result.clauses).toHaveLength(0);
   });
 
   it("bloquea slip-on en enfriamiento por agua de mar Cat. A por Nota 2", () => {
@@ -151,5 +156,18 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("forbidden");
     expect(result.reason).toBe("Tabla 12.2.9: límite de clase/OD");
+  });
+
+  it("bloquea slip-on en bodegas para LR Ships", () => {
+    const groups = evaluateLRShipsGroups({
+      systemId: "sanitary",
+      space: "cargo_hold",
+      joint: "slip_on_joints",
+    });
+
+    const slipOn = groups.slip_on_joints;
+    expect(slipOn.status).toBe("forbidden");
+    expect(slipOn.reasons[0]).toMatch(/Slip-on no permitido en bodegas/i);
+    expect(slipOn.clauses[0]?.section).toMatch(/§2\.12\.8/);
   });
 });

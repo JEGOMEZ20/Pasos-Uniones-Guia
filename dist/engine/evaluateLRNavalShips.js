@@ -24,6 +24,14 @@ function markConditional(result, condition) {
         pushOnce(result.conditions, condition);
     }
 }
+function forbidByClause(out, msg, clause) {
+    out.status = "forbidden";
+    pushOnce(out.reasons, msg);
+    if (!out.clauses) {
+        out.clauses = [];
+    }
+    out.clauses.push(clause);
+}
 function normalizeNavalContext(ctx) {
     const mediumSame = ctx.mediumInPipeSameAsTank ?? true;
     return {
@@ -48,7 +56,7 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
     const trace = [...groupResult.trace];
     const conditions = [...groupResult.conditions];
     const notesApplied = [...groupResult.notesApplied];
-    const generalClauses = [...groupResult.generalClauses];
+    const clauses = [...groupResult.clauses];
     const reasons = [...groupResult.reasons];
     let status = groupResult.status;
     let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
@@ -96,7 +104,7 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
         trace,
         observations,
         notesApplied,
-        generalClauses,
+        clauses,
     };
 }
 export function evaluateGroups(ctx, datasetOverride = db) {
@@ -143,7 +151,7 @@ function base(allowed, row, group) {
         conditions: [],
         reasons: [],
         notesApplied: [],
-        generalClauses: [],
+        clauses: [],
         trace: [],
     };
     const message = `Tabla 1.5.3 (${row.label_es}): ${allowed ? "+" : "–"} para ${describeJointGroup(group)}; clase '${row.class_of_pipe_system}'.`;
@@ -265,52 +273,58 @@ function applyGeneralClauses(ctx, group, out) {
     const mediumSame = ctx.mediumInPipeSameAsTank;
     if (ctx.isSectionDirectlyConnectedToShipSide &&
         ctx.aboveLimitOfWatertightIntegrity === false) {
-        const message = "§5.10.6: tramo conectado al costado bajo el WLI ⇒ juntas prohibidas";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        out.trace.push(message);
+        const clause = {
+            code: "NS-5.10.6",
+            title: "Sin juntas bajo el WLI conectadas al costado",
+            section: "Vol 2, Pt 7, Ch 1, §5.10.6",
+        };
+        const message = "Tramo conectado al costado por debajo del WLI: juntas prohibidas para cualquier tipo";
+        forbidByClause(out, message, clause);
+        out.trace.push("§5.10.6: tramo conectado al costado bajo el WLI ⇒ juntas prohibidas.");
         return;
     }
     if (ctx.space === "tank" && (ctx.lineType === "fuel_oil" || ctx.lineType === "thermal_oil")) {
-        const message = "§5.10.6: juntas prohibidas en tanques con fluidos inflamables";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        out.trace.push(message);
+        const clause = {
+            code: "NS-5.10.6.flammable",
+            title: "En tanques de fluidos inflamables no se admiten juntas mecánicas",
+            section: "Vol 2, Pt 7, Ch 1, §5.10.6",
+        };
+        const message = "Tanques con fluidos inflamables: juntas mecánicas no permitidas";
+        forbidByClause(out, message, clause);
+        out.trace.push("§5.10.6: juntas prohibidas en tanques con fluidos inflamables.");
         return;
     }
-    if (group === "slip_on_joints") {
-        const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
-        const isHardAccessSpace = ctx.accessibility === "not_easy" || ctx.space === "cofferdam" || ctx.space === "void";
-        if (isCargoOrTank || isHardAccessSpace) {
-            const message = "§5.10.9: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles (2.12.8 / 5.10.9)";
-            out.status = "forbidden";
-            pushOnce(out.generalClauses, message);
-            pushOnce(out.reasons, message);
-            out.trace.push(message);
-            return;
-        }
-        if (ctx.space === "tank") {
-            if (mediumSame === false) {
-                const message = "§5.10.9: slip-on en tanques solo si el medio es el mismo";
-                out.status = "forbidden";
-                pushOnce(out.generalClauses, message);
-                pushOnce(out.reasons, message);
-                out.trace.push(message);
-                return;
-            }
-        }
+    const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
+    const isHardAccess = ctx.accessibility === "not_easy";
+    if (group === "slip_on_joints" && (isCargoOrTank || isHardAccess)) {
+        const clause = {
+            code: "NS-5.10.9",
+            title: "Slip-on no en bodegas/tanques/espacios no fácilmente accesibles",
+            section: "Vol 2, Pt 7, Ch 1, §5.10.9",
+        };
+        forbidByClause(out, "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles", clause);
+        out.trace.push("§5.10.9: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles.");
+    }
+    if (group === "slip_on_joints" && ctx.space === "tank" && mediumSame === false) {
+        const clause = {
+            code: "NS-5.10.9.b",
+            title: "Dentro de tanques sólo si el medio es el mismo",
+            section: "Vol 2, Pt 7, Ch 1, §5.10.9",
+        };
+        forbidByClause(out, "Slip-on dentro de tanque: permitido sólo si el medio es el mismo", clause);
+        out.trace.push("§5.10.9: Slip-on en tanque sólo si el medio es el mismo.");
     }
     if (ctx.joint === "slip_on_slip_type") {
         pushOnce(out.conditions, SLIP_TYPE_WARNING);
         out.trace.push("§5.10.10: Slip-type solo para compensación axial.");
         if (ctx.mainMeansOfConnection) {
-            const message = "§5.10.10: slip-type no puede ser medio principal";
-            out.status = "forbidden";
-            pushOnce(out.generalClauses, message);
-            pushOnce(out.reasons, message);
-            out.trace.push(message);
+            const clause = {
+                code: "NS-5.10.10",
+                title: "Slip-type no puede ser medio principal de unión",
+                section: "Vol 2, Pt 7, Ch 1, §5.10.10",
+            };
+            forbidByClause(out, "Slip-type no puede ser medio principal", clause);
+            out.trace.push("§5.10.10: slip-type no puede ser medio principal.");
         }
     }
 }
@@ -357,7 +371,7 @@ function forbid(ctx, trace, message) {
         trace: [...trace],
         observations: [message],
         notesApplied: [],
-        generalClauses: [],
+        clauses: [],
     };
 }
 function groupOf(joint) {

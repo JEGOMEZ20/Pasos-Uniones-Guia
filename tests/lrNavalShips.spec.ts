@@ -151,7 +151,7 @@ describe("evaluateLRNavalShips", () => {
     });
 
     expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("tanques");
+    expect(result.reason).toContain("medio es el mismo");
   });
 
   it("mantiene condicional bilge Cat. A con joint genérico", () => {
@@ -179,7 +179,8 @@ describe("evaluateLRNavalShips", () => {
     });
 
     expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("§5.10.6");
+    expect(result.reason).toContain("costado");
+    expect(result.clauses[0]?.section).toMatch(/§5\.10\.6/);
   });
 
   it("prohíbe slip-on cuando no hay accesibilidad fácil", () => {
@@ -193,6 +194,20 @@ describe("evaluateLRNavalShips", () => {
     });
 
     expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("§5.10.9");
+    expect(result.reason).toContain("Slip-on no permitido");
+  });
+
+  it("bloquea slip-on en bodegas para LR Naval Ships", () => {
+    const groups = evaluateLRNavalGroups({
+      systemId: "aircraft_vehicle_fuel_lt60",
+      space: "cargo_hold",
+      joint: "slip_on_joints",
+      accessibility: "easy",
+    });
+
+    const slipOn = groups.slip_on_joints;
+    expect(slipOn.status).toBe("forbidden");
+    expect(slipOn.reasons[0]).toMatch(/Slip-on no permitido en bodegas/i);
+    expect(slipOn.clauses[0]?.section).toMatch(/§5\.10\.9/);
   });
 });

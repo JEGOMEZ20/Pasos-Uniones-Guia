@@ -6,18 +6,15 @@ import dataset, {
   Joint,
   PipeClass,
 } from "../data/lr_ships_mech_joints.js";
+import type { ClauseRef, EvalResult, EvalStatus } from "./evalTypes.js";
 
 export type { Space, Joint, PipeClass } from "../data/lr_ships_mech_joints.js";
 
 type Group = "pipe_unions" | "compression_couplings" | "slip_on_joints";
-type EvalStatus = "allowed" | "conditional" | "forbidden";
 
-interface GroupEvalResult {
-  status: EvalStatus;
-  conditions: string[];
-  reasons: string[];
+interface GroupEvalResult extends EvalResult {
+  clauses: ClauseRef[];
   notesApplied: number[];
-  generalClauses: string[];
   trace: string[];
 }
 
@@ -52,7 +49,7 @@ export interface LRShipsEvaluation {
   trace: string[];
   observations: string[];
   notesApplied: number[];
-  generalClauses: string[];
+  clauses: ClauseRef[];
 }
 
 const normReference = "LR Ships Pt5 Ch12 §2.12, Tablas 12.2.8–12.2.9";
@@ -86,7 +83,7 @@ export function evaluateLRShips(ctx: LRShipsContext, db: LRShipsDataset = datase
   const trace = [...groupResult.trace];
   const conditions = [...groupResult.conditions];
   const notesApplied = [...groupResult.notesApplied];
-  const generalClauses = [...groupResult.generalClauses];
+  const clauses = [...groupResult.clauses];
   const reasons = [...groupResult.reasons];
 
   let status: EvalStatus = groupResult.status;
@@ -131,7 +128,7 @@ export function evaluateLRShips(ctx: LRShipsContext, db: LRShipsDataset = datase
     trace,
     observations,
     notesApplied,
-    generalClauses,
+    clauses,
   };
 }
 
@@ -187,7 +184,7 @@ function base(allowed: boolean, row: LRShipsSystem, group: Group): GroupEvalResu
     conditions: [],
     reasons: [],
     notesApplied: [],
-    generalClauses: [],
+    clauses: [],
     trace: [],
   };
 
@@ -206,6 +203,15 @@ function pushOnce<T>(arr: T[], value: T | null | undefined) {
   if (!arr.includes(value)) {
     arr.push(value);
   }
+}
+
+function forbidByClause(out: GroupEvalResult, msg: string, clause: ClauseRef) {
+  out.status = "forbidden";
+  pushOnce(out.reasons, msg);
+  if (!out.clauses) {
+    out.clauses = [];
+  }
+  out.clauses.push(clause);
 }
 
 function applyNoteScoped_LRShips(
@@ -327,52 +333,69 @@ function applyGeneralClauses(ctx: LRShipsContext, group: Group, out: GroupEvalRe
   const mediumSame = ctx.mediumInPipeSameAsTank ?? ctx.sameMediumInTank;
 
   if (ctx.directToShipSideBelowLimit) {
-    const message = "§2.12.5: prohibido conectar directamente al costado bajo el límite";
-    out.status = "forbidden";
-    pushOnce(out.generalClauses, message);
-    pushOnce(out.reasons, message);
-    out.trace.push(message);
+    const clause: ClauseRef = {
+      code: "SH-2.12.5",
+      title: "Sin juntas conectadas directamente al costado bajo el límite",
+      section: "Pt 5, Ch 12, §2.12.5",
+    };
+    const message =
+      "Tramo conectado directamente al costado bajo el límite: juntas mecánicas prohibidas";
+    forbidByClause(out, message, clause);
+    out.trace.push("§2.12.5: prohibido conectar directamente al costado bajo el límite.");
     return;
   }
 
   if (ctx.tankContainsFlammable) {
-    const message = "§2.12.5: prohibido en tanques con fluidos inflamables";
-    out.status = "forbidden";
-    pushOnce(out.generalClauses, message);
-    pushOnce(out.reasons, message);
-    out.trace.push(message);
+    const clause: ClauseRef = {
+      code: "SH-2.12.5.flammable",
+      title: "Juntas mecánicas prohibidas en tanques con fluidos inflamables",
+      section: "Pt 5, Ch 12, §2.12.5",
+    };
+    const message = "Tanques con fluidos inflamables: juntas mecánicas no permitidas";
+    forbidByClause(out, message, clause);
+    out.trace.push("§2.12.5: prohibido en tanques con fluidos inflamables.");
     return;
   }
 
-  if (group === "slip_on_joints") {
-    const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
-    const isHardAccessSpace = ctx.accessibility === "not_easy";
-    if (isCargoOrTank || isHardAccessSpace) {
-      const message =
-        "§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles (2.12.8 / 5.10.9)";
-      out.status = "forbidden";
-      pushOnce(out.generalClauses, message);
-      pushOnce(out.reasons, message);
-      out.trace.push(message);
-      return;
-    }
+  const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
+  const isHardAccess = ctx.accessibility === "not_easy";
 
-    if (ctx.space === "tank" && mediumSame === false) {
-      const message = "§2.12.8: slip-on en tanques sólo si el medio es el mismo";
-      out.status = "forbidden";
-      pushOnce(out.generalClauses, message);
-      pushOnce(out.reasons, message);
-      out.trace.push(message);
-      return;
-    }
+  if (group === "slip_on_joints" && (isCargoOrTank || isHardAccess)) {
+    const clause: ClauseRef = {
+      code: "SH-2.12.8",
+      title: "Slip-on no en bodegas/tanques/espacios no fácilmente accesibles",
+      section: "Pt 5, Ch 12, §2.12.8",
+    };
+    forbidByClause(
+      out,
+      "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles",
+      clause
+    );
+    out.trace.push("§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles.");
+  }
+
+  if (group === "slip_on_joints" && ctx.space === "tank" && mediumSame === false) {
+    const clause: ClauseRef = {
+      code: "SH-2.12.8.b",
+      title: "Dentro de tanques sólo si el medio es el mismo",
+      section: "Pt 5, Ch 12, §2.12.8",
+    };
+    forbidByClause(
+      out,
+      "Slip-on dentro de tanque: permitido sólo si el medio es el mismo",
+      clause
+    );
+    out.trace.push("§2.12.8: Slip-on en tanque sólo si el medio es el mismo.");
   }
 
   if (ctx.joint === "slip_on_slip_type" && ctx.asMainMeans) {
-    const message = "§2.12.9: Slip-type no como medio principal (sólo compensación axial)";
-    out.status = "forbidden";
-    pushOnce(out.generalClauses, message);
-    pushOnce(out.reasons, message);
-    out.trace.push(message);
+    const clause: ClauseRef = {
+      code: "SH-2.12.9",
+      title: "Slip-type no puede ser medio principal de unión",
+      section: "Pt 5, Ch 12, §2.12.9",
+    };
+    forbidByClause(out, "Slip-type no puede ser medio principal", clause);
+    out.trace.push("§2.12.9: Slip-type no como medio principal (sólo compensación axial).");
   }
 }
 
@@ -395,7 +418,7 @@ function forbid(
     trace: [...trace],
     observations: [message],
     notesApplied: [],
-    generalClauses: [],
+    clauses: [],
   };
 }
 
