@@ -38,7 +38,7 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
-    expect(result.observations.some((msg) => msg.includes("Nota 2"))).toBe(false);
+    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
   });
 
   it("bloquea slip-on en acomodaciones por Nota 2", () => {
@@ -89,5 +89,31 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("forbidden");
     expect(result.reason).toContain("tanques");
+  });
+
+  it("marca ensayo combinado y Nota 4 para slip-on en bilge Cat. A (Clase III)", () => {
+    const result = evaluate({
+      systemId: "bilge_lines",
+      space: "machinery_cat_A",
+      joint: "slip_on_machine_grooved",
+      pipeClass: "III",
+      od_mm: 76,
+    });
+    expect(result.status).toBe("conditional");
+    expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
+    expect(result.notesApplied).toContain(4);
+    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
+  });
+
+  it("bloquea slip-on Grip en Clase I por Tabla 12.2.9", () => {
+    const result = evaluate({
+      systemId: "sanitary",
+      space: "other_machinery",
+      joint: "slip_on_grip",
+      pipeClass: "I",
+      od_mm: 50,
+    });
+    expect(result.status).toBe("forbidden");
+    expect(result.reason).toBe("Tabla 12.2.9: límite de clase/OD");
   });
 });

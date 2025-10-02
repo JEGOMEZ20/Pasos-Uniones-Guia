@@ -26,13 +26,13 @@ function evaluate(options: {
 }
 
 describe("evaluateLRNavalShips", () => {
-  it("marca condiciones para sistema de lastre en Cat. A con slip-on", () => {
+  it("marca condiciones para bilge Cat. A (Clase III) con slip-on", () => {
     const result = evaluate({
-      systemId: "ballast_system",
+      systemId: "bilge_lines",
       space: "machinery_cat_A",
       joint: "slip_on_machine_grooved",
-      pipeClass: "II",
-      od_mm: 50,
+      pipeClass: "III",
+      od_mm: 76,
     });
 
     expect(result.status).toBe("conditional");
@@ -40,6 +40,8 @@ describe("evaluateLRNavalShips", () => {
     expect(result.conditions).toContain(
       "Tipo resistente al fuego si componentes se deterioran en incendio (Cat. A)"
     );
+    expect(result.conditions).toContain("Material acople bilge main: acero/CuNi/equiv.");
+    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
   });
 
   it("aplica requisitos de bilge main en Cat. A con compresión", () => {
@@ -69,7 +71,7 @@ describe("evaluateLRNavalShips", () => {
     expect(result.reason).toContain("Nota 2");
   });
 
-  it("permite steam con restrained slip-on en cubierta expuesta ≤10 bar", () => {
+  it("condiciona steam con restrained slip-on en cubierta expuesta ≤10 bar", () => {
     const result = evaluate({
       systemId: "steam",
       space: "open_deck",
@@ -80,7 +82,7 @@ describe("evaluateLRNavalShips", () => {
       shipType: "oil_tanker",
     });
 
-    expect(result.status).toBe("allowed");
+    expect(result.status).toBe("conditional");
     expect(result.conditions).toContain(
       "Restringido a cubierta expuesta ≤10 bar (vapor, petroleros/quimiqueros)"
     );
@@ -99,6 +101,7 @@ describe("evaluateLRNavalShips", () => {
 
     expect(result.status).toBe("forbidden");
     expect(result.reason).toContain("Nota 5");
+    expect(result.reasons.some((msg) => msg.includes("Nota 5"))).toBe(true);
   });
 
   it("prohíbe slip-on en tanque con medio diferente", () => {

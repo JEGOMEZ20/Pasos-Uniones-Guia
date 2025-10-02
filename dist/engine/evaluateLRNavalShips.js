@@ -29,7 +29,6 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
     const groupResult = groups[jointGroup];
     const trace = [...groupResult.trace];
     const conditions = [...groupResult.conditions];
-    const observations = [...groupResult.observations];
     const notesApplied = [...groupResult.notesApplied];
     const generalClauses = [...groupResult.generalClauses];
     const reasons = [...groupResult.reasons];
@@ -45,8 +44,9 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
                 reason = "Tabla 1.5.4: límite de clase/OD";
             }
             status = "forbidden";
+            pushOnce(reasons, reason);
             if (classCheck.detail) {
-                pushOnce(observations, classCheck.detail);
+                trace.push(classCheck.detail);
             }
         }
         else if (classCheck.detail) {
@@ -63,9 +63,11 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
         pushOnce(conditions, label);
         trace.push("§5.10.2: Verificar requisitos de Tailoring Doc (autoridad naval).");
     }
+    const observations = Array.from(new Set([...conditions, ...reasons]));
     return {
         status,
         conditions,
+        reasons,
         normRef: normReference,
         reason,
         systemId: sys.id,
@@ -92,30 +94,27 @@ function evaluateGroupsForRow(ctx, row, datasetOverride) {
         compression_couplings: base(Boolean(row.allowed_joints.compression_couplings), row, "compression_couplings"),
         slip_on_joints: base(Boolean(row.allowed_joints.slip_on_joints), row, "slip_on_joints"),
     };
-    const fireLabel = row.fire_test !== "not_required" ? FIRE_TEST_LABELS[row.fire_test] ?? row.fire_test : null;
-    if (fireLabel) {
-        for (const result of Object.values(groups)) {
-            if (result.status === "forbidden")
-                continue;
+    const rowNotes = new Set(row?.notes ?? []);
+    const fireLabel = row.fire_test && row.fire_test !== "not_required"
+        ? FIRE_TEST_LABELS[row.fire_test] ?? row.fire_test
+        : null;
+    for (const [groupName, result] of Object.entries(groups)) {
+        if (!Boolean(row.allowed_joints[groupName])) {
+            continue;
+        }
+        if (fireLabel) {
             if (result.status === "allowed") {
                 result.status = "conditional";
             }
             pushOnce(result.conditions, fireLabel);
             result.trace.push(`Tabla 1.5.3: Ensayo base ${fireLabel}.`);
         }
-    }
-    const rowNotes = new Set(row.notes);
-    for (const noteId of rowNotes) {
-        for (const [groupName, result] of Object.entries(groups)) {
-            if (result.status === "forbidden")
-                continue;
-            applyNote_LRNS(ctx, row, datasetOverride, noteId, groupName, result);
+        for (const noteId of rowNotes) {
+            applyNoteScoped_LRNavalShips(noteId, ctx, row, datasetOverride, groupName, result);
         }
-    }
-    for (const [groupName, result] of Object.entries(groups)) {
-        if (result.status === "forbidden" || result.skipGeneralClauses)
-            continue;
-        applyGeneralClauses(ctx, groupName, result);
+        if (!result.skipGeneralClauses) {
+            applyGeneralClauses(ctx, groupName, result);
+        }
     }
     return groups;
 }
@@ -124,7 +123,6 @@ function base(allowed, row, group) {
         status: allowed ? "allowed" : "forbidden",
         conditions: [],
         reasons: [],
-        observations: [],
         notesApplied: [],
         generalClauses: [],
         trace: [],
@@ -136,125 +134,109 @@ function base(allowed, row, group) {
     }
     return result;
 }
-function applyNote_LRNS(ctx, row, datasetOverride, noteId, group, out) {
-    const note = datasetOverride.notes[String(noteId)];
-    if (!note)
+function applyNoteScoped_LRNavalShips(noteId, ctx, row, datasetOverride, group, out) {
+    if (out.status === "forbidden") {
         return;
-    switch (note.type) {
-        case "catA_fire_resistant_if_deteriorates_and_material_for_bilge_main": {
-            if (ctx.space === "machinery_cat_A" && note.catA_requires_fire_resistant) {
+    }
+    switch (noteId) {
+        case 1: {
+            if (ctx.space === "machinery_cat_A") {
                 if (out.status === "allowed") {
                     out.status = "conditional";
                 }
                 pushOnce(out.conditions, NOTE1_FIRE_CHIP);
                 pushOnce(out.notesApplied, noteId);
-                pushOnce(out.observations, "Nota 1: Cat. A requiere juntas resistentes al fuego si hay componentes que se deterioran.");
-                out.trace.push("Nota 1: Cat. A ⇒ tipo resistente al fuego.");
-            }
-            if (ctx.space === "machinery_cat_A" && row.id === "bilge_lines") {
-                if (out.status === "allowed") {
-                    out.status = "conditional";
+                out.trace.push("Nota 1: Cat. A ⇒ juntas resistentes al fuego.");
+                if (row.id === "bilge_lines") {
+                    pushOnce(out.conditions, NOTE1_BILGE_MATERIAL_CHIP);
                 }
-                pushOnce(out.conditions, NOTE1_BILGE_MATERIAL_CHIP);
-                pushOnce(out.notesApplied, noteId);
-                pushOnce(out.observations, "Nota 1: Acoples del bilge main en Cat. A deben ser acero/CuNi/equiv.");
-                out.trace.push("Nota 1: Bilge main ⇒ material acero/CuNi/equiv.");
             }
             break;
         }
-        case "no_slip_on_in_catA_munitions_accommodation": {
+        case 2: {
             if (group === "slip_on_joints") {
-                if (note.prohibit_spaces.includes(ctx.space)) {
+                if (ctx.space === "machinery_cat_A" ||
+                    ctx.space === "munitions_store" ||
+                    ctx.space === "accommodation") {
                     out.status = "forbidden";
-                    const message = "Nota 2: slip-on no aceptadas en Cat. A/municiones/aloj.";
+                    const message = "Nota 2: Slip-on no aceptadas en Cat. A/municiones/aloj.";
                     pushOnce(out.reasons, message);
-                    pushOnce(out.observations, message);
                     pushOnce(out.notesApplied, noteId);
                     out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
                 }
-                else if (ctx.space === "other_machinery" &&
-                    note.allow_other_machinery_if_visible_accessible &&
-                    ctx.location !== "visible_accessible") {
-                    if (out.status !== "forbidden") {
-                        out.status = "conditional";
-                    }
+                else if (ctx.space === "other_machinery" && ctx.location !== "visible_accessible") {
+                    out.status = "conditional";
                     pushOnce(out.conditions, NOTE2_LOCATION_CHIP);
                     pushOnce(out.notesApplied, noteId);
-                    pushOnce(out.observations, "Nota 2: ubicar en posiciones visibles y accesibles.");
                     out.trace.push("Nota 2: otras máquinas ⇒ visibles/accesibles.");
                 }
             }
             break;
         }
-        case "fire_resistant_except_open_deck_low_fire_risk": {
-            if (ctx.space !== note.exception.space) {
+        case 3: {
+            if (ctx.space !== "open_deck_low_risk_SOLAS_9_2_3_3_2_2_10") {
                 if (out.status === "allowed") {
                     out.status = "conditional";
                 }
                 pushOnce(out.conditions, NOTE3_FIRE_CHIP);
                 pushOnce(out.notesApplied, noteId);
-                pushOnce(out.observations, "Nota 3: requiere juntas de tipo resistente al fuego.");
-                out.trace.push("Nota 3: exigir tipo resistente al fuego.");
+                out.trace.push("Nota 3: exigir juntas resistentes al fuego.");
             }
             break;
         }
-        case "fire_resistant_required": {
+        case 4: {
             if (out.status === "allowed") {
                 out.status = "conditional";
             }
             pushOnce(out.conditions, NOTE4_FIRE_CHIP);
             pushOnce(out.notesApplied, noteId);
-            pushOnce(out.observations, "Nota 4: requiere juntas de tipo resistente al fuego.");
             out.trace.push("Nota 4: tipo resistente al fuego obligatorio.");
             break;
         }
-        case "restrained_slip_on_steam_open_deck_tankers_le_10bar": {
-            if (group === "slip_on_joints" && ctx.space === note.space) {
-                const okPressure = (ctx.designPressure_bar ?? Number.POSITIVE_INFINITY) <= note.max_pressure_bar;
-                const okShipType = note.ship_types.includes(ctx.shipType ?? "other");
+        case 5: {
+            if (group === "slip_on_joints" && row.id === "steam") {
                 const isRestrained = ctx.joint === "slip_on_machine_grooved";
-                if (okPressure && okShipType && isRestrained) {
+                const onOpenDeck = ctx.space === "open_deck";
+                const allowedShip = ["oil_tanker", "chemical_tanker"].includes(ctx.shipType ?? "");
+                const pressureOk = (ctx.designPressure_bar ?? Number.POSITIVE_INFINITY) <= 10;
+                if (isRestrained && onOpenDeck && allowedShip && pressureOk) {
+                    if (out.status === "allowed") {
+                        out.status = "conditional";
+                    }
                     pushOnce(out.conditions, NOTE5_STEAM_CHIP);
                     pushOnce(out.notesApplied, noteId);
-                    pushOnce(out.observations, "Nota 5: solo restrained slip-on en cubierta expuesta para vapor ≤10 bar (petroleros/quimiqueros).");
                     out.trace.push("Nota 5: Condiciones satisfechas para restrained slip-on.");
                 }
                 else {
                     out.status = "forbidden";
-                    const message = "Nota 5: solo se permiten restrained slip-on en cubierta expuesta de petroleros/quimiqueros con P ≤10 bar";
+                    const message = "Nota 5: sólo restrained slip-on ≤10 bar en cubierta expuesta (petroleros/quimiqueros)";
                     pushOnce(out.reasons, message);
-                    pushOnce(out.observations, message);
                     pushOnce(out.notesApplied, noteId);
                     out.trace.push("Nota 5: Condiciones para restrained slip-on no satisfechas.");
                 }
             }
             break;
         }
-        case "only_above_limit_of_watertight_integrity": {
+        case 6: {
             if (ctx.aboveLimitOfWatertightIntegrity === false) {
                 out.status = "forbidden";
-                const message = "Nota 6: solo permitido sobre el Límite de Integridad Estanca";
+                const message = "Nota 6: Sólo sobre el Límite de Integridad Estanca";
                 pushOnce(out.reasons, message);
-                pushOnce(out.observations, message);
                 pushOnce(out.notesApplied, noteId);
-                out.trace.push("Nota 6: Sección bajo el Límite de Integridad Estanca ⇒ prohibido.");
-            }
-            else {
-                if (out.status === "allowed") {
-                    out.status = "conditional";
-                }
-                pushOnce(out.conditions, NOTE6_WLI_CHIP);
-                pushOnce(out.notesApplied, noteId);
-                pushOnce(out.observations, "Nota 6: confirmar ubicación sobre el Límite de Integridad Estanca.");
-                out.trace.push("Nota 6: Requiere confirmar ubicación sobre el WLI.");
+                out.trace.push("Nota 6: Ubicación bajo el WLI ⇒ prohibido.");
             }
             break;
         }
-        case "hvac_trunking_intakes_uptakes_defer": {
+        case 7: {
             pushOnce(out.conditions, NOTE7_INFO_CHIP);
             pushOnce(out.notesApplied, noteId);
-            pushOnce(out.observations, `Nota 7: ${note.message}`);
-            out.trace.push(`Nota 7: ${note.message}`);
+            const note = datasetOverride.notes[String(noteId)];
+            if (note && "message" in note) {
+                out.trace.push(`Nota 7: ${note.message}`);
+            }
+            else {
+                out.trace.push("Nota 7: verificar requisitos adicionales (HVAC/intakes/uprakes).");
+            }
             out.skipGeneralClauses = true;
             break;
         }
@@ -268,7 +250,6 @@ function applyGeneralClauses(ctx, group, out) {
         out.status = "forbidden";
         pushOnce(out.generalClauses, message);
         pushOnce(out.reasons, message);
-        pushOnce(out.observations, message);
         out.trace.push(message);
         return;
     }
@@ -277,7 +258,6 @@ function applyGeneralClauses(ctx, group, out) {
         out.status = "forbidden";
         pushOnce(out.generalClauses, message);
         pushOnce(out.reasons, message);
-        pushOnce(out.observations, message);
         out.trace.push(message);
         return;
     }
@@ -287,7 +267,6 @@ function applyGeneralClauses(ctx, group, out) {
             out.status = "forbidden";
             pushOnce(out.generalClauses, message);
             pushOnce(out.reasons, message);
-            pushOnce(out.observations, message);
             out.trace.push(message);
             return;
         }
@@ -297,15 +276,8 @@ function applyGeneralClauses(ctx, group, out) {
                 out.status = "forbidden";
                 pushOnce(out.generalClauses, message);
                 pushOnce(out.reasons, message);
-                pushOnce(out.observations, message);
                 out.trace.push(message);
                 return;
-            }
-            if (mediumSame === true) {
-                const message = "§5.10.9: confirmar medio en tanque igual al de la tubería";
-                pushOnce(out.generalClauses, message);
-                pushOnce(out.observations, message);
-                out.trace.push(message);
             }
         }
         if (["cargo_hold", "cofferdam", "void"].includes(ctx.space)) {
@@ -313,7 +285,6 @@ function applyGeneralClauses(ctx, group, out) {
             out.status = "forbidden";
             pushOnce(out.generalClauses, message);
             pushOnce(out.reasons, message);
-            pushOnce(out.observations, message);
             out.trace.push(message);
             return;
         }
@@ -326,7 +297,6 @@ function applyGeneralClauses(ctx, group, out) {
             out.status = "forbidden";
             pushOnce(out.generalClauses, message);
             pushOnce(out.reasons, message);
-            pushOnce(out.observations, message);
             out.trace.push(message);
         }
     }
@@ -363,6 +333,7 @@ function forbid(ctx, trace, message) {
     return {
         status: "forbidden",
         conditions: [],
+        reasons: [message],
         normRef: normReference,
         reason: message,
         systemId: ctx.systemId,
@@ -371,7 +342,7 @@ function forbid(ctx, trace, message) {
         od_mm: ctx.od_mm,
         designPressure_bar: ctx.designPressure_bar,
         trace: [...trace],
-        observations: [],
+        observations: [message],
         notesApplied: [],
         generalClauses: [],
     };
