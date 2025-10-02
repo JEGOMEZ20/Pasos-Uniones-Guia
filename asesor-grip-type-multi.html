@@ -99,6 +99,18 @@
       margin-top: 2px;
     }
 
+    .block-subtitle {
+      display: block;
+      margin: 8px 0 16px;
+      opacity: 0.95;
+    }
+
+    .result-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
     .option-list {
       list-style: none;
       margin: 0;
@@ -111,12 +123,65 @@
     .option-item {
       width: 100%;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
       padding: 14px 16px;
+      min-height: 86px;
       border: 1px dashed rgba(255, 255, 255, 0.18);
       border-radius: 12px;
       background: rgba(255, 255, 255, 0.03);
+    }
+
+    .option-text {
+      line-height: 1.25;
+    }
+
+    .option-es {
+      display: block;
+      font-weight: 600;
+    }
+
+    .option-en {
+      display: block;
+      opacity: 0.8;
+      font-size: 0.95rem;
+    }
+
+    .option-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .option-actions .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      color: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .option-actions .chip:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .option-actions .chip:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      background: rgba(148, 163, 184, 0.1);
+      border-color: rgba(148, 163, 184, 0.25);
     }
 
     .option-item.disabled {
@@ -164,6 +229,7 @@
 
     const {
       createElement: h,
+      useCallback,
       useEffect,
       useMemo,
       useRef,
@@ -209,24 +275,63 @@
       slip_slip: "Juntas tipo Slip-on",
     };
 
-    const JOINT_CATEGORY_LABELS = {
-      pipeUnions: "Uniones para tubería",
-      compression: "Acoples de compresión",
-      slipOn: "Juntas tipo Slip-on",
+    const JOINT_CATEGORY_TITLES = {
+      pipeUnions: { es: "Uniones para tubería", en: "Pipe unions" },
+      compression: { es: "Acoples de compresión", en: "Compression couplings" },
+      slipOn: { es: "Juntas tipo Slip-on", en: "Slip-on joints" },
     };
 
-    const COMPRESSION_SUBTYPE_LABELS = {
-      swage: "Tipo swage (deformado)",
-      bite: "Tipo mordedor (bite)",
-      typical: "Tipo férula",
-      flared: "Tipo abocardado",
-      press: "Tipo press",
+    const JOINT_ITEM_LABELS = {
+      pipe_welded_brazed: {
+        es: "Uniones soldadas y por braseado",
+        en: "Welded and Brazed Types",
+      },
+      compression_swage: {
+        es: "Tipo swage (deformado)",
+        en: "Swage Type",
+      },
+      compression_press: {
+        es: "Tipo press",
+        en: "Press Type",
+      },
+      compression_typical: {
+        es: "Tipo férula",
+        en: "Typical Compression Type",
+      },
+      compression_bite: {
+        es: "Tipo mordedor",
+        en: "Bite Type",
+      },
+      compression_flared: {
+        es: "Tipo abocardado/abocinado",
+        en: "Flared Type",
+      },
+      slip_machine_grooved: {
+        es: "Tipo ranurado (laminado/mecanizado)",
+        en: "Machine Grooved Type",
+      },
+      slip_grip: {
+        es: "Tipo grip / agarre",
+        en: "Grip Type",
+      },
+      slip_slip: {
+        es: "Tipo slip / deslizante",
+        en: "Slip Type",
+      },
     };
 
-    const SLIP_ON_SUBTYPE_LABELS = {
-      machine_grooved: "Ranurado mecánico (laminado/mecanizado)",
-      grip: "Tipo grip (restringido)",
-      slip: "Tipo slip (deslizante)",
+    const COMPRESSION_SUBTYPE_MAP = {
+      swage: "compression_swage",
+      press: "compression_press",
+      typical: "compression_typical",
+      bite: "compression_bite",
+      flared: "compression_flared",
+    };
+
+    const SLIP_ON_SUBTYPE_MAP = {
+      machine_grooved: "slip_machine_grooved",
+      grip: "slip_grip",
+      slip: "slip_slip",
     };
 
     const SPACES = [
@@ -262,6 +367,15 @@
     function formatNumber(value) {
       if (!Number.isFinite(value)) return value;
       return value.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+    }
+
+    function getJointLabels(kind) {
+      const entry = JOINT_ITEM_LABELS[kind];
+      if (entry) {
+        return entry;
+      }
+      const label = JOINT_VIEWER_LABELS[kind] || kind;
+      return { es: label, en: label };
     }
 
     const EMPTY_DICT = { groups: {}, systems: {}, conditions: {}, fireTest: {} };
@@ -376,6 +490,45 @@
         return { order, byGroup };
       }, [systems]);
 
+      const syncViewerFromLocation = useCallback(() => {
+        const kind = parseViewerHash(window.location.hash);
+        if (kind) {
+          setViewer({ open: true, kind, title: buildViewerTitle(kind) });
+        } else {
+          setViewer(null);
+          viewerHistoryRef.current = false;
+        }
+      }, []);
+
+      const openViewer = useCallback(
+        (kind) => {
+          if (!kind) return;
+          const targetHash = `#view:${kind}`;
+          const baseUrl = `${window.location.pathname}${window.location.search}`;
+          const nextUrl = `${baseUrl}${targetHash}`;
+          if (viewer?.open) {
+            history.replaceState(null, '', nextUrl);
+          } else {
+            history.pushState(null, '', nextUrl);
+            viewerHistoryRef.current = true;
+          }
+          syncViewerFromLocation();
+        },
+        [viewer?.open, syncViewerFromLocation]
+      );
+
+      const closeViewer = useCallback(() => {
+        if (!viewer?.open) return;
+        const expectedHash = viewer?.kind ? `#view:${viewer.kind}` : null;
+        const baseUrl = `${window.location.pathname}${window.location.search}`;
+        if (expectedHash && viewerHistoryRef.current && window.location.hash === expectedHash && window.history.length > 1) {
+          history.back();
+        } else {
+          history.replaceState(null, '', baseUrl);
+          syncViewerFromLocation();
+        }
+      }, [viewer?.open, viewer?.kind, syncViewerFromLocation]);
+
       function handleRuleChange(event) {
         setRuleId(event.target.value);
         setEvaluation(null);
@@ -412,17 +565,22 @@
       }
 
       useEffect(() => {
-        const kind = parseViewerHash(window.location.hash);
-        if (kind) {
-          setViewer({ open: true, kind, title: buildViewerTitle(kind) });
-        } else {
-          setViewer(null);
-          viewerHistoryRef.current = false;
-        }
-      }, []);
+        const handleLocationChange = () => syncViewerFromLocation();
+        handleLocationChange();
+        window.addEventListener('hashchange', handleLocationChange);
+        window.addEventListener('popstate', handleLocationChange);
+        return () => {
+          window.removeEventListener('hashchange', handleLocationChange);
+          window.removeEventListener('popstate', handleLocationChange);
+        };
+      }, [syncViewerFromLocation]);
 
       useEffect(() => {
-        if (!viewer?.open) return;
+        if (!(viewer?.open && viewer.kind)) {
+          setViewerImageStatus('idle');
+          setViewerImageSrc('');
+          return;
+        }
         const desiredSrc = JOINT_IMAGES[viewer.kind] || DEFAULT_JOINT_IMAGE;
         setViewerImageStatus('loading');
         const loader = new Image();
@@ -445,6 +603,17 @@
         };
       }, [viewer]);
 
+      useEffect(() => {
+        if (!viewer?.open) return;
+        const handleKeyDown = (event) => {
+          if (event.key === 'Escape') {
+            closeViewer();
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [viewer?.open, closeViewer]);
+
       const system = systems.find((item) => item.id === selectedSystemId) || systems[0] || null;
       const requirements = rules.LR_REQUIREMENTS_ES || [];
       const evaluationSystem = evaluation?.system || system;
@@ -462,6 +631,82 @@
       const translatedSystem = tSystem(system?.id) || '—';
       const translatedCondition = tCondition(system?.pipeSystemClass);
       const translatedFireTest = tFireTest(system?.fireTest);
+
+      const renderCategoryCard = (category) => {
+        if (!evaluation) return null;
+        const allowed = Boolean(evaluation.allowed?.[category]);
+        const titles = JOINT_CATEGORY_TITLES[category] || { es: category, en: category };
+        let subtitleExtra = '';
+        let items = [];
+
+        if (category === 'pipeUnions') {
+          const reason = evaluation.details?.pipeUnionsRule?.reason;
+          subtitleExtra = reason || (allowed ? 'Aplicable según Tabla 12.2.9' : '');
+          items = [
+            {
+              kind: 'pipe_welded_brazed',
+              enabled: allowed,
+            },
+          ];
+        } else if (category === 'compression') {
+          const subs = evaluation.details?.compressionSubs || {};
+          subtitleExtra = allowed ? 'Subtipos según clase y OD' : 'Sin subtipos válidos con la clase/OD';
+          const order = ['swage', 'press', 'typical', 'bite', 'flared'];
+          items = order.map((subId) => ({
+            kind: COMPRESSION_SUBTYPE_MAP[subId],
+            enabled: Boolean(subs[subId]),
+          }));
+        } else if (category === 'slipOn') {
+          const subs = evaluation.details?.slipOnSubs || {};
+          subtitleExtra = allowed ? 'Machine-grooved / Grip / Slip' : 'Bloqueado por ubicación o clase';
+          const order = ['machine_grooved', 'grip', 'slip'];
+          items = order.map((subId) => ({
+            kind: SLIP_ON_SUBTYPE_MAP[subId],
+            enabled: Boolean(subs[subId]),
+          }));
+        }
+
+        const statusText = allowed ? 'Se puede usar' : 'No se puede usar';
+        const subtitle = subtitleExtra ? `${statusText} • ${subtitleExtra}` : statusText;
+        const cardClass = allowed ? 'result-card result-card--allowed' : 'result-card result-card--blocked';
+
+        return html`
+          <article className=${cardClass} key=${category}>
+            <header className="result-header">
+              <span className="result-title-es">${titles.es}</span>
+              <span className="result-title-en">(${titles.en})</span>
+            </header>
+            <div className="block-subtitle">${subtitle}</div>
+            <div className="result-body">
+              <ul className="option-list">
+                ${items.map((item, idx) => {
+                  if (!item?.kind) return null;
+                  const labels = getJointLabels(item.kind);
+                  const disabled = !item.enabled;
+                  return html`
+                    <li className=${`option-item${disabled ? ' disabled' : ''}`} key=${`${item.kind}-${idx}`}>
+                      <div className="option-text">
+                        <span className="option-es">${labels.es}</span>
+                        <span className="option-en">(${labels.en})</span>
+                      </div>
+                      <div className="option-actions">
+                        <button
+                          type="button"
+                          className="chip"
+                          disabled=${disabled}
+                          onClick=${() => openViewer(item.kind)}
+                        >
+                          ver
+                        </button>
+                      </div>
+                    </li>
+                  `;
+                })}
+              </ul>
+            </div>
+          </article>
+        `;
+      };
 
       return html`
         <div className="max-w-6xl mx-auto px-4 pb-16">
@@ -676,47 +921,7 @@
                 </dl>
               </article>
               <div className="result-row">
-                ${['pipeUnions', 'compression', 'slipOn'].map((category) => {
-                  const allowed = evaluation.allowed?.[category];
-                  const cardClass = allowed ? 'result-card result-card--allowed' : 'result-card result-card--blocked';
-                  const title = JOINT_CATEGORY_LABELS[category] || category;
-
-                  const content = (() => {
-                    if (category === 'pipeUnions') {
-                      const rule = evaluation.details?.pipeUnionsRule;
-                      return html`<li className=${`option-item ${allowed ? '' : 'disabled'}`}>
-                        <div className="text-sm text-slate-200">${rule?.reason || 'Aplicable según Tabla 12.2.9'}</div>
-                      </li>`;
-                    }
-                    if (category === 'compression') {
-                      const subs = evaluation.details?.compressionSubs || {};
-                      return html`<>
-                        ${Object.entries(subs).map(([subId, enabled]) => html`
-                          <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
-                            <span className="text-sm font-medium text-slate-200">${COMPRESSION_SUBTYPE_LABELS[subId] || subId}</span>
-                          </li>
-                        `)}
-                      </>`;
-                    }
-                    const subs = evaluation.details?.slipOnSubs || {};
-                    return html`<>
-                      ${Object.entries(subs).map(([subId, enabled]) => html`
-                        <li className=${`option-item ${enabled ? '' : 'disabled'}`}>
-                          <span className="text-sm font-medium text-slate-200">${SLIP_ON_SUBTYPE_LABELS[subId] || subId}</span>
-                        </li>
-                      `)}
-                    </>`;
-                  })();
-
-                  return html`
-                    <article className=${cardClass} key=${category}>
-                      <header className="result-header text-center mb-4">
-                        <span className="result-title-es">${title}</span>
-                      </header>
-                      <ul className="option-list">${content}</ul>
-                    </article>
-                  `;
-                })}
+                ${['pipeUnions', 'compression', 'slipOn'].map((category) => renderCategoryCard(category))}
               </div>
 
               <section className="grid gap-6 md:grid-cols-2">
@@ -749,29 +954,26 @@
         </div>
 
         ${viewer?.open ? html`
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+            onClick=${closeViewer}
+          >
+            <div
+              className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl"
+              onClick=${(event) => event.stopPropagation()}
+            >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
                 <h3 className="text-lg font-semibold">${viewer.title}</h3>
-                <button
-                  className="text-slate-300 hover:text-slate-100"
-                  onClick=${() => {
-                    const expectedHash = viewer?.kind ? `#view:${viewer.kind}` : null;
-                    if (expectedHash && viewerHistoryRef.current && window.location.hash === expectedHash && window.history.length > 1) {
-                      history.back();
-                    } else {
-                      const baseUrl = `${window.location.pathname}${window.location.search}`;
-                      history.replaceState(null, '', baseUrl);
-                      setViewer(null);
-                    }
-                  }}
-                >Cerrar</button>
+                <button className="text-slate-300 hover:text-slate-100" onClick=${closeViewer}>Cerrar</button>
               </div>
               <div className="p-4">
                 ${viewerImageStatus === 'loading'
                   ? html`<p className="text-sm text-slate-400">Cargando imagen…</p>`
                   : html`<img src=${viewerImageSrc || DEFAULT_JOINT_IMAGE} alt=${viewer.title} className="w-full h-auto rounded-lg" />`}
               </div>
+              ${viewerImageStatus === 'error'
+                ? html`<div className="px-4 pb-4 text-xs text-rose-300">No se encontró una imagen específica; se muestra la referencia genérica.</div>`
+                : html`<div className="px-4 pb-4 text-xs text-slate-400">Referencia fotográfica para el tipo de unión seleccionado.</div>`}
             </div>
           </div>
         ` : null}
