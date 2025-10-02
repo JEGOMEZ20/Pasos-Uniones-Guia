@@ -1,6 +1,6 @@
 {
     "standard": "LR_NAVAL_SHIPS",
-    "version": "Vol2 Pt7 Ch1 §5.10 (Tables 1.5.3, 1.5.4)",
+    "version": "Vol2 Pt7 Ch1 §5.10 (Tables 1.5.3, 1.5.4) – rev 2024-06",
     "systems": [
         {
             "id": "aircraft_vehicle_fuel_lt60",
