@@ -27,12 +27,12 @@ function evaluate(options: {
 }
 
 describe("evaluateLRNavalShips", () => {
-  it("marca condiciones para bilge Cat. A (Clase III) con slip-on", () => {
+  it("marca condiciones para bilge Cat. A (Clase I) con slip-on", () => {
     const result = evaluate({
       systemId: "bilge_lines",
       space: "machinery_cat_A",
       joint: "slip_on_machine_grooved",
-      pipeClass: "III",
+      pipeClass: "I",
       od_mm: 76,
     });
 
@@ -92,7 +92,7 @@ describe("evaluateLRNavalShips", () => {
       systemId: "steam",
       space: "open_deck",
       joint: "slip_on_machine_grooved",
-      pipeClass: "II",
+      pipeClass: "I",
       od_mm: 40,
       designPressure_bar: 8,
       shipType: "oil_tanker",
@@ -120,6 +120,19 @@ describe("evaluateLRNavalShips", () => {
     expect(result.reasons.some((msg) => msg.includes("Nota 5"))).toBe(true);
   });
 
+  it("bloquea slip-on Clase II por Tabla 1.5.4", () => {
+    const result = evaluate({
+      systemId: "aircraft_vehicle_fuel_lt60",
+      space: "other_machinery",
+      joint: "slip_on_machine_grooved",
+      pipeClass: "II",
+      od_mm: 50,
+    });
+
+    expect(result.status).toBe("forbidden");
+    expect(result.reason).toContain("Tabla 1.5.4");
+  });
+
   it("mantiene slip-on machine grooved disponible en bilge Cat. A al agrupar", () => {
     const group = evaluateLRNavalGroups({
       systemId: "bilge_lines",
@@ -133,7 +146,7 @@ describe("evaluateLRNavalShips", () => {
       systemId: "bilge_lines",
       space: "machinery_cat_A",
       joint: "slip_on_machine_grooved",
-      pipeClass: "III",
+      pipeClass: "I",
       od_mm: 76,
     });
 
@@ -159,7 +172,7 @@ describe("evaluateLRNavalShips", () => {
       systemId: "bilge_lines",
       space: "machinery_cat_A",
       joint: "slip_on_joints",
-      pipeClass: "III",
+      pipeClass: "I",
       od_mm: 114.3,
     });
 
