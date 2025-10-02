@@ -26,7 +26,7 @@ export function evaluateLRShips(ctx, db = dataset) {
     const trace = [...groupResult.trace];
     const conditions = [...groupResult.conditions];
     const notesApplied = [...groupResult.notesApplied];
-    const generalClauses = [...groupResult.generalClauses];
+    const clauses = [...groupResult.clauses];
     const reasons = [...groupResult.reasons];
     let status = groupResult.status;
     let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
@@ -64,7 +64,7 @@ export function evaluateLRShips(ctx, db = dataset) {
         trace,
         observations,
         notesApplied,
-        generalClauses,
+        clauses,
     };
 }
 export function evaluateGroups(ctx, db = dataset) {
@@ -107,7 +107,7 @@ function base(allowed, row, group) {
         conditions: [],
         reasons: [],
         notesApplied: [],
-        generalClauses: [],
+        clauses: [],
         trace: [],
     };
     const baseMessage = `Tabla 12.2.8 (${row.label_es}): ${allowed ? "+" : "–"} para ${describeJointGroup(group)}; clasificación '${row.class_of_pipe_system}'.`;
@@ -123,6 +123,14 @@ function pushOnce(arr, value) {
     if (!arr.includes(value)) {
         arr.push(value);
     }
+}
+function forbidByClause(out, msg, clause) {
+    out.status = "forbidden";
+    pushOnce(out.reasons, msg);
+    if (!out.clauses) {
+        out.clauses = [];
+    }
+    out.clauses.push(clause);
 }
 function applyNoteScoped_LRShips(note, ctx, row, group, out) {
     if (out.status === "forbidden") {
@@ -236,47 +244,55 @@ function applyNoteScoped_LRShips(note, ctx, row, group, out) {
 function applyGeneralClauses(ctx, group, out) {
     const mediumSame = ctx.mediumInPipeSameAsTank ?? ctx.sameMediumInTank;
     if (ctx.directToShipSideBelowLimit) {
-        const message = "§2.12.5: prohibido conectar directamente al costado bajo el límite";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        out.trace.push(message);
+        const clause = {
+            code: "SH-2.12.5",
+            title: "Sin juntas conectadas directamente al costado bajo el límite",
+            section: "Pt 5, Ch 12, §2.12.5",
+        };
+        const message = "Tramo conectado directamente al costado bajo el límite: juntas mecánicas prohibidas";
+        forbidByClause(out, message, clause);
+        out.trace.push("§2.12.5: prohibido conectar directamente al costado bajo el límite.");
         return;
     }
     if (ctx.tankContainsFlammable) {
-        const message = "§2.12.5: prohibido en tanques con fluidos inflamables";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        out.trace.push(message);
+        const clause = {
+            code: "SH-2.12.5.flammable",
+            title: "Juntas mecánicas prohibidas en tanques con fluidos inflamables",
+            section: "Pt 5, Ch 12, §2.12.5",
+        };
+        const message = "Tanques con fluidos inflamables: juntas mecánicas no permitidas";
+        forbidByClause(out, message, clause);
+        out.trace.push("§2.12.5: prohibido en tanques con fluidos inflamables.");
         return;
     }
-    if (group === "slip_on_joints") {
-        const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
-        const isHardAccessSpace = ctx.accessibility === "not_easy";
-        if (isCargoOrTank || isHardAccessSpace) {
-            const message = "§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles (2.12.8 / 5.10.9)";
-            out.status = "forbidden";
-            pushOnce(out.generalClauses, message);
-            pushOnce(out.reasons, message);
-            out.trace.push(message);
-            return;
-        }
-        if (ctx.space === "tank" && mediumSame === false) {
-            const message = "§2.12.8: slip-on en tanques sólo si el medio es el mismo";
-            out.status = "forbidden";
-            pushOnce(out.generalClauses, message);
-            pushOnce(out.reasons, message);
-            out.trace.push(message);
-            return;
-        }
+    const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
+    const isHardAccess = ctx.accessibility === "not_easy";
+    if (group === "slip_on_joints" && (isCargoOrTank || isHardAccess)) {
+        const clause = {
+            code: "SH-2.12.8",
+            title: "Slip-on no en bodegas/tanques/espacios no fácilmente accesibles",
+            section: "Pt 5, Ch 12, §2.12.8",
+        };
+        forbidByClause(out, "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles", clause);
+        out.trace.push("§2.12.8: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles.");
+    }
+    if (group === "slip_on_joints" && ctx.space === "tank" && mediumSame === false) {
+        const clause = {
+            code: "SH-2.12.8.b",
+            title: "Dentro de tanques sólo si el medio es el mismo",
+            section: "Pt 5, Ch 12, §2.12.8",
+        };
+        forbidByClause(out, "Slip-on dentro de tanque: permitido sólo si el medio es el mismo", clause);
+        out.trace.push("§2.12.8: Slip-on en tanque sólo si el medio es el mismo.");
     }
     if (ctx.joint === "slip_on_slip_type" && ctx.asMainMeans) {
-        const message = "§2.12.9: Slip-type no como medio principal (sólo compensación axial)";
-        out.status = "forbidden";
-        pushOnce(out.generalClauses, message);
-        pushOnce(out.reasons, message);
-        out.trace.push(message);
+        const clause = {
+            code: "SH-2.12.9",
+            title: "Slip-type no puede ser medio principal de unión",
+            section: "Pt 5, Ch 12, §2.12.9",
+        };
+        forbidByClause(out, "Slip-type no puede ser medio principal", clause);
+        out.trace.push("§2.12.9: Slip-type no como medio principal (sólo compensación axial).");
     }
 }
 function forbid(ctx, trace, message) {
@@ -294,7 +310,7 @@ function forbid(ctx, trace, message) {
         trace: [...trace],
         observations: [message],
         notesApplied: [],
-        generalClauses: [],
+        clauses: [],
     };
 }
 function groupOf(joint) {
