@@ -36,7 +36,7 @@ export interface LRNavalShipsContext {
 }
 
 export interface LRNavalShipsEvaluation {
-  status: "allowed" | "conditional" | "forbidden";
+  status: EvalStatus;
   conditions: string[];
   normRef: string;
   reason?: string;
@@ -46,6 +46,9 @@ export interface LRNavalShipsEvaluation {
   od_mm?: number;
   designPressure_bar?: number;
   trace: string[];
+  observations: string[];
+  notesApplied: number[];
+  generalClauses: string[];
 }
 
 const normReference = "LR Naval Ships Vol2 Pt7 Ch1 §5.10, Tablas 1.5.3–1.5.4";
@@ -69,7 +72,19 @@ const NOTE7_INFO_CHIP = "HVAC/intakes: ver secciones específicas de las Reglas"
 const SLIP_TYPE_WARNING = "No como medio principal (slip-type)";
 const TAILORING_CHIP_PREFIX = "Tailoring Doc: validar";
 
-type JointGroup = "pipe_unions" | "compression_couplings" | "slip_on_joints";
+type Group = "pipe_unions" | "compression_couplings" | "slip_on_joints";
+type EvalStatus = "allowed" | "conditional" | "forbidden";
+
+interface GroupEvalResult {
+  status: EvalStatus;
+  conditions: string[];
+  reasons: string[];
+  observations: string[];
+  notesApplied: number[];
+  generalClauses: string[];
+  trace: string[];
+  skipGeneralClauses?: boolean;
+}
 
 type NavalSystem = {
   id: string;
@@ -79,7 +94,7 @@ type NavalSystem = {
   fire_test: "30min_dry" | "30min_wet" | "8min_dry_plus_22min_wet" | "not_required";
   notes: number[];
   extra?: string;
-  allowed_joints: Partial<Record<JointGroup, boolean>>;
+  allowed_joints: Partial<Record<Group, boolean>>;
 };
 
 type NavalNote =
@@ -123,8 +138,6 @@ type NavalDataset = {
 
 const db = dataset as NavalDataset;
 
-type Status = "allowed" | "conditional" | "forbidden";
-
 type ClassCheckResult =
   | { ok: true; detail?: string }
   | { ok: false; reason: "missing_inputs" | "limit"; detail?: string };
@@ -133,265 +146,358 @@ export function evaluateLRNavalShips(
   ctx: LRNavalShipsContext,
   datasetOverride: NavalDataset = db
 ): LRNavalShipsEvaluation {
-  const trace: string[] = [];
   const sys = datasetOverride.systems.find((s) => s.id === ctx.systemId);
   if (!sys) {
-    return forbid(ctx, trace, "Sistema no reconocido");
+    return forbid(ctx, [], "Sistema no reconocido");
   }
 
   const jointGroup = groupOf(ctx.joint);
   if (!jointGroup) {
-    return forbid(ctx, trace, "Tipo de junta desconocido");
+    return forbid(ctx, [], "Tipo de junta desconocido");
   }
 
-  const allowedByRow = Boolean(sys.allowed_joints[jointGroup]);
-  trace.push(
-    `Tabla 1.5.3 (${sys.label_es}): ${allowedByRow ? "+" : "–"} para ${describeJointGroup(
-      jointGroup
-    )}; clase '${sys.class_of_pipe_system}'.`
-  );
-  if (!allowedByRow) {
-    return forbid(ctx, trace, "Tabla 1.5.3: '-' para este tipo de junta");
-  }
+  const groups = evaluateGroupsForRow(ctx, sys, datasetOverride);
+  const groupResult = groups[jointGroup];
+  const trace = [...groupResult.trace];
+  const conditions = [...groupResult.conditions];
+  const observations = [...groupResult.observations];
+  const notesApplied = [...groupResult.notesApplied];
+  const generalClauses = [...groupResult.generalClauses];
+  const reasons = [...groupResult.reasons];
 
-  const classCheck = passClassOD(ctx.joint, ctx.pipeClass, ctx.od_mm, datasetOverride);
-  if (!classCheck.ok) {
-    if (classCheck.reason === "missing_inputs") {
-      return forbid(ctx, trace, "Falta clase/OD (Tabla 1.5.4)");
-    }
-    return forbid(ctx, trace, "Tabla 1.5.4: límite de clase/OD", classCheck.detail);
-  }
-  if (classCheck.detail) {
-    trace.push(classCheck.detail);
-  }
+  let status: EvalStatus = groupResult.status;
+  let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
 
-  let status: Status = sys.fire_test !== "not_required" ? "conditional" : "allowed";
-  let reason: string | undefined;
-  const conditions: string[] = [];
-  let skipGeneralClauses = false;
-
-  const addCondition = (msg: string, forceConditional = true) => {
-    if (!conditions.includes(msg)) {
-      conditions.push(msg);
-    }
-    if (forceConditional && status !== "forbidden") {
-      status = "conditional";
-    }
-  };
-
-  const addTrace = (msg: string) => {
-    trace.push(msg);
-  };
-
-  if (sys.fire_test !== "not_required") {
-    const label = FIRE_TEST_LABELS[sys.fire_test] ?? sys.fire_test;
-    addCondition(label, true);
-    addTrace(`Tabla 1.5.3: Ensayo base ${label}.`);
-  }
-
-  for (const noteId of sys.notes) {
-    if (reason) break;
-    const note = datasetOverride.notes[String(noteId)];
-    if (!note) continue;
-    switch (note.type) {
-      case "catA_fire_resistant_if_deteriorates_and_material_for_bilge_main": {
-        if (ctx.space === "machinery_cat_A" && note.catA_requires_fire_resistant) {
-          addCondition(NOTE1_FIRE_CHIP);
-          addTrace(`Nota ${noteId}: En Cat. A usar juntas resistentes al fuego si hay componentes que se deterioran.`);
-        }
-        if (ctx.space === "machinery_cat_A" && sys.id === "bilge_lines") {
-          addCondition(NOTE1_BILGE_MATERIAL_CHIP);
-          addTrace(`Nota ${noteId}: Acoples del bilge main en Cat. A deben ser acero/CuNi/equiv.`);
-        }
-        break;
+  if (status !== "forbidden") {
+    const classCheck = passClassOD(ctx.joint, ctx.pipeClass, ctx.od_mm, datasetOverride);
+    if (!classCheck.ok) {
+      if (classCheck.reason === "missing_inputs") {
+        reason = "Falta clase/OD (Tabla 1.5.4)";
+      } else {
+        reason = "Tabla 1.5.4: límite de clase/OD";
       }
-      case "no_slip_on_in_catA_munitions_accommodation": {
-        if (isSlipOn(ctx.joint)) {
-          if (note.prohibit_spaces.includes(ctx.space)) {
-            addTrace(`Nota ${noteId}: Slip-on prohibidas en ${ctx.space}.`);
-            reason = `Nota ${noteId}: slip-on no aceptadas en este espacio`;
-          } else if (
-            ctx.space === "other_machinery" &&
-            note.allow_other_machinery_if_visible_accessible &&
-            ctx.location !== "visible_accessible"
-          ) {
-            addCondition(NOTE2_LOCATION_CHIP);
-            addTrace(`Nota ${noteId}: En otros espacios de maquinaria deben quedar visibles y accesibles.`);
-          }
-        }
-        break;
+      status = "forbidden";
+      if (classCheck.detail) {
+        pushOnce(observations, classCheck.detail);
       }
-      case "fire_resistant_except_open_deck_low_fire_risk": {
-        if (ctx.space !== note.exception.space) {
-          addCondition(NOTE3_FIRE_CHIP);
-          addTrace(`Nota ${noteId}: Exigir tipo resistente al fuego salvo en cubierta abierta de bajo riesgo.`);
-        }
-        break;
-      }
-      case "fire_resistant_required": {
-        addCondition(NOTE4_FIRE_CHIP);
-        addTrace(`Nota ${noteId}: Requiere tipo resistente al fuego.`);
-        break;
-      }
-      case "restrained_slip_on_steam_open_deck_tankers_le_10bar": {
-        if (isSlipOn(ctx.joint)) {
-          const okPressure = (ctx.designPressure_bar ?? Number.POSITIVE_INFINITY) <= note.max_pressure_bar;
-          const okLocation = ctx.space === note.space;
-          const okShipType = note.ship_types.includes(ctx.shipType ?? "other");
-          const isRestrained = ctx.joint === "slip_on_machine_grooved";
-          if (okPressure && okLocation && okShipType && isRestrained) {
-            addCondition(NOTE5_STEAM_CHIP, false);
-            addTrace(
-              `Nota ${noteId}: Slip-on restringida permitida en cubierta expuesta para vapor ≤ ${note.max_pressure_bar} bar en petroleros/quimiqueros.`
-            );
-          } else {
-            addTrace(`Nota ${noteId}: Condiciones para restrained slip-on en vapor no satisfechas.`);
-            reason =
-              "Nota 5: solo se permiten restrained slip-on en cubierta expuesta de petroleros/quimiqueros con P ≤ 10 bar";
-          }
-        }
-        break;
-      }
-      case "only_above_limit_of_watertight_integrity": {
-        if (ctx.aboveLimitOfWatertightIntegrity === false) {
-          addTrace(`Nota ${noteId}: Aplicable solo sobre el límite de integridad estanca.`);
-          addCondition(NOTE6_WLI_CHIP);
-          reason = "Nota 6: solo permitido sobre el Límite de Integridad Estanca";
-        } else if (ctx.aboveLimitOfWatertightIntegrity !== undefined) {
-          addCondition(NOTE6_WLI_CHIP, false);
-          addTrace(`Nota ${noteId}: Confirmado sobre el límite de integridad estanca.`);
-        }
-        break;
-      }
-      case "hvac_trunking_intakes_uptakes_defer": {
-        addCondition(NOTE7_INFO_CHIP, false);
-        addTrace(`Nota ${noteId}: ${note.message}`);
-        skipGeneralClauses = true;
-        break;
-      }
+    } else if (classCheck.detail) {
+      trace.push(classCheck.detail);
     }
   }
 
-  if (reason) {
-    return forbid(ctx, trace, reason, undefined, conditions);
-  }
-
-  if (!skipGeneralClauses) {
-    const generalReason = applyGeneralClauses(ctx, sys, addCondition, addTrace);
-    if (generalReason) {
-      return forbid(ctx, trace, generalReason, undefined, conditions);
-    }
-  }
-
-  if (ctx.tailoring && (ctx.tailoring.shock || ctx.tailoring.fire || ctx.tailoring.watertight)) {
+  if (status !== "forbidden" && ctx.tailoring && (ctx.tailoring.shock || ctx.tailoring.fire || ctx.tailoring.watertight)) {
     const requirements = [
       ctx.tailoring.shock ? "Shock" : null,
       ctx.tailoring.fire ? "Fire" : null,
       ctx.tailoring.watertight ? "WT" : null,
     ].filter(Boolean);
-    addCondition(`${TAILORING_CHIP_PREFIX} ${requirements.join("/") || "Shock/Fire/WT"}`);
-    addTrace("§5.10.2: Verificar requisitos de Tailoring Doc (autoridad naval).");
+    const label = `${TAILORING_CHIP_PREFIX} ${requirements.join("/") || "Shock/Fire/WT"}`;
+    pushOnce(conditions, label);
+    trace.push("§5.10.2: Verificar requisitos de Tailoring Doc (autoridad naval).");
   }
 
   return {
     status,
     conditions,
     normRef: normReference,
+    reason,
     systemId: sys.id,
     joint: ctx.joint,
     pipeClass: ctx.pipeClass,
     od_mm: ctx.od_mm,
     designPressure_bar: ctx.designPressure_bar,
     trace,
+    observations,
+    notesApplied,
+    generalClauses,
   };
 }
 
-function applyGeneralClauses(
+export function evaluateGroups(
   ctx: LRNavalShipsContext,
-  sys: NavalSystem,
-  addCondition: (msg: string, forceConditional?: boolean) => void,
-  addTrace: (msg: string) => void
-): string | null {
-  if (ctx.isSectionDirectlyConnectedToShipSide && ctx.aboveLimitOfWatertightIntegrity === false) {
-    addTrace("§5.10.6: Tramo conectado al costado bajo WLI → juntas mecánicas prohibidas.");
-    return "§5.10.6: no se permiten juntas si el tramo conectado al costado está bajo el WLI";
+  datasetOverride: NavalDataset = db
+): Record<Group, GroupEvalResult> {
+  const sys = datasetOverride.systems.find((s) => s.id === ctx.systemId);
+  if (!sys) {
+    throw new Error("Sistema no reconocido");
+  }
+  return evaluateGroupsForRow(ctx, sys, datasetOverride);
+}
+
+function evaluateGroupsForRow(
+  ctx: LRNavalShipsContext,
+  row: NavalSystem,
+  datasetOverride: NavalDataset
+): Record<Group, GroupEvalResult> {
+  const groups: Record<Group, GroupEvalResult> = {
+    pipe_unions: base(Boolean(row.allowed_joints.pipe_unions), row, "pipe_unions"),
+    compression_couplings: base(Boolean(row.allowed_joints.compression_couplings), row, "compression_couplings"),
+    slip_on_joints: base(Boolean(row.allowed_joints.slip_on_joints), row, "slip_on_joints"),
+  };
+
+  const fireLabel = row.fire_test !== "not_required" ? FIRE_TEST_LABELS[row.fire_test] ?? row.fire_test : null;
+  if (fireLabel) {
+    for (const result of Object.values(groups)) {
+      if (result.status === "forbidden") continue;
+      if (result.status === "allowed") {
+        result.status = "conditional";
+      }
+      pushOnce(result.conditions, fireLabel);
+      result.trace.push(`Tabla 1.5.3: Ensayo base ${fireLabel}.`);
+    }
+  }
+
+  const rowNotes = new Set<number>(row.notes);
+  for (const noteId of rowNotes) {
+    for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
+      if (result.status === "forbidden") continue;
+      applyNote_LRNS(ctx, row, datasetOverride, noteId, groupName, result);
+    }
+  }
+
+  for (const [groupName, result] of Object.entries(groups) as [Group, GroupEvalResult][]) {
+    if (result.status === "forbidden" || result.skipGeneralClauses) continue;
+    applyGeneralClauses(ctx, groupName, result);
+  }
+
+  return groups;
+}
+
+function base(allowed: boolean, row: NavalSystem, group: Group): GroupEvalResult {
+  const result: GroupEvalResult = {
+    status: allowed ? "allowed" : "forbidden",
+    conditions: [],
+    reasons: [],
+    observations: [],
+    notesApplied: [],
+    generalClauses: [],
+    trace: [],
+  };
+  const message = `Tabla 1.5.3 (${row.label_es}): ${allowed ? "+" : "–"} para ${describeJointGroup(
+    group
+  )}; clase '${row.class_of_pipe_system}'.`;
+  result.trace.push(message);
+  if (!allowed) {
+    result.reasons.push("Tabla de sistema: ‘-’");
+  }
+  return result;
+}
+
+function applyNote_LRNS(
+  ctx: LRNavalShipsContext,
+  row: NavalSystem,
+  datasetOverride: NavalDataset,
+  noteId: number,
+  group: Group,
+  out: GroupEvalResult
+) {
+  const note = datasetOverride.notes[String(noteId)];
+  if (!note) return;
+
+  switch (note.type) {
+    case "catA_fire_resistant_if_deteriorates_and_material_for_bilge_main": {
+      if (ctx.space === "machinery_cat_A" && note.catA_requires_fire_resistant) {
+        if (out.status === "allowed") {
+          out.status = "conditional";
+        }
+        pushOnce(out.conditions, NOTE1_FIRE_CHIP);
+        pushOnce(out.notesApplied, noteId);
+        pushOnce(
+          out.observations,
+          "Nota 1: Cat. A requiere juntas resistentes al fuego si hay componentes que se deterioran."
+        );
+        out.trace.push("Nota 1: Cat. A ⇒ tipo resistente al fuego.");
+      }
+      if (ctx.space === "machinery_cat_A" && row.id === "bilge_lines") {
+        if (out.status === "allowed") {
+          out.status = "conditional";
+        }
+        pushOnce(out.conditions, NOTE1_BILGE_MATERIAL_CHIP);
+        pushOnce(out.notesApplied, noteId);
+        pushOnce(out.observations, "Nota 1: Acoples del bilge main en Cat. A deben ser acero/CuNi/equiv.");
+        out.trace.push("Nota 1: Bilge main ⇒ material acero/CuNi/equiv.");
+      }
+      break;
+    }
+    case "no_slip_on_in_catA_munitions_accommodation": {
+      if (group === "slip_on_joints") {
+        if (note.prohibit_spaces.includes(ctx.space)) {
+          out.status = "forbidden";
+          const message = "Nota 2: slip-on no aceptadas en Cat. A/municiones/aloj.";
+          pushOnce(out.reasons, message);
+          pushOnce(out.observations, message);
+          pushOnce(out.notesApplied, noteId);
+          out.trace.push(`Nota 2: Slip-on prohibidas en ${ctx.space}.`);
+        } else if (
+          ctx.space === "other_machinery" &&
+          note.allow_other_machinery_if_visible_accessible &&
+          ctx.location !== "visible_accessible"
+        ) {
+          if (out.status !== "forbidden") {
+            out.status = "conditional";
+          }
+          pushOnce(out.conditions, NOTE2_LOCATION_CHIP);
+          pushOnce(out.notesApplied, noteId);
+          pushOnce(out.observations, "Nota 2: ubicar en posiciones visibles y accesibles.");
+          out.trace.push("Nota 2: otras máquinas ⇒ visibles/accesibles.");
+        }
+      }
+      break;
+    }
+    case "fire_resistant_except_open_deck_low_fire_risk": {
+      if (ctx.space !== note.exception.space) {
+        if (out.status === "allowed") {
+          out.status = "conditional";
+        }
+        pushOnce(out.conditions, NOTE3_FIRE_CHIP);
+        pushOnce(out.notesApplied, noteId);
+        pushOnce(out.observations, "Nota 3: requiere juntas de tipo resistente al fuego.");
+        out.trace.push("Nota 3: exigir tipo resistente al fuego.");
+      }
+      break;
+    }
+    case "fire_resistant_required": {
+      if (out.status === "allowed") {
+        out.status = "conditional";
+      }
+      pushOnce(out.conditions, NOTE4_FIRE_CHIP);
+      pushOnce(out.notesApplied, noteId);
+      pushOnce(out.observations, "Nota 4: requiere juntas de tipo resistente al fuego.");
+      out.trace.push("Nota 4: tipo resistente al fuego obligatorio.");
+      break;
+    }
+    case "restrained_slip_on_steam_open_deck_tankers_le_10bar": {
+      if (group === "slip_on_joints" && ctx.space === note.space) {
+        const okPressure = (ctx.designPressure_bar ?? Number.POSITIVE_INFINITY) <= note.max_pressure_bar;
+        const okShipType = note.ship_types.includes(ctx.shipType ?? "other");
+        const isRestrained = ctx.joint === "slip_on_machine_grooved";
+        if (okPressure && okShipType && isRestrained) {
+          pushOnce(out.conditions, NOTE5_STEAM_CHIP);
+          pushOnce(out.notesApplied, noteId);
+          pushOnce(
+            out.observations,
+            "Nota 5: solo restrained slip-on en cubierta expuesta para vapor ≤10 bar (petroleros/quimiqueros)."
+          );
+          out.trace.push("Nota 5: Condiciones satisfechas para restrained slip-on.");
+        } else {
+          out.status = "forbidden";
+          const message =
+            "Nota 5: solo se permiten restrained slip-on en cubierta expuesta de petroleros/quimiqueros con P ≤10 bar";
+          pushOnce(out.reasons, message);
+          pushOnce(out.observations, message);
+          pushOnce(out.notesApplied, noteId);
+          out.trace.push("Nota 5: Condiciones para restrained slip-on no satisfechas.");
+        }
+      }
+      break;
+    }
+    case "only_above_limit_of_watertight_integrity": {
+      if (ctx.aboveLimitOfWatertightIntegrity === false) {
+        out.status = "forbidden";
+        const message = "Nota 6: solo permitido sobre el Límite de Integridad Estanca";
+        pushOnce(out.reasons, message);
+        pushOnce(out.observations, message);
+        pushOnce(out.notesApplied, noteId);
+        out.trace.push("Nota 6: Sección bajo el Límite de Integridad Estanca ⇒ prohibido.");
+      } else {
+        if (out.status === "allowed") {
+          out.status = "conditional";
+        }
+        pushOnce(out.conditions, NOTE6_WLI_CHIP);
+        pushOnce(out.notesApplied, noteId);
+        pushOnce(out.observations, "Nota 6: confirmar ubicación sobre el Límite de Integridad Estanca.");
+        out.trace.push("Nota 6: Requiere confirmar ubicación sobre el WLI.");
+      }
+      break;
+    }
+    case "hvac_trunking_intakes_uptakes_defer": {
+      pushOnce(out.conditions, NOTE7_INFO_CHIP);
+      pushOnce(out.notesApplied, noteId);
+      pushOnce(out.observations, `Nota 7: ${note.message}`);
+      out.trace.push(`Nota 7: ${note.message}`);
+      out.skipGeneralClauses = true;
+      break;
+    }
+  }
+}
+
+function applyGeneralClauses(ctx: LRNavalShipsContext, group: Group, out: GroupEvalResult) {
+  const mediumSame = ctx.mediumInPipeSameAsTank;
+
+  if (
+    ctx.isSectionDirectlyConnectedToShipSide &&
+    ctx.aboveLimitOfWatertightIntegrity === false
+  ) {
+    const message = "§5.10.6: tramo conectado al costado bajo el WLI ⇒ juntas prohibidas";
+    out.status = "forbidden";
+    pushOnce(out.generalClauses, message);
+    pushOnce(out.reasons, message);
+    pushOnce(out.observations, message);
+    out.trace.push(message);
+    return;
   }
 
   if (ctx.space === "tank" && (ctx.lineType === "fuel_oil" || ctx.lineType === "thermal_oil")) {
-    addTrace("§5.10.6: Tanques con fluidos inflamables → juntas mecánicas prohibidas.");
-    return "§5.10.6: juntas prohibidas en tanques con fluidos inflamables";
+    const message = "§5.10.6: juntas prohibidas en tanques con fluidos inflamables";
+    out.status = "forbidden";
+    pushOnce(out.generalClauses, message);
+    pushOnce(out.reasons, message);
+    pushOnce(out.observations, message);
+    out.trace.push(message);
+    return;
   }
 
-  if (isSlipOn(ctx.joint)) {
+  if (group === "slip_on_joints") {
     if (ctx.accessibility === "not_easy") {
-      addTrace("§5.10.9: Slip-on prohibidas en ubicaciones de difícil acceso.");
-      return "§5.10.9: slip-on no permitidas si no hay acceso fácil";
+      const message = "§5.10.9: slip-on prohibidas en ubicaciones de difícil acceso";
+      out.status = "forbidden";
+      pushOnce(out.generalClauses, message);
+      pushOnce(out.reasons, message);
+      pushOnce(out.observations, message);
+      out.trace.push(message);
+      return;
     }
 
     if (ctx.space === "tank") {
-      if (ctx.mediumInPipeSameAsTank === true) {
-        addTrace("§5.10.9: Slip-on dentro de tanques solo si el medio es el mismo.");
-      } else {
-        addTrace("§5.10.9: Slip-on en tanques con medio diferente están prohibidas.");
-        return "§5.10.9: slip-on solo dentro de tanques con el mismo medio";
+      if (mediumSame === false) {
+        const message = "§5.10.9: slip-on en tanques solo si el medio es el mismo";
+        out.status = "forbidden";
+        pushOnce(out.generalClauses, message);
+        pushOnce(out.reasons, message);
+        pushOnce(out.observations, message);
+        out.trace.push(message);
+        return;
+      }
+      if (mediumSame === true) {
+        const message = "§5.10.9: confirmar medio en tanque igual al de la tubería";
+        pushOnce(out.generalClauses, message);
+        pushOnce(out.observations, message);
+        out.trace.push(message);
       }
     }
 
     if (["cargo_hold", "cofferdam", "void"].includes(ctx.space)) {
-      addTrace("§5.10.9: Slip-on prohibidas en espacios no accesibles.");
-      return "§5.10.9: slip-on prohibidas en bodegas, cofferdams o voids";
+      const message = "§5.10.9: slip-on prohibidas en bodegas/cofferdams/voids";
+      out.status = "forbidden";
+      pushOnce(out.generalClauses, message);
+      pushOnce(out.reasons, message);
+      pushOnce(out.observations, message);
+      out.trace.push(message);
+      return;
     }
   }
 
   if (ctx.joint === "slip_on_slip_type") {
+    pushOnce(out.conditions, SLIP_TYPE_WARNING);
+    out.trace.push("§5.10.10: Slip-type solo para compensación axial.");
     if (ctx.mainMeansOfConnection) {
-      addCondition(SLIP_TYPE_WARNING, false);
-      addTrace("§5.10.10: Slip type no debe ser medio principal de conexión.");
-      return "§5.10.10: slip type no puede usarse como medio principal";
+      const message = "§5.10.10: slip-type no puede ser medio principal";
+      out.status = "forbidden";
+      pushOnce(out.generalClauses, message);
+      pushOnce(out.reasons, message);
+      pushOnce(out.observations, message);
+      out.trace.push(message);
     }
-    addCondition(SLIP_TYPE_WARNING, false);
-    addTrace("§5.10.10: Recordatorio – slip type solo para compensación axial.");
-  }
-
-  return null;
-}
-
-function groupOf(joint: Joint): JointGroup | null {
-  if (joint === "pipe_unions" || joint === "compression_couplings" || joint === "slip_on_joints") {
-    return joint;
-  }
-  if (joint === "pipe_union_welded_brazed") return "pipe_unions";
-  if (
-    joint === "compression_swage" ||
-    joint === "compression_typical" ||
-    joint === "compression_bite" ||
-    joint === "compression_flared" ||
-    joint === "compression_press"
-  ) {
-    return "compression_couplings";
-  }
-  if (
-    joint === "slip_on_machine_grooved" ||
-    joint === "slip_on_grip" ||
-    joint === "slip_on_slip_type"
-  ) {
-    return "slip_on_joints";
-  }
-  return null;
-}
-
-function isSlipOn(joint: Joint): boolean {
-  return groupOf(joint) === "slip_on_joints";
-}
-
-function describeJointGroup(group: JointGroup): string {
-  switch (group) {
-    case "pipe_unions":
-      return "pipe unions";
-    case "compression_couplings":
-      return "compression couplings";
-    case "slip_on_joints":
-      return "slip-on joints";
   }
 }
 
@@ -438,16 +544,11 @@ function passClassOD(
 function forbid(
   ctx: LRNavalShipsContext,
   trace: string[],
-  message: string,
-  detail?: string,
-  conditions?: string[]
+  message: string
 ): LRNavalShipsEvaluation {
-  if (detail) {
-    trace.push(detail);
-  }
   return {
     status: "forbidden",
-    conditions: conditions ? [...conditions] : [],
+    conditions: [],
     normRef: normReference,
     reason: message,
     systemId: ctx.systemId,
@@ -456,7 +557,52 @@ function forbid(
     od_mm: ctx.od_mm,
     designPressure_bar: ctx.designPressure_bar,
     trace: [...trace],
+    observations: [],
+    notesApplied: [],
+    generalClauses: [],
   };
+}
+
+function groupOf(joint: Joint): Group | null {
+  if (joint === "pipe_unions" || joint === "compression_couplings" || joint === "slip_on_joints") {
+    return joint;
+  }
+  if (joint === "pipe_union_welded_brazed") return "pipe_unions";
+  if (
+    joint === "compression_swage" ||
+    joint === "compression_typical" ||
+    joint === "compression_bite" ||
+    joint === "compression_flared" ||
+    joint === "compression_press"
+  ) {
+    return "compression_couplings";
+  }
+  if (
+    joint === "slip_on_machine_grooved" ||
+    joint === "slip_on_grip" ||
+    joint === "slip_on_slip_type"
+  ) {
+    return "slip_on_joints";
+  }
+  return null;
+}
+
+function describeJointGroup(group: Group): string {
+  switch (group) {
+    case "pipe_unions":
+      return "pipe unions";
+    case "compression_couplings":
+      return "compression couplings";
+    case "slip_on_joints":
+      return "slip-on joints";
+  }
+}
+
+function pushOnce<T>(arr: T[], value: T | null | undefined) {
+  if (value === undefined || value === null) return;
+  if (!arr.includes(value)) {
+    arr.push(value);
+  }
 }
 
 export default evaluateLRNavalShips;
