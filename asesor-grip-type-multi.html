@@ -80,10 +80,31 @@
       background: linear-gradient(145deg, rgba(34, 197, 94, 0.16), rgba(14, 116, 144, 0.05));
     }
 
+    .result-card--conditional {
+      border-color: rgba(245, 158, 11, 0.65);
+      box-shadow: 0 12px 28px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.38);
+      background: linear-gradient(145deg, rgba(180, 83, 9, 0.22), rgba(120, 53, 15, 0.08));
+    }
+
+    .result-card--forbidden,
     .result-card--blocked {
       border-color: rgba(239, 68, 68, 0.7);
       box-shadow: 0 12px 28px rgba(239, 68, 68, 0.24), 0 0 0 1px rgba(239, 68, 68, 0.5);
       background: linear-gradient(145deg, rgba(127, 29, 29, 0.3), rgba(67, 20, 20, 0.12));
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .result-header-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .result-title-es {
@@ -103,6 +124,38 @@
       display: block;
       margin: 8px 0 16px;
       opacity: 0.95;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .status-pill--allowed {
+      color: #34d399;
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .status-pill--conditional {
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .status-pill--forbidden {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.14);
     }
 
     .result-body {
@@ -184,6 +237,63 @@
       border-color: rgba(148, 163, 184, 0.25);
     }
 
+    .chip--ghost {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: transparent;
+      color: rgba(226, 232, 240, 0.82);
+    }
+
+    .status-details {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .detail-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .detail-title {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.58);
+    }
+
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .chip-list .chip {
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    .chip-note {
+      border-color: rgba(147, 197, 253, 0.5);
+      background: rgba(59, 130, 246, 0.12);
+      color: rgba(191, 219, 254, 0.95);
+    }
+
+    .trace-list {
+      list-style: decimal;
+      padding-left: 1.5rem;
+      margin: 0;
+      color: rgba(226, 232, 240, 0.92);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
     .option-item.disabled {
       opacity: 0.55;
       filter: grayscale(10%);
@@ -226,6 +336,10 @@
     import { RULESETS } from './rulesets/index.js';
     import { RegulationEngines } from './engines.js';
     import { I18N } from './i18n/index.js';
+    import evaluateLRShips from './dist/engine/lrShips.js';
+    import evaluateLRNavalShips from './dist/engine/evaluateLRNavalShips.js';
+    import lrShipsDataset from './dist/data/lr_ships_mech_joints.js';
+    import lrNavalDataset from './dist/data/lr_naval_ships_mech_joints.json' assert { type: 'json' };
 
     const {
       createElement: h,
@@ -280,6 +394,114 @@
       compression: { es: "Acoples de compresión", en: "Compression couplings" },
       slipOn: { es: "Juntas tipo Slip-on", en: "Slip-on joints" },
     };
+
+    const JOINT_BY_CATEGORY = {
+      pipeUnions: "pipe_unions",
+      compression: "compression_couplings",
+      slipOn: "slip_on_joints",
+    };
+
+    const STATUS_LABELS = {
+      allowed: "Permitido",
+      conditional: "Condicional",
+      forbidden: "No permitido",
+    };
+
+    const STOP_WORDS = new Set([
+      "system",
+      "systems",
+      "line",
+      "lines",
+      "service",
+      "services",
+      "main",
+      "and",
+      "the",
+      "permanently",
+      "filled",
+    ]);
+
+    function tokenizeLabel(value) {
+      if (!value) return [];
+      return value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter((token) => token && !STOP_WORDS.has(token));
+    }
+
+    function matchSystemIdForRule(ruleId, system) {
+      const dataset = ruleId === "ships" ? lrShipsDataset : ruleId === "naval" ? lrNavalDataset : null;
+      if (!dataset || !system) return null;
+
+      const targetTokens = new Set();
+      tokenizeLabel(system.system || "").forEach((token) => targetTokens.add(token));
+      tokenizeLabel(system.id || "").forEach((token) => targetTokens.add(token));
+      if (!targetTokens.size) return null;
+
+      let bestMatch = { id: null, score: 0, remainder: Number.POSITIVE_INFINITY };
+
+      for (const entry of dataset.systems || []) {
+        const candidates = [entry.label_en, entry.label_es, entry.id];
+
+        for (const candidate of candidates) {
+          if (!candidate) continue;
+          if (candidate.toLowerCase() === (system.system || "").toLowerCase()) {
+            return entry.id;
+          }
+          const tokens = tokenizeLabel(candidate);
+          if (!tokens.length) continue;
+          let overlap = 0;
+          for (const token of tokens) {
+            if (targetTokens.has(token)) overlap += 1;
+          }
+          if (overlap > bestMatch.score || (overlap === bestMatch.score && tokens.length < bestMatch.remainder)) {
+            bestMatch = { id: entry.id, score: overlap, remainder: tokens.length };
+          }
+        }
+      }
+
+      return bestMatch.score > 0 ? bestMatch.id : null;
+    }
+
+    function normalizeSpaceForRule(ruleId, spaceId) {
+      const baseMap = {
+        category_a: "machinery_cat_A",
+        other_machinery: "other_machinery",
+        accommodation: "accommodation",
+        cargo_hold: "cargo_hold",
+        tank: "tank",
+        open_deck: "open_deck",
+      };
+
+      if (spaceId in baseMap) {
+        return baseMap[spaceId];
+      }
+
+      if (ruleId === "ships") {
+        if (spaceId === "weather_deck_oil_chem_tanker" || spaceId === "passenger_below_bulkhead") {
+          return "open_deck";
+        }
+        if (spaceId === "munition_store") {
+          return "other_machinery";
+        }
+      }
+
+      if (ruleId === "naval") {
+        if (spaceId === "munition_store") {
+          return "munitions_store";
+        }
+        if (spaceId === "weather_deck_oil_chem_tanker") {
+          return "open_deck";
+        }
+        if (spaceId === "passenger_below_bulkhead") {
+          return "other_machinery";
+        }
+      }
+
+      return baseMap.other_machinery;
+    }
 
     const JOINT_ITEM_LABELS = {
       pipe_welded_brazed: {
@@ -378,6 +600,55 @@
       return { es: label, en: label };
     }
 
+    function computeCategoryEvaluations({ ruleId, system, spaceId, usedClass, odMM, designPressureBar }) {
+      const dataset = ruleId === "ships" ? lrShipsDataset : ruleId === "naval" ? lrNavalDataset : null;
+      const evaluator = ruleId === "ships" ? evaluateLRShips : ruleId === "naval" ? evaluateLRNavalShips : null;
+      if (!dataset || typeof evaluator !== "function" || !system) {
+        return {};
+      }
+
+      const systemId = matchSystemIdForRule(ruleId, system);
+      if (!systemId) {
+        return {};
+      }
+
+      const normalizedSpace = normalizeSpaceForRule(ruleId, spaceId);
+      const classLabel = typeof usedClass === "string" ? usedClass.replace(/^class\s+/i, "").trim() : undefined;
+      const odValue = Number.isFinite(odMM) ? odMM : undefined;
+      const pressureValue = Number.isFinite(designPressureBar) ? designPressureBar : undefined;
+
+      const baseInput = {
+        systemId,
+        space: normalizedSpace,
+        pipeClass: classLabel || undefined,
+        od_mm: odValue,
+        designPressure_bar: pressureValue,
+        location: "visible_accessible",
+        accessibility: "easy",
+        mediumInPipeSameAsTank: true,
+        lineType: "other",
+      };
+
+      if (ruleId === "naval") {
+        baseInput.shipType = spaceId === "weather_deck_oil_chem_tanker" ? "oil_tanker" : "naval";
+        baseInput.isSectionDirectlyConnectedToShipSide = false;
+        baseInput.aboveLimitOfWatertightIntegrity = true;
+        baseInput.mainMeansOfConnection = false;
+        baseInput.tailoring = undefined;
+      }
+
+      const evaluations = {};
+      for (const [category, joint] of Object.entries(JOINT_BY_CATEGORY)) {
+        try {
+          evaluations[category] = evaluator({ ...baseInput, joint });
+        } catch (error) {
+          console.warn(`No se pudo evaluar ${category}`, error);
+        }
+      }
+
+      return evaluations;
+    }
+
     const EMPTY_DICT = { groups: {}, systems: {}, conditions: {}, fireTest: {} };
 
     function buildViewerTitle(kind) {
@@ -389,7 +660,12 @@
     function parseViewerHash(hash) {
       if (!hash) return null;
       const match = hash.match(/^#view:([\w-]+)/i);
-      return match ? match[1] : null;
+      if (!match) return null;
+      const raw = match[1];
+      if (raw.startsWith("trace-")) {
+        return { kind: raw, mode: "trace" };
+      }
+      return { kind: raw, mode: "image" };
     }
 
     const SearchIcon = ({ className = "w-4 h-4", ...props }) =>
@@ -445,6 +721,7 @@
       const [viewer, setViewer] = useState(null);
       const [viewerImageSrc, setViewerImageSrc] = useState('');
       const [viewerImageStatus, setViewerImageStatus] = useState('idle');
+      const [viewerTrace, setViewerTrace] = useState([]);
       const viewerHistoryRef = useRef(false);
 
       const rules = RULESETS[ruleId] ?? RULESETS.naval;
@@ -492,17 +769,31 @@
       }, [systems]);
 
       const syncViewerFromLocation = useCallback(() => {
-        const kind = parseViewerHash(window.location.hash);
-        if (kind) {
-          setViewer({ open: true, kind, title: buildViewerTitle(kind) });
+        const parsed = parseViewerHash(window.location.hash);
+        if (parsed?.kind) {
+          if (parsed.mode === 'trace') {
+            const category = parsed.kind.replace(/^trace-/, '');
+            const titles = JOINT_CATEGORY_TITLES[category] || { es: category, en: category };
+            const traceData = evaluation?.categoryEvaluations?.[category]?.trace ?? [];
+            setViewer({ open: true, kind: parsed.kind, title: `Trazas · ${titles.es}`, mode: 'trace' });
+            setViewerTrace(traceData);
+            setViewerImageStatus('idle');
+            setViewerImageSrc('');
+          } else {
+            setViewer({ open: true, kind: parsed.kind, title: buildViewerTitle(parsed.kind), mode: 'image' });
+          }
         } else {
           setViewer(null);
+          setViewerTrace([]);
           viewerHistoryRef.current = false;
         }
-      }, []);
+      }, [evaluation]);
 
       const openViewer = useCallback(
-        (kind) => {
+        (input) => {
+          if (!input) return;
+          const payload = typeof input === 'string' ? { kind: input, mode: 'image' } : input;
+          const kind = payload?.kind;
           if (!kind) return;
           const targetHash = `#view:${kind}`;
           const baseUrl = `${window.location.pathname}${window.location.search}`;
@@ -522,6 +813,7 @@
         if (!viewer?.open) return;
         const expectedHash = viewer?.kind ? `#view:${viewer.kind}` : null;
         const baseUrl = `${window.location.pathname}${window.location.search}`;
+        setViewerTrace([]);
         if (expectedHash && viewerHistoryRef.current && window.location.hash === expectedHash && window.history.length > 1) {
           history.back();
         } else {
@@ -572,7 +864,15 @@
           engine.applyGlobalConstraints(context);
           engine.collectSystemNotes(context);
           engine.collectObservations(context);
-          const result = engine.finalize(context);
+          const categoryEvaluations = computeCategoryEvaluations({
+            ruleId,
+            system: context.system,
+            spaceId: context.space,
+            usedClass: context.usedClass,
+            odMM: context.odMM,
+            designPressureBar: context.designPressureBar,
+          });
+          const result = { ...engine.finalize(context), categoryEvaluations };
           setEvaluation(result);
           setHasPendingChanges(false);
           setEvaluationError(null);
@@ -597,7 +897,7 @@
       }, [syncViewerFromLocation]);
 
       useEffect(() => {
-        if (!(viewer?.open && viewer.kind)) {
+        if (!(viewer?.open && viewer.kind && viewer.mode !== 'trace')) {
           setViewerImageStatus('idle');
           setViewerImageSrc('');
           return;
@@ -635,6 +935,14 @@
         return () => window.removeEventListener('keydown', handleKeyDown);
       }, [viewer?.open, closeViewer]);
 
+      useEffect(() => {
+        if (!(viewer?.open && viewer.mode === 'trace')) return;
+        const category = viewer.kind?.replace(/^trace-/, '');
+        if (!category) return;
+        const traceData = evaluation?.categoryEvaluations?.[category]?.trace ?? [];
+        setViewerTrace(traceData);
+      }, [evaluation, viewer]);
+
       const system = systems.find((item) => item.id === selectedSystemId) || systems[0] || null;
       const requirements = rules.LR_REQUIREMENTS_ES || [];
       const evaluationSystem = evaluation?.system || system;
@@ -655,7 +963,10 @@
 
       const renderCategoryCard = (category) => {
         if (!evaluation) return null;
-        const allowed = Boolean(evaluation.allowed?.[category]);
+        const rawAllowed = Boolean(evaluation.allowed?.[category]);
+        const detail = evaluation.categoryEvaluations?.[category];
+        const status = detail?.status ?? (rawAllowed ? 'allowed' : 'forbidden');
+        const allowed = status !== 'forbidden';
         const titles = JOINT_CATEGORY_TITLES[category] || { es: category, en: category };
         let subtitleExtra = '';
         let items = [];
@@ -687,15 +998,40 @@
           }));
         }
 
-        const statusText = allowed ? 'Se puede usar' : 'No se puede usar';
+        const statusTextMap = {
+          allowed: 'Se puede usar',
+          conditional: 'Uso condicionado',
+          forbidden: 'No se puede usar',
+        };
+        const statusText = statusTextMap[status] ?? (allowed ? 'Se puede usar' : 'No se puede usar');
         const subtitle = subtitleExtra ? `${statusText} • ${subtitleExtra}` : statusText;
-        const cardClass = allowed ? 'result-card result-card--allowed' : 'result-card result-card--blocked';
+        const cardClass = `result-card result-card--${status}`;
+        const statusLabel = STATUS_LABELS[status] || status;
+        const traceAvailable = detail?.trace?.length;
+        const conditions = detail?.conditions ?? [];
+        const notesApplied = detail?.notesApplied ?? [];
+        const reasons = detail?.reasons ?? [];
+        const generalClauses = detail?.generalClauses ?? [];
 
         return html`
           <article className=${cardClass} key=${category}>
             <header className="result-header">
-              <span className="result-title-es">${titles.es}</span>
-              <span className="result-title-en">(${titles.en})</span>
+              <div>
+                <span className="result-title-es">${titles.es}</span>
+                <span className="result-title-en">(${titles.en})</span>
+              </div>
+              <div className="result-header-actions">
+                <span className=${`status-pill status-pill--${status}`}>${statusLabel}</span>
+                ${traceAvailable
+                  ? html`<button
+                      type="button"
+                      className="chip chip--ghost"
+                      onClick=${() => openViewer({ kind: `trace-${category}`, mode: 'trace' })}
+                    >
+                      VER
+                    </button>`
+                  : null}
+              </div>
             </header>
             <div className="block-subtitle">${subtitle}</div>
             <div className="result-body">
@@ -724,6 +1060,60 @@
                   `;
                 })}
               </ul>
+              ${status === 'conditional'
+                ? html`
+                    <div className="status-details">
+                      ${conditions.length
+                        ? html`<div className="detail-block">
+                            <span className="detail-title">Condiciones</span>
+                            <ul className="chip-list">
+                              ${conditions.map(
+                                (item, idx) => html`<li className="chip" key=${`cond-${idx}`}>${item}</li>`
+                              )}
+                            </ul>
+                          </div>`
+                        : null}
+                      ${notesApplied.length
+                        ? html`<div className="detail-block">
+                            <span className="detail-title">Notas aplicadas</span>
+                            <ul className="chip-list">
+                              ${notesApplied.map(
+                                (note) => html`<li className="chip chip-note" key=${`note-${note}`}>
+                                    Nota ${note}
+                                  </li>`
+                              )}
+                            </ul>
+                          </div>`
+                        : null}
+                    </div>
+                  `
+                : null}
+              ${status === 'forbidden'
+                ? html`
+                    <div className="status-details">
+                      ${reasons.length
+                        ? html`<div className="detail-block">
+                            <span className="detail-title">Motivos</span>
+                            <ul className="chip-list">
+                              ${reasons.map(
+                                (item, idx) => html`<li className="chip" key=${`reason-${idx}`}>${item}</li>`
+                              )}
+                            </ul>
+                          </div>`
+                        : null}
+                      ${generalClauses.length
+                        ? html`<div className="detail-block">
+                            <span className="detail-title">Cláusulas</span>
+                            <ul className="chip-list">
+                              ${generalClauses.map(
+                                (item, idx) => html`<li className="chip" key=${`clause-${idx}`}>${item}</li>`
+                              )}
+                            </ul>
+                          </div>`
+                        : null}
+                    </div>
+                  `
+                : null}
             </div>
           </article>
         `;
@@ -1029,14 +1419,25 @@
                 <h3 className="text-lg font-semibold">${viewer.title}</h3>
                 <button className="text-slate-300 hover:text-slate-100" onClick=${closeViewer}>Cerrar</button>
               </div>
-              <div className="p-4">
-                ${viewerImageStatus === 'loading'
-                  ? html`<p className="text-sm text-slate-400">Cargando imagen…</p>`
-                  : html`<img src=${viewerImageSrc || DEFAULT_JOINT_IMAGE} alt=${viewer.title} className="w-full h-auto rounded-lg" />`}
-              </div>
-              ${viewerImageStatus === 'error'
-                ? html`<div className="px-4 pb-4 text-xs text-rose-300">No se encontró una imagen específica; se muestra la referencia genérica.</div>`
-                : html`<div className="px-4 pb-4 text-xs text-slate-400">Referencia fotográfica para el tipo de unión seleccionado.</div>`}
+              ${viewer.mode === 'trace'
+                ? html`
+                    <div className="p-4">
+                      ${viewerTrace.length
+                        ? html`<ol className="trace-list">${viewerTrace.map((line, idx) => html`<li key=${idx}>${line}</li>`)}</ol>`
+                        : html`<p className="text-sm text-slate-400">Sin trazas registradas para esta evaluación.</p>`}
+                    </div>
+                    <div className="px-4 pb-4 text-xs text-slate-400">Secuencia normativa aplicada al resultado.</div>
+                  `
+                : html`
+                    <div className="p-4">
+                      ${viewerImageStatus === 'loading'
+                        ? html`<p className="text-sm text-slate-400">Cargando imagen…</p>`
+                        : html`<img src=${viewerImageSrc || DEFAULT_JOINT_IMAGE} alt=${viewer.title} className="w-full h-auto rounded-lg" />`}
+                    </div>
+                    ${viewerImageStatus === 'error'
+                      ? html`<div className="px-4 pb-4 text-xs text-rose-300">No se encontró una imagen específica; se muestra la referencia genérica.</div>`
+                      : html`<div className="px-4 pb-4 text-xs text-slate-400">Referencia fotográfica para el tipo de unión seleccionado.</div>`}
+                  `}
             </div>
           </div>
         ` : null}

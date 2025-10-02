@@ -1,6 +1,6 @@
 export const LR_SHIPS_DATASET = {
     standard: "LR_SHIPS",
-    version: "Pt5 Ch12 Sec2.12 (Tables 12.2.8, 12.2.9)",
+    version: "Pt5 Ch12 Sec2.12 (Tables 12.2.8, 12.2.9) – rev 2024-06",
     systems: [
         {
             id: "ballast_system",

@@ -41,6 +41,7 @@ describe("evaluateLRNavalShips", () => {
       "Tipo resistente al fuego si componentes se deterioran en incendio (Cat. A)"
     );
     expect(result.conditions).toContain("Material acople bilge main: acero/CuNi/equiv.");
+    expect(result.notesApplied).toContain(1);
     expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
   });
 
@@ -56,6 +57,7 @@ describe("evaluateLRNavalShips", () => {
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo de fuego: 8 min seco + 22 min húmedo");
     expect(result.conditions).toContain("Material acople bilge main: acero/CuNi/equiv.");
+    expect(result.notesApplied).toContain(1);
   });
 
   it("bloquea slip-on en Cat. A para sistemas con Nota 2", () => {
@@ -116,6 +118,19 @@ describe("evaluateLRNavalShips", () => {
 
     expect(result.status).toBe("forbidden");
     expect(result.reason).toContain("tanques");
+  });
+
+  it("mantiene condicional bilge Cat. A con joint genérico", () => {
+    const result = evaluate({
+      systemId: "bilge_lines",
+      space: "machinery_cat_A",
+      joint: "slip_on_joints",
+      pipeClass: "III",
+      od_mm: 114.3,
+    });
+
+    expect(result.status).toBe("conditional");
+    expect(result.notesApplied).toContain(1);
   });
 
   it("prohíbe secciones conectadas al costado bajo el WLI", () => {

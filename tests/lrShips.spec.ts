@@ -26,6 +26,9 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 30 min húmedo");
+    expect(result.notesApplied).toContain(4);
+    expect(result.reasons).toHaveLength(0);
+    expect(result.generalClauses).toHaveLength(0);
   });
 
   it("aplica ensayo combinado para líneas de achique en Cat. A con compresión", () => {
@@ -38,7 +41,9 @@ describe("evaluateLRShips", () => {
     });
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
-    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
+    expect(result.notesApplied).toContain(4);
+    expect(result.reasons).toHaveLength(0);
+    expect(result.generalClauses).toHaveLength(0);
   });
 
   it("bloquea slip-on en acomodaciones por Nota 2", () => {
@@ -102,7 +107,37 @@ describe("evaluateLRShips", () => {
     expect(result.status).toBe("conditional");
     expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
     expect(result.notesApplied).toContain(4);
-    expect(result.reasons.some((msg) => msg.includes("Nota 2"))).toBe(false);
+    expect(result.reasons).toHaveLength(0);
+    expect(result.generalClauses).toHaveLength(0);
+  });
+
+  it("mantiene condicional slip-on en bilge Cat. A con joint genérico", () => {
+    const result = evaluate({
+      systemId: "bilge_lines",
+      space: "machinery_cat_A",
+      joint: "slip_on_joints",
+      pipeClass: "III",
+      od_mm: 114.3,
+    });
+
+    expect(result.status).toBe("conditional");
+    expect(result.notesApplied).toContain(4);
+    expect(result.reasons).toHaveLength(0);
+    expect(result.generalClauses).toHaveLength(0);
+  });
+
+  it("bloquea slip-on en enfriamiento por agua de mar Cat. A por Nota 2", () => {
+    const result = evaluate({
+      systemId: "seawater_cooling",
+      space: "machinery_cat_A",
+      joint: "slip_on_joints",
+      pipeClass: "III",
+      od_mm: 114.3,
+    });
+
+    expect(result.status).toBe("forbidden");
+    expect(result.reason).toContain("Nota 2");
+    expect(result.notesApplied).toContain(2);
   });
 
   it("bloquea slip-on Grip en Clase I por Tabla 12.2.9", () => {
