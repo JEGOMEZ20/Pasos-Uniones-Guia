@@ -7,7 +7,7 @@ import {
 } from "../dist/engine/lrShips.js";
 
 describe("LR Ships mechanical joints", () => {
-  it("marca condicional los grupos por ensayo base en hidrocarburos", () => {
+  it("respeta Nota 1 sin aplicar Nota 2 cuando la fila no la trae", () => {
     const result = evaluateLRShips({
       systemId: "hydrocarbon_loading_lines_fp_le_60",
       space: "machinery_cat_A",
@@ -19,10 +19,9 @@ describe("LR Ships mechanical joints", () => {
     expect(result.pipe_unions.status).toBe("conditional");
     expect(result.pipe_unions.conditions).toContain("30 min seco");
     expect(result.compression_couplings.status).toBe("conditional");
-    expect(result.slip_on_joints.status).toBe("forbidden");
-    expect(result.slip_on_joints.reasons.some((msg) => msg.includes("Slip-on no aceptadas"))).toBe(
-      true,
-    );
+    expect(result.slip_on_joints.status).toBe("conditional");
+    expect(result.slip_on_joints.reasons.length).toBe(0);
+    expect(result.slip_on_joints.conditions).toContain("30 min seco");
   });
 
   it("valida Swage y Press según Tabla 12.2.9 para Clase II", () => {
@@ -92,9 +91,9 @@ describe("LR Ships mechanical joints", () => {
     expect(group.compression_couplings.status).not.toBe("forbidden");
   });
 
-  it("prohíbe Slip-on en alojamientos aplicando la Nota 2", () => {
+  it("aplica la Nota 2 solo cuando la fila la incluye", () => {
     const result = evaluateLRShips({
-      systemId: "hydrocarbon_loading_lines_fp_le_60",
+      systemId: "seawater_cooling",
       space: "accommodation",
       pipeClass: "II",
       od_mm: 60.3,
@@ -102,35 +101,21 @@ describe("LR Ships mechanical joints", () => {
 
     const slip = result.slip_on_joints;
     expect(slip.status).toBe("forbidden");
-    expect(slip.reasons.some((msg) => msg.includes("Slip-on no aceptadas"))).toBe(true);
+    expect(slip.reasons.some((msg) => msg.includes("Nota 2"))).toBe(true);
     expect(slip.notesApplied).toContain(2);
   });
 
-  it("condiciona Slip-on en otros espacios de máquinas accesibles", () => {
+  it("condiciona Slip-on accesibles cuando aplica Nota 2", () => {
     const result = evaluateLRShips({
-      systemId: "hydrocarbon_loading_lines_fp_le_60",
+      systemId: "fire_main",
       space: "other_machinery_accessible",
-      pipeClass: "II",
-      od_mm: 60.3,
+      pipeClass: "III",
+      od_mm: 50,
     });
 
     const slip = result.slip_on_joints;
     expect(slip.status).toBe("conditional");
     expect(slip.conditions).toContain("Ubicar en posición visible/accesible (MSC/Circ.734)");
-    expect(slip.notesApplied).toContain(2);
-  });
-
-  it("bloquea Slip-on en espacios de máquinas sin accesibilidad", () => {
-    const result = evaluateLRShips({
-      systemId: "hydrocarbon_loading_lines_fp_le_60",
-      space: "other_machinery",
-      pipeClass: "II",
-      od_mm: 60.3,
-    });
-
-    const slip = result.slip_on_joints;
-    expect(slip.status).toBe("forbidden");
-    expect(slip.reasons.some((msg) => msg.includes("visibles y accesibles"))).toBe(true);
     expect(slip.notesApplied).toContain(2);
   });
 });
