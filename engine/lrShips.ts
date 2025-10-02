@@ -175,6 +175,7 @@ function evaluateGroupsWithRow(
     forEachOpen(groups, (ev) => makeConditional(ev, fireLabel));
   }
 
+  applySlipOnSpaceRestrictions(ctx, groups);
   applyRowNotes(ctx, row, groups);
   applyClauses(ctx, groups);
   applySubtypeLimits(ctx, groups);
@@ -268,31 +269,6 @@ function labelFire(test: LrShipRow["fire_test"]): string | null {
 function applyRowNotes(ctx: LRShipsContext, row: LrShipRow, out: GroupEvaluations) {
   if (!row.notes.length) return;
 
-  if (row.notes.includes(2)) {
-    const ev = out.slip_on_joints;
-    let applied = false;
-
-    if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
-      if (ev.status !== "forbidden") {
-        ev.status = "forbidden";
-      }
-      pushUnique(
-        ev.reasons,
-        "Slip-on no aceptadas en espacios de máquinas de categoría A ni alojamientos.",
-      );
-      applied = true;
-    } else if (ctx.space === "other_machinery_accessible") {
-      if (ev.status !== "forbidden") {
-        makeConditional(ev, "Ubicar en posición visible/accesible (MSC/Circ.734)");
-        applied = true;
-      }
-    }
-
-    if (applied) {
-      note(ev, 2);
-    }
-  }
-
   if (row.notes.includes(3) && ctx.space !== "open_deck") {
     forEachOpen(out, (ev) => makeConditional(ev, "Junta de tipo resistente al fuego"));
     noteAll(out, 3);
@@ -301,6 +277,30 @@ function applyRowNotes(ctx: LRShipsContext, row: LrShipRow, out: GroupEvaluation
   if (row.notes.includes(4) && ctx.space === "machinery_cat_A") {
     forEachOpen(out, (ev) => makeConditional(ev, "Ensayo adicional en Cat. A (Nota 4)"));
     noteAll(out, 4);
+  }
+}
+
+function applySlipOnSpaceRestrictions(ctx: LRShipsContext, out: GroupEvaluations) {
+  const ev = out.slip_on_joints;
+  if (ev.status === "forbidden") {
+    return;
+  }
+
+  if (ctx.space === "machinery_cat_A" || ctx.space === "accommodation") {
+    block(ev, "Slip-on no aceptadas en espacios de máquinas de categoría A ni alojamientos.");
+    note(ev, 2);
+    return;
+  }
+
+  if (ctx.space === "other_machinery") {
+    block(ev, "Slip-on en espacios de máquinas sólo si están visibles y accesibles (MSC/Circ.734).");
+    note(ev, 2);
+    return;
+  }
+
+  if (ctx.space === "other_machinery_accessible") {
+    makeConditional(ev, "Ubicar en posición visible/accesible (MSC/Circ.734)");
+    note(ev, 2);
   }
 }
 
