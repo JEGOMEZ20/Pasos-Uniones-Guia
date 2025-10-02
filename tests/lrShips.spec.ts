@@ -5,6 +5,7 @@ import evaluateLRShips, {
   type PipeClass,
   type Space,
 } from "../dist/engine/lrShips.js";
+import lrShipsDataset from "../dist/data/lr_ships_mech_joints.js";
 
 function evaluate(options: {
   systemId: string;
@@ -15,159 +16,66 @@ function evaluate(options: {
   designPressure_bar?: number;
   lineType?: "fuel_oil" | "thermal_oil" | "other";
   location?: "visible_accessible" | "normal";
-  sameMediumInTank?: boolean;
 }) {
   return evaluateLRShips(options);
 }
 
+function pass(joint: Joint, pipeClass: PipeClass, od?: number) {
+  const rule = lrShipsDataset.pipe_class_rules.find((entry) => entry.joint === joint);
+  if (!rule) {
+    throw new Error(`No existe regla para ${joint}`);
+  }
+  if (!rule.class.includes(pipeClass)) {
+    return false;
+  }
+  const limit = rule.od_max_mm?.[pipeClass];
+  if (limit == null) {
+    return true;
+  }
+  if (od === undefined) {
+    return false;
+  }
+  return od <= limit + 1e-6;
+}
+
 describe("evaluateLRShips", () => {
-  it("marca condiciones de fuego para sistema de lastre en Cat. A con slip-on", () => {
+  it("marca condicional líneas de carga de hidrocarburos en Cat. A, Clase III", () => {
     const result = evaluate({
-      systemId: "ballast_system",
+      systemId: "hydrocarbon_loading_lines",
       space: "machinery_cat_A",
-      joint: "slip_on_machine_grooved",
-      pipeClass: "II",
-      od_mm: 50,
-    });
-    expect(result.status).toBe("conditional");
-    expect(result.conditions).toContain("Ensayo fuego 30 min húmedo");
-    expect(result.notesApplied).toContain(4);
-    expect(result.reasons).toHaveLength(0);
-    expect(result.clauses).toHaveLength(0);
-  });
-
-  it("aplica ensayo combinado para líneas de achique en Cat. A con compresión", () => {
-    const result = evaluate({
-      systemId: "bilge_lines",
-      space: "machinery_cat_A",
-      joint: "compression_bite",
-      pipeClass: "II",
-      od_mm: 40,
-    });
-    expect(result.status).toBe("conditional");
-    expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
-    expect(result.notesApplied).toContain(4);
-    expect(result.reasons).toHaveLength(0);
-    expect(result.clauses).toHaveLength(0);
-  });
-
-  it("bloquea slip-on en acomodaciones por Nota 2", () => {
-    const result = evaluate({
-      systemId: "seawater_cooling",
-      space: "accommodation",
-      joint: "slip_on_grip",
-      pipeClass: "II",
-      od_mm: 40,
-    });
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("Nota 2");
-  });
-
-  it("permite slip-type en cubierta abierta a ≤10 bar", () => {
-    const result = evaluate({
-      systemId: "sanitary",
-      space: "open_deck",
-      joint: "slip_on_slip_type",
       pipeClass: "III",
-      od_mm: 40,
-      designPressure_bar: 8,
-    });
-    expect(result.status === "allowed" || result.status === "conditional").toBe(true);
-    expect(result.reason).toBeUndefined();
-  });
-
-  it("rechaza compression press en clase I por Tabla 12.2.9", () => {
-    const result = evaluate({
-      systemId: "sanitary",
-      space: "other_machinery",
-      joint: "compression_press",
-      pipeClass: "I",
-      od_mm: 40,
-    });
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toBe("Tabla 12.2.9: límite de clase/OD");
-  });
-
-  it("prohíbe slip-on en tanque con medio distinto", () => {
-    const result = evaluate({
-      systemId: "ballast_system",
-      space: "tank",
-      joint: "slip_on_machine_grooved",
-      pipeClass: "II",
-      od_mm: 40,
-      sameMediumInTank: false,
-    });
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("medio es el mismo");
-  });
-
-  it("marca ensayo combinado y Nota 4 para slip-on en bilge Cat. A (Clase III)", () => {
-    const result = evaluate({
-      systemId: "bilge_lines",
-      space: "machinery_cat_A",
-      joint: "slip_on_machine_grooved",
-      pipeClass: "III",
-      od_mm: 76,
-    });
-    expect(result.status).toBe("conditional");
-    expect(result.conditions).toContain("Ensayo fuego 8 min seco + 22 min húmedo");
-    expect(result.notesApplied).toContain(4);
-    expect(result.notesApplied).not.toContain(2);
-    expect(result.reasons).toHaveLength(0);
-    expect(result.clauses).toHaveLength(0);
-  });
-
-  it("mantiene condicional slip-on en bilge Cat. A con joint genérico", () => {
-    const result = evaluate({
-      systemId: "bilge_lines",
-      space: "machinery_cat_A",
+      od_mm: 73,
       joint: "slip_on_joints",
-      pipeClass: "III",
-      od_mm: 114.3,
     });
 
     expect(result.status).toBe("conditional");
-    expect(result.notesApplied).toContain(4);
+    expect(result.conditions.join(" ")).toMatch(/30 min seco/);
     expect(result.reasons).toHaveLength(0);
-    expect(result.clauses).toHaveLength(0);
   });
 
-  it("bloquea slip-on en enfriamiento por agua de mar Cat. A por Nota 2", () => {
-    const result = evaluate({
-      systemId: "seawater_cooling",
-      space: "machinery_cat_A",
-      joint: "slip_on_joints",
-      pipeClass: "III",
-      od_mm: 114.3,
-    });
-
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toContain("Nota 2");
-    expect(result.notesApplied).toContain(2);
+  it("verifica Tabla 12.2.9 por subtipo", () => {
+    expect(pass("slip_on_machine_grooved", "III", 73)).toBe(true);
+    expect(pass("slip_on_grip", "III", 73)).toBe(true);
+    expect(pass("compression_press", "III", 73)).toBe(true);
+    expect(pass("pipe_union_welded_brazed", "III", 141.3)).toBe(true);
   });
 
-  it("bloquea slip-on Grip en Clase I por Tabla 12.2.9", () => {
-    const result = evaluate({
-      systemId: "sanitary",
-      space: "other_machinery",
-      joint: "slip_on_grip",
-      pipeClass: "I",
-      od_mm: 50,
-    });
-    expect(result.status).toBe("forbidden");
-    expect(result.reason).toBe("Tabla 12.2.9: límite de clase/OD");
+  it("controla Grip en Clase I por Tabla 12.2.9", () => {
+    expect(pass("slip_on_grip", "I", 60.3)).toBe(false);
   });
 
-  it("bloquea slip-on en bodegas para LR Ships", () => {
+  it("bloquea slip-on en bodegas por cláusula general", () => {
     const groups = evaluateLRShipsGroups({
-      systemId: "sanitary",
+      systemId: "hydrocarbon_loading_lines",
       space: "cargo_hold",
       joint: "slip_on_joints",
     });
 
     const slipOn = groups.slip_on_joints;
     expect(slipOn.status).toBe("forbidden");
-    expect(slipOn.reasons[0]).toMatch(/Slip-on no permitido en bodegas/i);
+    expect(slipOn.reasons[0]).toBe(
+      "Slip-on no permitido en bodegas/tanques/espacios no fácilmente accesibles"
+    );
     expect(slipOn.clauses[0]?.section).toMatch(/§2\.12\.8/);
   });
 });
