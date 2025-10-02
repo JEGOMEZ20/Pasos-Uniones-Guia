@@ -156,11 +156,19 @@
 
   <script type="module">
     import htm from 'https://unpkg.com/htm?module';
-    import { createElement as h, useEffect, useMemo, useRef, useState } from 'https://esm.sh/react@18';
-    import ReactDOM from 'https://esm.sh/react-dom@18/client';
+    import * as React from 'https://esm.sh/react@18.2.0';
+    import * as ReactDOMClient from 'https://esm.sh/react-dom@18.2.0/client';
     import { RULESETS } from './rulesets/index.js';
     import { RegulationEngines } from './engines.js';
     import { I18N } from './i18n/index.js';
+
+    const {
+      createElement: h,
+      useEffect,
+      useMemo,
+      useRef,
+      useState,
+    } = React;
 
     const html = htm.bind(h);
 
@@ -450,6 +458,10 @@
       const evaluationSpaceId = evaluation?.space || space;
       const spaceLabel = SPACES.find((opt) => opt.id === evaluationSpaceId)?.label ?? evaluationSpaceId;
       const ruleLabel = rules.subtitle || rules.title;
+      const translatedGroup = tGroup(system?.group) || '—';
+      const translatedSystem = tSystem(system?.id) || '—';
+      const translatedCondition = tCondition(system?.pipeSystemClass);
+      const translatedFireTest = tFireTest(system?.fireTest);
 
       return html`
         <div className="max-w-6xl mx-auto px-4 pb-16">
@@ -767,7 +779,15 @@
     }
 
     const root = document.getElementById('root');
-    ReactDOM.createRoot(root).render(html`<${App} />`);
+    const createRoot =
+      ReactDOMClient?.createRoot ||
+      ReactDOMClient?.default?.createRoot;
+
+    if (!root || typeof createRoot !== 'function') {
+      throw new Error('No fue posible inicializar la aplicación (createRoot no disponible).');
+    }
+
+    createRoot(root).render(html`<${App} />`);
   </script>
 </body>
 </html>
