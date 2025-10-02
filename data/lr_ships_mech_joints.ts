@@ -6,7 +6,7 @@ export interface LRShipsSystem {
   label_en?: string;
   group?: string;
   class_of_pipe_system: "dry" | "wet" | "dry/wet";
-  fire_test: "30min_dry" | "30min_wet" | "8min_dry_plus_22min_wet" | null;
+  fire_test: "30min_dry" | "30min_wet" | "8+22" | "not_required";
   notes: number[];
   allowed_joints: Partial<Record<LRShipsJointGroup, boolean>>;
 }
@@ -57,7 +57,7 @@ export type LRShipsNote =
   | {
       type: "fire_test_if_space";
       spaces: Space[];
-      test: "from_row" | "30min_dry" | "30min_wet" | "8min_dry_plus_22min_wet";
+      test: "from_row" | "30min_dry" | "30min_wet" | "8+22";
     }
   | {
       type: "prohibit_slip_on_in_spaces";
@@ -72,10 +72,7 @@ export type LRShipsNote =
   | { type: "allow_slip_type_on_open_deck_max_pressure_bar"; max_bar: number }
   | {
       type: "test_equivalence";
-      equivalences: Record<
-        "30min_dry" | "30min_wet" | "8min_dry_plus_22min_wet",
-        "30min_dry" | "30min_wet" | "8min_dry_plus_22min_wet"
-      >;
+      equivalences: Record<"30min_dry" | "30min_wet" | "8+22", "30min_dry" | "30min_wet" | "8+22">;
     }
   | { type: "reference_only"; ref: string };
 
@@ -101,7 +98,7 @@ export const LR_SHIPS_DATASET: LRShipsDataset = {
       label_es: "Líneas de achique",
       label_en: "Bilge lines",
       class_of_pipe_system: "dry/wet",
-      fire_test: "8min_dry_plus_22min_wet",
+      fire_test: "8+22",
       notes: [4],
       allowed_joints: {
         pipe_unions: true,
@@ -167,7 +164,7 @@ export const LR_SHIPS_DATASET: LRShipsDataset = {
       label_es: "Sistema sanitario",
       label_en: "Sanitary system",
       class_of_pipe_system: "wet",
-      fire_test: null,
+      fire_test: "not_required",
       notes: [],
       allowed_joints: {
         pipe_unions: true,
@@ -182,7 +179,7 @@ export const LR_SHIPS_DATASET: LRShipsDataset = {
       class: ["I", "II", "III"],
       od_max_mm: { I: 60.3, II: 60.3 },
     },
-    { joint: "compression_swage", class: ["III"] },
+    { joint: "compression_swage", class: ["I", "II", "III"] },
     {
       joint: "compression_bite",
       class: ["I", "II", "III"],
@@ -220,8 +217,8 @@ export const LR_SHIPS_DATASET: LRShipsDataset = {
     "7": {
       type: "test_equivalence",
       equivalences: {
-        "30min_dry": "8min_dry_plus_22min_wet",
-        "8min_dry_plus_22min_wet": "30min_dry",
+        "30min_dry": "8+22",
+        "8+22": "30min_dry",
         "30min_wet": "30min_wet",
       },
     },
