@@ -16,16 +16,26 @@ const NOTE7_INFO_CHIP = "HVAC/intakes: ver secciones específicas de las Reglas"
 const SLIP_TYPE_WARNING = "No como medio principal (slip-type)";
 const TAILORING_CHIP_PREFIX = "Tailoring Doc: validar";
 const db = dataset;
+function normalizeNavalContext(ctx) {
+    const mediumSame = ctx.mediumInPipeSameAsTank ?? true;
+    return {
+        ...ctx,
+        accessibility: ctx.accessibility ?? "easy",
+        mediumInPipeSameAsTank: mediumSame,
+        mainMeansOfConnection: ctx.mainMeansOfConnection ?? false,
+    };
+}
 export function evaluateLRNavalShips(ctx, datasetOverride = db) {
-    const sys = datasetOverride.systems.find((s) => s.id === ctx.systemId);
+    const normalizedCtx = normalizeNavalContext(ctx);
+    const sys = datasetOverride.systems.find((s) => s.id === normalizedCtx.systemId);
     if (!sys) {
-        return forbid(ctx, [], "Sistema no reconocido");
+        return forbid(normalizedCtx, [], "Sistema no reconocido");
     }
-    const jointGroup = groupOf(ctx.joint);
+    const jointGroup = groupOf(normalizedCtx.joint);
     if (!jointGroup) {
-        return forbid(ctx, [], "Tipo de junta desconocido");
+        return forbid(normalizedCtx, [], "Tipo de junta desconocido");
     }
-    const groups = evaluateGroupsForRow(ctx, sys, datasetOverride);
+    const groups = evaluateGroupsForRow(normalizedCtx, sys, datasetOverride);
     const groupResult = groups[jointGroup];
     const trace = [...groupResult.trace];
     const conditions = [...groupResult.conditions];
@@ -35,7 +45,7 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
     let status = groupResult.status;
     let reason = reasons.length ? reasons[reasons.length - 1] : undefined;
     if (status !== "forbidden") {
-        const classCheck = passClassOD(ctx.joint, ctx.pipeClass, ctx.od_mm, datasetOverride);
+        const classCheck = passClassOD(normalizedCtx.joint, normalizedCtx.pipeClass, normalizedCtx.od_mm, datasetOverride);
         if (!classCheck.ok) {
             if (classCheck.reason === "missing_inputs") {
                 reason = "Falta clase/OD (Tabla 1.5.4)";
@@ -71,10 +81,10 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
         normRef: normReference,
         reason,
         systemId: sys.id,
-        joint: ctx.joint,
-        pipeClass: ctx.pipeClass,
-        od_mm: ctx.od_mm,
-        designPressure_bar: ctx.designPressure_bar,
+        joint: normalizedCtx.joint,
+        pipeClass: normalizedCtx.pipeClass,
+        od_mm: normalizedCtx.od_mm,
+        designPressure_bar: normalizedCtx.designPressure_bar,
         trace,
         observations,
         notesApplied,
@@ -82,11 +92,12 @@ export function evaluateLRNavalShips(ctx, datasetOverride = db) {
     };
 }
 export function evaluateGroups(ctx, datasetOverride = db) {
-    const sys = datasetOverride.systems.find((s) => s.id === ctx.systemId);
+    const normalizedCtx = normalizeNavalContext(ctx);
+    const sys = datasetOverride.systems.find((s) => s.id === normalizedCtx.systemId);
     if (!sys) {
         throw new Error("Sistema no reconocido");
     }
-    return evaluateGroupsForRow(ctx, sys, datasetOverride);
+    return evaluateGroupsForRow(normalizedCtx, sys, datasetOverride);
 }
 function evaluateGroupsForRow(ctx, row, datasetOverride) {
     const groups = {
@@ -262,8 +273,10 @@ function applyGeneralClauses(ctx, group, out) {
         return;
     }
     if (group === "slip_on_joints") {
-        if (ctx.accessibility === "not_easy") {
-            const message = "§5.10.9: slip-on prohibidas en ubicaciones de difícil acceso";
+        const isCargoOrTank = ctx.space === "cargo_hold" || ctx.space === "tank";
+        const isHardAccessSpace = ctx.accessibility === "not_easy" || ctx.space === "cofferdam" || ctx.space === "void";
+        if (isCargoOrTank || isHardAccessSpace) {
+            const message = "§5.10.9: Slip-on no en bodegas/tanques/espacios no fácilmente accesibles (2.12.8 / 5.10.9)";
             out.status = "forbidden";
             pushOnce(out.generalClauses, message);
             pushOnce(out.reasons, message);
@@ -279,14 +292,6 @@ function applyGeneralClauses(ctx, group, out) {
                 out.trace.push(message);
                 return;
             }
-        }
-        if (["cargo_hold", "cofferdam", "void"].includes(ctx.space)) {
-            const message = "§5.10.9: slip-on prohibidas en bodegas/cofferdams/voids";
-            out.status = "forbidden";
-            pushOnce(out.generalClauses, message);
-            pushOnce(out.reasons, message);
-            out.trace.push(message);
-            return;
         }
     }
     if (ctx.joint === "slip_on_slip_type") {
