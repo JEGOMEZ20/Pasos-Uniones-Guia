@@ -1,9 +1,16 @@
 import naval from "./naval.js";
-import ships from "./ships.js";
+import shipsBase from "./ships.js";
 import ssc from "./ssc.js";
 
-if (!ships.CLASS_LIMITS) {
-  ships.CLASS_LIMITS = naval.CLASS_LIMITS;
-}
+const clone = (value) => (value ? JSON.parse(JSON.stringify(value)) : value);
 
-export const RULESETS = { naval, ships, ssc };
+const ships = {
+  ...shipsBase,
+  CLASS_LIMITS: shipsBase.CLASS_LIMITS ? clone(shipsBase.CLASS_LIMITS) : clone(naval.CLASS_LIMITS),
+};
+
+export const RULESETS = {
+  naval: { ...naval, CLASS_LIMITS: clone(naval.CLASS_LIMITS) },
+  ships,
+  ssc,
+};
