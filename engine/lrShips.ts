@@ -1,29 +1,38 @@
 import { LR_SHIPS_SYSTEMS } from "../data/lr_ships_mech_joints.js";
-import type { Group, LrShipRow, PipeClass, Space } from "../data/lr_ships_mech_joints.js";
+import type { Group, Joint, LrShipRow, PipeClass, Space } from "../data/lr_ships_mech_joints.js";
 
-export type { Space, PipeClass, Group } from "../data/lr_ships_mech_joints.js";
+export type { Space, PipeClass, Group, Joint } from "../data/lr_ships_mech_joints.js";
 
 type Status = "allowed" | "conditional" | "forbidden";
+
+export type ClauseRef = { code: string; section: string; title: string };
 
 type Eval = {
   status: Status;
   conditions: string[];
   reasons: string[];
   notesApplied: number[];
-  clauses: { code: string; section: string; title: string }[];
+  clauses: ClauseRef[];
 };
 
-type Ctx = {
+type LRShipsDataset = LrShipRow[];
+
+export interface LRShipsContext {
   systemId: string;
-  pipeClass: PipeClass;
-  od_mm: number;
   space: Space;
+  pipeClass?: PipeClass;
+  od_mm?: number;
   accessibility?: "easy" | "not_easy";
   mediumInPipeSameAsTank?: boolean;
   asMainMeans?: boolean;
   directToShipSideBelowLimit?: boolean;
   tankContainsFlammable?: boolean;
-};
+  joint?: Joint;
+}
+
+export interface LRShipsJointContext extends LRShipsContext {
+  joint: Joint;
+}
 
 type SubtypeRule = {
   id: string;
@@ -55,38 +64,144 @@ export function passClassOD(rule: SubtypeRule, cls: PipeClass, od_mm?: number) {
   return lim ? (od_mm ?? Infinity) <= lim : true;
 }
 
-export function evaluateLRShips(ctx: Ctx): Record<Group, Eval> {
-  const row = findRow(ctx.systemId);
-  const out: Record<Group, Eval> = {
+const JOINT_GROUP_MAP: Record<Joint, Group> = {
+  pipe_unions: "pipe_unions",
+  compression_couplings: "compression_couplings",
+  slip_on_joints: "slip_on_joints",
+  pipe_union_welded_brazed: "pipe_unions",
+  compression_swage: "compression_couplings",
+  compression_bite: "compression_couplings",
+  compression_typical: "compression_couplings",
+  compression_flared: "compression_couplings",
+  compression_press: "compression_couplings",
+  slip_on_machine_grooved: "slip_on_joints",
+  slip_on_grip: "slip_on_joints",
+  slip_on_slip_type: "slip_on_joints",
+};
+
+const JOINT_SUBTYPE_IDS: Partial<Record<Joint, string>> = {
+  pipe_union_welded_brazed: "welded_brazed",
+  compression_swage: "swage",
+  compression_bite: "bite",
+  compression_typical: "typical",
+  compression_flared: "flared",
+  compression_press: "press",
+  slip_on_machine_grooved: "machine_grooved",
+  slip_on_grip: "grip",
+  slip_on_slip_type: "slip_type",
+};
+
+type GroupEvaluations = Record<Group, Eval>;
+
+export function evaluateLRShips(ctx: LRShipsJointContext, dataset?: LRShipsDataset): Eval;
+export function evaluateLRShips(ctx: LRShipsContext, dataset?: LRShipsDataset): GroupEvaluations;
+export function evaluateLRShips(
+  ctx: LRShipsContext,
+  dataset: LRShipsDataset = LR_SHIPS_SYSTEMS,
+): Eval | GroupEvaluations {
+  const { groups } = evaluateGroupsWithRow(ctx, dataset);
+
+  if (!ctx.joint) {
+    return cloneGroups(groups);
+  }
+
+  const group = JOINT_GROUP_MAP[ctx.joint];
+  if (!group) {
+    throw new Error(`Joint no reconocido: ${ctx.joint}`);
+  }
+
+  const base = cloneEval(groups[group]);
+  if (ctx.joint === group || base.status === "forbidden") {
+    return base;
+  }
+
+  const subtypeId = JOINT_SUBTYPE_IDS[ctx.joint];
+  if (!subtypeId) {
+    block(base, "Tabla 12.2.9: subtipo no reconocido");
+    return base;
+  }
+
+  const cls = ctx.pipeClass;
+  if (!cls) {
+    block(base, "Tabla 12.2.9: requiere clase/OD");
+    return base;
+  }
+
+  const rule = (SUBTYPE_RULES[group] ?? []).find((item) => item.id === subtypeId);
+  if (!rule) {
+    block(base, "Tabla 12.2.9: subtipo no reconocido");
+    return base;
+  }
+
+  if (!passClassOD(rule, cls, ctx.od_mm)) {
+    block(base, "Tabla 12.2.9: subtipo fuera de límite de clase/OD");
+  }
+
+  return base;
+}
+
+export function evaluateGroups(
+  ctx: LRShipsContext,
+  dataset: LRShipsDataset = LR_SHIPS_SYSTEMS,
+): GroupEvaluations {
+  const { groups } = evaluateGroupsWithRow(ctx, dataset);
+  return cloneGroups(groups);
+}
+
+function evaluateGroupsWithRow(
+  ctx: LRShipsContext,
+  dataset: LRShipsDataset,
+): { groups: GroupEvaluations; row?: LrShipRow } {
+  const row = findRow(ctx.systemId, dataset);
+  const groups: GroupEvaluations = {
     pipe_unions: base(),
     compression_couplings: base(),
     slip_on_joints: base(),
   };
 
   if (!row) {
-    return forbidAll("Fila 12.2.8 no encontrada");
+    forbidAll(groups, "Fila 12.2.8 no encontrada");
+    return { groups };
   }
 
-  for (const group of Object.keys(out) as Group[]) {
+  for (const group of Object.keys(groups) as Group[]) {
     if (!row.allowed_joints[group]) {
-      block(out[group], "Tabla 12.2.8: ‘−’ para este tipo de unión");
+      block(groups[group], "Tabla 12.2.8: ‘−’ para este tipo de unión");
     }
   }
 
   const fireLabel = labelFire(row.fire_test);
   if (fireLabel) {
-    forEachOpen(out, (ev) => makeConditional(ev, fireLabel));
+    forEachOpen(groups, (ev) => makeConditional(ev, fireLabel));
   }
 
-  applyRowNotes(ctx, row, out);
-  applyClauses(ctx, out);
-  applySubtypeLimits(ctx, out);
+  applyRowNotes(ctx, row, groups);
+  applyClauses(ctx, groups);
+  applySubtypeLimits(ctx, groups);
 
-  return out;
+  return { groups, row };
 }
 
-function findRow(id: string): LrShipRow | undefined {
-  return LR_SHIPS_SYSTEMS.find((row) => row.id === id);
+function cloneGroups(groups: GroupEvaluations): GroupEvaluations {
+  return {
+    pipe_unions: cloneEval(groups.pipe_unions),
+    compression_couplings: cloneEval(groups.compression_couplings),
+    slip_on_joints: cloneEval(groups.slip_on_joints),
+  };
+}
+
+function cloneEval(ev: Eval): Eval {
+  return {
+    status: ev.status,
+    conditions: [...ev.conditions],
+    reasons: [...ev.reasons],
+    notesApplied: [...ev.notesApplied],
+    clauses: ev.clauses.map((clause) => ({ ...clause })),
+  };
+}
+
+function findRow(id: string, dataset: LRShipsDataset): LrShipRow | undefined {
+  return dataset.find((row) => row.id === id);
 }
 
 function base(): Eval {
@@ -116,13 +231,13 @@ function note(ev: Eval, n: number) {
   }
 }
 
-function noteAll(out: Record<Group, Eval>, n: number) {
+function noteAll(out: GroupEvaluations, n: number) {
   for (const group of Object.keys(out) as Group[]) {
     note(out[group], n);
   }
 }
 
-function forEachOpen(out: Record<Group, Eval>, fn: (ev: Eval) => void) {
+function forEachOpen(out: GroupEvaluations, fn: (ev: Eval) => void) {
   for (const group of Object.keys(out) as Group[]) {
     const ev = out[group];
     if (ev.status !== "forbidden") {
@@ -131,16 +246,10 @@ function forEachOpen(out: Record<Group, Eval>, fn: (ev: Eval) => void) {
   }
 }
 
-function forbidAll(reason: string): Record<Group, Eval> {
-  const result: Record<Group, Eval> = {
-    pipe_unions: base(),
-    compression_couplings: base(),
-    slip_on_joints: base(),
-  };
-  for (const group of Object.keys(result) as Group[]) {
-    block(result[group], reason);
+function forbidAll(out: GroupEvaluations, reason: string) {
+  for (const group of Object.keys(out) as Group[]) {
+    block(out[group], reason);
   }
-  return result;
 }
 
 function labelFire(test: LrShipRow["fire_test"]): string | null {
@@ -156,7 +265,7 @@ function labelFire(test: LrShipRow["fire_test"]): string | null {
   }
 }
 
-function applyRowNotes(ctx: Ctx, row: LrShipRow, out: Record<Group, Eval>) {
+function applyRowNotes(ctx: LRShipsContext, row: LrShipRow, out: GroupEvaluations) {
   if (!row.notes.length) return;
 
   if (row.notes.includes(2)) {
@@ -182,7 +291,7 @@ function applyRowNotes(ctx: Ctx, row: LrShipRow, out: Record<Group, Eval>) {
   }
 }
 
-function applyClauses(ctx: Ctx, out: Record<Group, Eval>) {
+function applyClauses(ctx: LRShipsContext, out: GroupEvaluations) {
   const addClause = (
     ev: Eval,
     code: string,
@@ -241,7 +350,7 @@ function applyClauses(ctx: Ctx, out: Record<Group, Eval>) {
   }
 }
 
-function applySubtypeLimits(ctx: Ctx, out: Record<Group, Eval>) {
+function applySubtypeLimits(ctx: LRShipsContext, out: GroupEvaluations) {
   const cls = ctx.pipeClass;
   if (!cls) {
     forEachOpen(out, (ev) => block(ev, "Tabla 12.2.9: requiere clase/OD"));
@@ -258,3 +367,5 @@ function applySubtypeLimits(ctx: Ctx, out: Record<Group, Eval>) {
     }
   }
 }
+
+export default evaluateLRShips;

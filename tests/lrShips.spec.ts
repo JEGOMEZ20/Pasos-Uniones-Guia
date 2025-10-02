@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { evaluateLRShips, SUBTYPE_RULES, passClassOD } from "../dist/engine/lrShips.js";
+import {
+  evaluateLRShips,
+  evaluateGroups,
+  SUBTYPE_RULES,
+  passClassOD,
+} from "../dist/engine/lrShips.js";
 
 describe("LR Ships mechanical joints", () => {
   it("marca condicional los grupos por ensayo base en hidrocarburos", () => {
@@ -51,5 +56,37 @@ describe("LR Ships mechanical joints", () => {
   it("rechaza Grip en Clase I por límite de Tabla 12.2.9", () => {
     const gripRule = SUBTYPE_RULES.slip_on_joints.find((rule) => rule.id === "grip");
     expect(gripRule && passClassOD(gripRule, "I", 48.3)).toBe(false);
+  });
+
+  it("evalúa subtipos individuales respetando los límites de clase/OD", () => {
+    const pressClassII = evaluateLRShips({
+      systemId: "fire_main",
+      space: "machinery_cat_A",
+      pipeClass: "II",
+      od_mm: 50,
+      joint: "compression_press",
+    });
+
+    expect(pressClassII.status).toBe("forbidden");
+    expect(pressClassII.reasons.some((msg) => msg.includes("Tabla 12.2.9"))).toBe(true);
+
+    const pressClassIII = evaluateLRShips({
+      systemId: "fire_main",
+      space: "machinery_cat_A",
+      pipeClass: "III",
+      od_mm: 50,
+      joint: "compression_press",
+    });
+
+    expect(pressClassIII.status).not.toBe("forbidden");
+
+    const group = evaluateGroups({
+      systemId: "fire_main",
+      space: "machinery_cat_A",
+      pipeClass: "III",
+      od_mm: 50,
+    });
+
+    expect(group.compression_couplings.status).not.toBe("forbidden");
   });
 });
