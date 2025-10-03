@@ -938,16 +938,17 @@ export default function App({
           <img src="assets/joints/cotec.jpg" alt="COTECMAR" />
         </div>
 
-        <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Juntas mecánicas</p>
+        <p className="uppercase tracking-[0.4em] text-xs text-sky-400">
+          LR · Juntas mecánicas
+        </p>
 
         <h1 className="hero-title font-extrabold">
-          Evaluador multi-norma para juntas<br className="hidden xl:block" />
+          Evaluador multi-norma para juntas<br>
           mecánicas Grip-Type / Slip-on
         </h1>
 
         <p className="mt-3 text-slate-300 max-w-3xl">
-          Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño
-          para evaluar la compatibilidad de uniones mecánicas tipo Grip/Slip y sus alternativas.
+          Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño…
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
           <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" /> Flujo unificado por norma (patrón estrategia)</span>
