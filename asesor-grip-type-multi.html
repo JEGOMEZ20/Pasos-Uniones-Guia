@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Asesor Grip-Type (Slip-on Joints) · Multi-norma LR</title>
+  <link rel="stylesheet" href="assets/css/app.css">
   <base href="./">
 
   <script>
@@ -21,6 +22,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    .relative { position: relative; }
     .page-header {
       display: flex;
       align-items: flex-start;
@@ -37,26 +39,7 @@
       gap: 0.75rem;
     }
 
-    .page-header .header-brand {
-      flex: 0 0 auto;
-      width: 200px;
-      max-width: 100%;
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-end;
-      padding: 12px;
-      border-radius: 22px;
-      background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
-    }
-
-    .page-header .header-brand img {
-      width: 100%;
-      height: auto;
-      border-radius: 14px;
-      display: block;
-    }
+    .page-header .header-brand { display: none; }
 
     .result-row {
       display: grid;
@@ -328,7 +311,12 @@
       Volver al inicio
     </a>
   </div>
-  <div id="root" class="min-h-[40vh]"></div>
+  <section class="relative max-w-6xl mx-auto px-6">
+    <div class="logo-badge" aria-hidden="true">
+      <img src="assets/joints/cotec.jpg" alt="">
+    </div>
+    <div id="root" class="min-h-[40vh]"></div>
+  </section>
 
   <script type="module">
     const rootEl = document.getElementById('root');
@@ -394,17 +382,10 @@
     }
   </script>
 
-  <footer class="mt-16">
-    <div class="max-w-6xl mx-auto px-6">
-      <div class="rounded-2xl bg-slate-900/70 border border-slate-700 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
-        <p class="text-slate-200 text-sm">
-          Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN
-        </p>
-        <p class="text-slate-200 text-sm mt-1 sm:mt-0">
-          Para consultas contactar a:
-          <a href="mailto:jegomez@cotecmar.com" class="text-sky-300 hover:text-sky-200 underline underline-offset-4">jegomez@cotecmar.com</a>.
-        </p>
-      </div>
+  <footer class="site-footer">
+    <div class="footer-wrap">
+      <div>Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN</div>
+      <div>Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
     </div>
   </footer>
   </body>

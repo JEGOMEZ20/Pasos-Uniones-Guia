@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Herramientas normativas — Juntas mecánicas</title>
+  <link rel="stylesheet" href="assets/css/app.css">
   <style>
     :root{
       --bg:#0e1320;
@@ -61,24 +62,14 @@
     .text-slate-300{color:rgba(203,213,225,.92);}
     .max-w-3xl{max-width:48rem;}
     .mt-3{margin-top:.75rem;}
+    .relative{position:relative;}
     .hero{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;}
     .hero-copy{flex:1 1 380px;min-width:260px;}
-    .hero-brand{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:flex-end;padding:12px;border-radius:22px;background:rgba(15,23,42,.5);box-shadow:0 18px 40px rgba(3,10,28,.45);backdrop-filter:blur(12px);}
-    .hero-brand img{width:72px;height:72px;border-radius:16px;display:block;}
     .gap-6{gap:1.5rem;}
     .items-stretch{align-items:stretch;}
     .tool-card{display:flex;flex-direction:column;height:100%;box-shadow:var(--shadow);}
     .tool-card p{margin:0 0 18px;color:var(--ink-soft);line-height:1.6;font-size:16px;}
-    .tool-card .cta{margin-top:auto;}
     .card-head{min-height:4.5rem;}
-    .btn-eval{
-      display:inline-flex;align-items:center;justify-content:center;
-      padding:.625rem 1.25rem;border-radius:1rem;font-weight:600;
-      color:#0a1220;background:linear-gradient(90deg,#21c8f6,#637bff);
-      box-shadow:0 6px 24px rgba(3,13,38,.35);transition:filter .2s ease;
-      text-decoration:none;
-    }
-    .btn-eval:hover{filter:brightness(1.05);}
     .rounded-3xl{border-radius:1.5rem;}
     .rounded-2xl{border-radius:1rem;}
     .border{border:1px solid transparent;}
@@ -119,19 +110,21 @@
 <body>
   <div class="wrap">
     <span class="eyebrow">Herramientas</span>
-    <section class="hero max-w-6xl mx-auto px-6">
-      <div class="hero-copy">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-100">
-          Herramientas normativas para sistemas de tuberías
-        </h1>
-        <p class="mt-3 text-slate-300 max-w-3xl">
-          Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques.
-          Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el
-          asesor para juntas flexibles tipo Grip (Slip-on) según LR Naval Ships / LR Ships.
-        </p>
+    <section class="relative max-w-6xl mx-auto px-6">
+      <div class="logo-badge" aria-hidden="true">
+        <img src="assets/joints/cotec.jpg" alt="">
       </div>
-      <div class="hero-brand">
-        <img src="assets/joints/cotec.jpg" alt="COTECMAR" />
+      <div class="hero">
+        <div class="hero-copy">
+          <h1 class="text-4xl md:text-5xl font-extrabold text-slate-100">
+            Herramientas normativas para sistemas de tuberías
+          </h1>
+          <p class="mt-3 text-slate-300 max-w-3xl">
+            Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques.
+            Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el
+            asesor para juntas flexibles tipo Grip (Slip-on) según LR Naval Ships / LR Ships.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -144,7 +137,7 @@
           Versión sin dependencias adicionales, pensada para pruebas o dispositivos lentos. Calcula compatibilidad de paso
           a través de <b>tanques y espacios</b> y presenta el <b>espesor mínimo</b> por material.
         </p>
-        <div class="cta pt-4">
+        <div class="tool-cta pt-4">
           <a href="compatibilidad.html" class="btn-eval">Abrir evaluador</a>
         </div>
       </article>
@@ -156,24 +149,17 @@
         <p>
           Analiza compatibilidad por <b>sistema</b>, <b>ubicación</b>, <b>clase</b> y <b>OD</b>. Incluye visor de subtipos e imágenes.
         </p>
-        <div class="cta pt-4">
+        <div class="tool-cta pt-4">
           <a href="asesor-grip-type-multi.html" class="btn-eval">Abrir evaluador</a>
         </div>
       </article>
     </div>
   </div>
 
-  <footer class="mt-16">
-    <div class="max-w-6xl mx-auto px-6">
-      <div class="rounded-2xl bg-slate-900/70 border border-slate-700 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
-        <p class="text-slate-200 text-sm">
-          Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN
-        </p>
-        <p class="text-slate-200 text-sm mt-1 sm:mt-0">
-          Para consultas contactar a:
-          <a href="mailto:jegomez@cotecmar.com" class="text-sky-300 hover:text-sky-200 underline underline-offset-4">jegomez@cotecmar.com</a>.
-        </p>
-      </div>
+  <footer class="site-footer">
+    <div class="footer-wrap">
+      <div>Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN</div>
+      <div>Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
     </div>
   </footer>
 </body>
