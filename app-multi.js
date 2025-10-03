@@ -943,8 +943,8 @@ export default function App({
         </p>
 
         <h1 className="hero-title font-extrabold">
-          Evaluador multi-norma para juntas<br>
-          mecánicas Grip-Type / Slip-on
+          Evaluador multi-norma Para<br />
+          Juntas Mecánicas.
         </h1>
 
         <p className="mt-3 text-slate-300 max-w-3xl">

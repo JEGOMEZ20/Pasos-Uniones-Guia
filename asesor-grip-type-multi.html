@@ -322,15 +322,15 @@
     };
 
     try {
-      // 1) React + ReactDOM (client)
+      // 1) React + ReactDOM
       const React = await import('https://esm.sh/react@18.2.0');
       const ReactDOM = await import('https://esm.sh/react-dom@18.2.0/client');
 
-      // 2) HTM → bind a React.createElement (¡clave!)
+      // 2) HTM → bind a React.createElement (si NO se hace, aparece "reading 'apply'")
       const htmMod = await import('https://unpkg.com/htm@3.1.1/dist/htm.module.js');
       const html = htmMod.default.bind(React.createElement);
 
-      // 3) Módulos locales (cargas paralelas)
+      // 3) Módulos locales que App necesita (cargar en paralelo)
       const [
         { RULESETS },
         { RegulationEngines },
@@ -338,7 +338,6 @@
         shipsMod,
         navalMod,
         { default: App },
-        // evaluadores que App necesita por props:
         { default: evaluateLRShips, evaluateGroups: evaluateLRShipsGroups },
         { default: evaluateLRNavalShips, evaluateGroups: evaluateLRNavalGroups },
       ] = await Promise.all([
