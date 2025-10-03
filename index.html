@@ -1,195 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Herramientas · Pasos a través de tanques y juntas</title>
-<style>
-  :root {
-    --bg: #0f172a;
-    --bg-soft: #1e293b;
-    --bg-card: rgba(15, 23, 42, 0.8);
-    --ink: #e2e8f0;
-    --accent: #38bdf8;
-    --accent-2: #a855f7;
-    --shadow: 0 20px 45px rgba(2, 6, 23, 0.5);
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    min-height: 100%;
-    background: radial-gradient(circle at top, #1e293b 0%, #0f172a 60%, #020617 100%);
-    color: var(--ink);
-    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  }
-  a { color: inherit; }
-  .wrap {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 48px 24px 64px;
-  }
-  header {
-    margin-bottom: 48px;
-  }
-  .page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
-  .page-header .header-copy {
-    flex: 1 1 360px;
-    min-width: 260px;
-  }
-  .page-header .header-brand {
-    flex: 0 0 auto;
-    max-width: 200px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding: 12px;
-    border-radius: 22px;
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
-  }
-  .page-header .header-brand img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 14px;
-  }
-  h1 {
-    margin: 0 0 12px;
-    font-size: clamp(28px, 4vw, 40px);
-    letter-spacing: -0.01em;
-  }
-  .intro {
-    font-size: 16px;
-    line-height: 1.6;
-    max-width: 720px;
-    margin: 0;
-    color: rgba(226, 232, 240, 0.78);
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 28px;
-  }
-  .card {
-    background: var(--bg-card);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 26px;
-    padding: 28px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    backdrop-filter: blur(12px);
-  }
-  .card h2 {
-    margin: 0 0 12px;
-    font-size: 22px;
-  }
-  .card p {
-    margin: 0 0 20px;
-    font-size: 15px;
-    line-height: 1.6;
-    color: rgba(226, 232, 240, 0.76);
-  }
-  .meta {
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: rgba(148, 163, 184, 0.8);
-    margin-bottom: 16px;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    font-weight: 600;
-    font-size: 15px;
-    text-decoration: none;
-    margin-top: auto;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .btn span {
-    font-size: 18px;
-  }
-  .btn.primary {
-    background: linear-gradient(135deg, var(--accent), #0ea5e9);
-    color: #0b1120;
-    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.35);
-  }
-  .btn.secondary {
-    background: linear-gradient(135deg, var(--accent-2), #ec4899);
-    color: #0b1120;
-    box-shadow: 0 12px 30px rgba(168, 85, 247, 0.35);
-  }
-  .btn:hover {
-    transform: translateY(-3px);
-  }
-  footer {
-    margin-top: 56px;
-    text-align: center;
-    font-size: 13px;
-    color: rgba(148, 163, 184, 0.7);
-  }
-  footer a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-</style>
+  <meta charset="utf-8" />
+  <title>LR • Juntas mecánicas</title>
+  <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="page-header">
-        <div class="header-copy">
-          <h1>Herramientas normativas para sistemas de tuberías</h1>
-          <p class="intro">
-            Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques. Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el asesor para comprobación del tipo de juntas que se pueden usar según LR Naval Ships v0.7.
-          </p>
-        </div>
-        <div class="header-brand">
-          <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
-        </div>
-      </div>
-    </header>
+  <h1>Evaluador LR Ships — Juntas mecánicas</h1>
 
-    <main class="grid">
-      <article class="card">
-        <div class="meta">GL · Tabla 11.5</div>
-        <h2>Compatibilidad de tuberías a través de tanques</h2>
-        <p>
-          Evalúa si una línea puede atravesar un tanque o espacio específico según GL. Incluye cálculo de espesor mínimo por material y representación visual inmediata.
-        </p>
-        <a class="btn primary" href="./compatibilidad.html">
-          <span>→</span> Abrir herramienta
-        </a>
-      </article>
+  <section id="form">
+    <label>Sistema</label>
+    <select id="system"></select>
 
-      <article class="card">
-        <div class="meta">LR Naval Ships · Tabla 1.5</div>
-        <h2>Asesor para selección de juntas </h2>
-        <p>
-          Analiza la viabilidad de juntas mecánicas Slip-on, Pipe Unions y Compression por sistema, clase y ubicación, con recomendaciones normativas aplicables y visor ligero de esquemas SVG.
-        </p>
-        <a class="btn secondary" href="./asesor-grip-type-nobabel.html">
-          <span>→</span> Explorar asesor
-        </a>
-      </article>
-    </main>
+    <label>Ubicación/espacio</label>
+    <select id="space">
+      <option value="machinery_cat_A">Espacio de máquinas Cat. A</option>
+      <option value="accommodation">Alojamientos</option>
+      <option value="other_machinery_accessible">Otros espacios de maquinaria (accesibles)</option>
+      <option value="cargo_hold">Bodega</option>
+      <option value="tank">Tanque</option>
+      <option value="open_deck">Cubierta abierta</option>
+    </select>
 
-    <footer>
-      <p>Por Jhon Eric Gomez - DVMPR-GEDIN<br />Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a>.</p>
-    </footer>
-  </div>
+    <label>Clase</label>
+    <select id="pipeClass">
+      <option>I</option><option selected>II</option><option>III</option>
+    </select>
+
+    <label>OD (mm)</label>
+    <input id="od" type="number" step="0.1" value="60.3">
+
+    <label><input type="checkbox" id="pumpRoom"> Sala de bombas</label>
+    <label><input type="checkbox" id="asMain"> Slip-type como medio principal</label>
+    <label><input type="checkbox" id="notEasy"> No fácilmente accesible</label>
+
+    <button id="eval">Evaluar compatibilidad</button>
+  </section>
+
+  <section id="cards" class="grid">
+    <!-- se pintan 3 tarjetas: pipe_unions / compression_couplings / slip_on_joints -->
+  </section>
+
+  <section id="notes"></section>
+
+  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
