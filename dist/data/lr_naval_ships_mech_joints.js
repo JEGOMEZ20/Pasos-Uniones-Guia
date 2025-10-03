@@ -40,7 +40,7 @@ const SYSTEMS = [
   {
     id: 'aircraft_vehicle_fuel_lt60',
     group: 'ff_lt60',
-    label_es: 'Fuel aeronaves/vehículos (fp<60°C)',
+    label_es: 'Fuel-*-* aeronaves/vehículos (fp<60°C)',
     label_en: 'Aircraft / vehicle fuel (<60°C)',
     pipeSystemClass: 'dry',
     fireTest: '30min_dry',
