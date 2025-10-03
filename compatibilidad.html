@@ -340,12 +340,30 @@
   }
   .tbl tr:first-child td { border-top: none; }
   .small strong { color: #fff; }
-  footer {
-    margin-top: 32px;
-    font-size: 13px;
-    color: var(--mut);
-    line-height: 1.6;
-    text-align: center;
+  .mt-16 { margin-top: 4rem; }
+  .max-w-6xl { max-width: 72rem; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .rounded-2xl { border-radius: 1rem; }
+  .bg-slate-900\/70 { background-color: rgba(15, 23, 42, 0.7); }
+  .border { border: 1px solid transparent; }
+  .border-slate-700 { border-color: #334155; }
+  .p-4 { padding: 1rem; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .text-slate-200 { color: #e2e8f0; }
+  .text-sm { font-size: 0.875rem; }
+  .mt-1 { margin-top: 0.25rem; }
+  .text-sky-300 { color: #7dd3fc; }
+  .underline { text-decoration: underline; }
+  .underline-offset-4 { text-underline-offset: 4px; }
+  .hover\:text-sky-200:hover { color: #bae6fd; }
+  .shadow-\[0_8px_40px_rgba\(0,0,0,0\.35\)\] { box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35); }
+  @media (min-width: 640px) {
+    .sm\:flex-row { flex-direction: row; }
+    .sm\:items-center { align-items: center; }
+    .sm\:justify-between { justify-content: space-between; }
+    .sm\:mt-0 { margin-top: 0; }
   }
   /* Modal genérico para el evaluador LR de juntas */
   .lrj-modal {
@@ -482,9 +500,6 @@
     </div>
   </div>
 
-  <footer>
-    <p>Por Jhon Eric Gomez - DVMPR-GEDIN<br />Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a>.</p>
-  </footer>
 </div>
 
 <script>
@@ -1447,6 +1462,20 @@ window.addEventListener('DOMContentLoaded',()=>{
   cleanseLegacyTableRefs();
 });
 </script>
+
+<footer class="mt-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="rounded-2xl bg-slate-900/70 border border-slate-700 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
+      <p class="text-slate-200 text-sm">
+        Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN
+      </p>
+      <p class="text-slate-200 text-sm mt-1 sm:mt-0">
+        Para consultas contactar a:
+        <a href="mailto:jegomez@cotecmar.com" class="text-sky-300 hover:text-sky-200 underline underline-offset-4">jegomez@cotecmar.com</a>.
+      </p>
+    </div>
+  </div>
+</footer>
 </body>
 </html>
 
