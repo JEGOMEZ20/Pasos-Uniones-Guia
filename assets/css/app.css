@@ -24,9 +24,9 @@ h3 { margin:0 0 8px; }
 
 body.modal-open { overflow: hidden; }
 
-/* Logo homogéneo en héroes */
+/* Logo homogéneo */
 .logo-badge{
-  position:absolute; right:24px; top:-8px;
+  position:absolute; right:24px; top:-6px;
   width:88px; height:88px; border-radius:16px;
   background: radial-gradient(100% 100% at 30% 20%, #1f3b77 0%, #0e1f3f 60%, #0a1530 100%);
   box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06);
@@ -34,18 +34,30 @@ body.modal-open { overflow: hidden; }
 }
 .logo-badge img{ width:68%; height:68%; object-fit:contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.35)); }
 
-/* Reserva de espacio para que el H1 no choque con el logo */
-.hero-pr { padding-right: 120px; }
-@media (max-width: 1024px){ .hero-pr{ padding-right: 100px; } }
-@media (max-width: 640px){  .logo-badge{ width:72px;height:72px; right:16px; top:-6px; } .hero-pr{ padding-right: 84px; } }
-
-/* Tipografía homogénea para H1 de héroe */
-.hero-title{
-  line-height:1.1; letter-spacing:-0.01em;
-  /* clamp para consistencia visual */
-  font-size: clamp(2rem, 1.1rem + 2.5vw, 3.25rem);
-  word-break: keep-all; hyphens: auto;
+/* Reserva para que el H1 no choque con el logo */
+.hero-pr{ padding-right:120px; }
+@media (max-width:1024px){ .hero-pr{ padding-right:100px; } }
+@media (max-width:640px){
+  .logo-badge{ width:72px; height:72px; right:16px; top:-6px; }
+  .hero-pr{ padding-right:84px; }
 }
+
+/* Tipografía homogénea + forzar 2 líneas */
+.hero-title{
+  line-height:1.1; letter-spacing:-0.01em; color:#f8fafc;
+  text-wrap: balance;
+}
+.h1-two-lines{ max-width: 52ch; }
+
+/* Footer centrado y con contraste */
+.site-footer{ margin-top:4rem; }
+.site-footer .footer-wrap{
+  max-width:64rem; margin:0 auto; padding:.875rem 1.25rem;
+  border-radius:14px; text-align:center;
+  background:rgba(11,17,28,.55); border:1px solid rgba(148,163,184,.25);
+  color:#e5e7eb;
+}
+.site-footer a{ color:#7dd3fc; text-decoration:underline; text-underline-offset:4px; }
 
 /* ————— Cards: alinear botones al fondo ————— */
 .tool-card{ display:flex; flex-direction:column; height:100%; }

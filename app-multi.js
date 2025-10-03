@@ -933,25 +933,24 @@ export default function App({
 
   return html`
     <div className="pb-16">
-      <section className="page-header relative hero-pr max-w-6xl mx-auto px-6 py-10">
-        <div className="logo-badge" aria-hidden="true" role="presentation">
-          <img src="assets/img/cotecmar.svg" alt="" />
+      <section className="relative hero-pr max-w-6xl mx-auto px-6 py-10">
+        <div className="logo-badge" aria-hidden="true">
+          <img src="assets/joints/cotec.jpg" alt="COTECMAR" />
         </div>
-        <div className="header-copy">
-          <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Juntas mecánicas</p>
-          <h1 className="hero-title font-extrabold text-slate-100">
-            Evaluador multi-norma para juntas mecánicas Grip-Type / Slip-on
-          </h1>
-          <p className="mt-3 text-slate-300 max-w-3xl">
-            Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño
-            para evaluar la compatibilidad de uniones mecánicas tipo Grip/Slip y sus alternativas.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
-            <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" />
-              Flujo unificado por norma (patrón estrategia)</span>
-            <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" />
-              Datos y notas aislados por conjunto de reglas</span>
-          </div>
+
+        <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Juntas mecánicas</p>
+        <h1 className="hero-title h1-two-lines font-extrabold">
+          Evaluador multi-norma para juntas mecánicas Grip-Type / Slip-on
+        </h1>
+        <p className="mt-3 text-slate-300 max-w-3xl">
+          Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño
+          para evaluar la compatibilidad de uniones mecánicas tipo Grip/Slip y sus alternativas.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
+          <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" />
+            Flujo unificado por norma (patrón estrategia)</span>
+          <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" />
+            Datos y notas aislados por conjunto de reglas</span>
         </div>
       </section>
 
