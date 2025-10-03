@@ -1,3 +1,5 @@
+import "./joint-images.js";
+import "./joint-viewer.js";
 import { LR_SHIPS_SYSTEMS } from "./data-lr-ships.js";
 import { LR_NAVAL_SYSTEMS } from "./data-lr-naval.js";
 import { evaluateLRShips } from "./engine-lr-ships.js";

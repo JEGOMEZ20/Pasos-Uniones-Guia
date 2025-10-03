@@ -1,13 +1,18 @@
 import { getJointImageSrc } from "./joint-images.js";
 
+let lastFocusedElement = null;
+
 function openImageModal(src, caption) {
   const modal = document.getElementById("imgModal");
   const img = document.getElementById("imgModalPic");
   const cap = document.getElementById("imgModalCaption");
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   img.src = src;
   img.alt = caption;
   cap.textContent = caption || "";
   modal.classList.remove("hidden");
+  document.body?.classList.add("modal-open");
+  modal.querySelector(".close")?.focus();
 }
 
 function closeImageModal() {
@@ -16,6 +21,11 @@ function closeImageModal() {
   img.src = "";
   document.getElementById("imgModalCaption").textContent = "";
   modal.classList.add("hidden");
+  document.body?.classList.remove("modal-open");
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
 }
 
 (function wireModal() {

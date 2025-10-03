@@ -1,3 +1,5 @@
+.hidden { display: none !important; }
+
 body { font-family: system-ui, sans-serif; background:#0e1320; color:#e9eef8; margin:24px; }
 label { margin-right:12px; }
 .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-top:16px; }
@@ -19,3 +21,5 @@ h3 { margin:0 0 8px; }
 .img-modal img{max-width:min(92vw,1200px);max-height:88vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
 .img-modal .close{position:absolute;top:16px;right:16px;font-size:28px;background:#111;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
 #imgModalCaption{position:absolute;left:0;right:0;bottom:20px;color:#fff;text-align:center;opacity:.9}
+
+body.modal-open { overflow: hidden; }
