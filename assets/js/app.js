@@ -1,14 +1,51 @@
 import { LR_SHIPS_SYSTEMS } from "./data-lr-ships.js";
+import { LR_NAVAL_SYSTEMS } from "./data-lr-naval.js";
 import { evaluateLRShips } from "./engine-lr-ships.js";
+import { evaluateLRNaval } from "./engine-lr-naval.js";
 import { renderUI } from "./ui.js";
 
+const regulationSel = document.querySelector("#regulation");
 const systemSel = document.querySelector("#system");
-LR_SHIPS_SYSTEMS.forEach(r => {
-  const opt = document.createElement("option"); opt.value = r.id; opt.textContent = r.label; systemSel.appendChild(opt);
+
+const REGULATIONS = {
+  ships: {
+    systems: LR_SHIPS_SYSTEMS,
+    evaluate: evaluateLRShips,
+    defaultSystem: "cargo_oil_lines_lt60"
+  },
+  naval: {
+    systems: LR_NAVAL_SYSTEMS,
+    evaluate: evaluateLRNaval,
+    defaultSystem: LR_NAVAL_SYSTEMS[0]?.id || ""
+  }
+};
+
+function populateSystems(regKey) {
+  const reg = REGULATIONS[regKey];
+  systemSel.innerHTML = "";
+  if (!reg) return;
+  reg.systems.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r.id;
+    opt.textContent = r.label;
+    systemSel.appendChild(opt);
+  });
+  const def = reg.defaultSystem || reg.systems[0]?.id;
+  if (def) {
+    systemSel.value = def;
+  }
+}
+
+populateSystems(regulationSel.value || "ships");
+
+regulationSel.addEventListener("change", () => {
+  populateSystems(regulationSel.value);
+  document.querySelector("#cards").innerHTML = "";
+  document.querySelector("#notes").innerHTML = "";
 });
-systemSel.value = "cargo_oil_lines_lt60"; // por defecto (tu caso típico)
 
 document.querySelector("#eval").addEventListener("click", () => {
+  const reg = REGULATIONS[regulationSel.value] || REGULATIONS.ships;
   const ctx = {
     systemId: systemSel.value,
     space: document.querySelector("#space").value,
@@ -24,6 +61,6 @@ document.querySelector("#eval").addEventListener("click", () => {
     isSteam: systemSel.value==="steam",
     designPressureBar: 10
   };
-  const res = evaluateLRShips(ctx);
+  const res = reg.evaluate(ctx);
   renderUI(res);
 });

@@ -97,7 +97,12 @@ export function evaluateLRShips(ctx){
   checkGroup("slip_on_joints");
 
   return {
-    row: { label: row.label, class_of_pipe_system: row.class_of_pipe_system, fire_test: row.fire_test, notes: row.notes },
+    row: {
+      label: row.label,
+      class_of_pipe_system: row.class_of_pipe_system,
+      fire_test: row.fire_test,
+      notes: row.notes.map(n => ({ n, text: NOTES_TEXT[n] || "" }))
+    },
     result: out
   };
 }
