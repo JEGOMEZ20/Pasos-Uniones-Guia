@@ -932,30 +932,31 @@ export default function App({
   };
 
   return html`
-    <div className="max-w-6xl mx-auto px-4 pb-16">
-      <header className="page-header py-10">
+    <div className="pb-16">
+      <section className="page-header relative hero-pr max-w-6xl mx-auto px-6 py-10">
+        <div className="logo-badge" aria-hidden="true" role="presentation">
+          <img src="assets/img/cotecmar.svg" alt="" />
+        </div>
         <div className="header-copy">
           <p className="uppercase tracking-[0.4em] text-xs text-sky-400">LR · Juntas mecánicas</p>
-          <h1 className="text-3xl sm:text-4xl font-semibold">
+          <h1 className="hero-title font-extrabold text-slate-100">
             Evaluador multi-norma para juntas mecánicas Grip-Type / Slip-on
           </h1>
-          <p className="sublead text-slate-200">
+          <p className="mt-3 text-slate-300 max-w-3xl">
             Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño
             para evaluar la compatibilidad de uniones mecánicas tipo Grip/Slip y sus alternativas.
           </p>
-          <div className="flex flex-wrap gap-3 text-sm text-slate-300">
+          <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
             <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" />
               Flujo unificado por norma (patrón estrategia)</span>
             <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" />
               Datos y notas aislados por conjunto de reglas</span>
           </div>
         </div>
-        <div className="header-brand">
-          <img src="./assets/brand/lr-glass.jpg" alt="Lloyd's Register" loading="lazy" />
-        </div>
-      </header>
+      </section>
 
-      <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
+      <div className="max-w-6xl mx-auto px-4">
+        <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-slate-300">Reglamento activo</span>
@@ -1253,9 +1254,9 @@ export default function App({
           Configura los parámetros y pulsa <strong>Evaluar compatibilidad</strong> para generar el informe.
         </div>
       `}
-    </div>
+      </div>
 
-    ${viewer?.open ? html`
+      ${viewer?.open ? html`
       <div
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
         onClick=${closeViewer}
@@ -1290,5 +1291,6 @@ export default function App({
         </div>
       </div>
     ` : null}
+    </div>
   `;
 }
