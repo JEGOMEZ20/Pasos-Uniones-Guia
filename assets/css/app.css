@@ -24,7 +24,7 @@ h3 { margin:0 0 8px; }
 
 body.modal-open { overflow: hidden; }
 
-/* Logo homogéneo */
+/* Logo homogéneo, arriba-derecha */
 .logo-badge{
   position:absolute; right:24px; top:-6px;
   width:88px; height:88px; border-radius:16px;
@@ -34,7 +34,7 @@ body.modal-open { overflow: hidden; }
 }
 .logo-badge img{ width:68%; height:68%; object-fit:contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.35)); }
 
-/* Reserva para que el H1 no choque con el logo */
+/* Reserva lateral para que el H1 no choque con el logo */
 .hero-pr{ padding-right:120px; }
 @media (max-width:1024px){ .hero-pr{ padding-right:100px; } }
 @media (max-width:640px){
@@ -42,28 +42,19 @@ body.modal-open { overflow: hidden; }
   .hero-pr{ padding-right:84px; }
 }
 
-/* Tipografía homogénea + forzar 2 líneas */
+/* Títulos del héroe (sin cortes raros) */
 .hero-title{
   line-height:1.1; letter-spacing:-0.01em; color:#f8fafc;
-  text-wrap: balance;
+  text-wrap: balance;      /* reparte el texto en 2 líneas de forma estética */
+  hyphens: none;           /* evita "ubi-ción" */
+  word-break: normal;      /* no romper palabras */
 }
-.h1-two-lines{ max-width: 52ch; }
+.h1-two-lines{ max-width: 52ch; }  /* ayuda a mantener ~2 líneas en desktop */
 
-/* Footer centrado y con contraste */
-.site-footer{ margin-top:4rem; }
-.site-footer .footer-wrap{
-  max-width:64rem; margin:0 auto; padding:.875rem 1.25rem;
-  border-radius:14px; text-align:center;
-  background:rgba(11,17,28,.55); border:1px solid rgba(148,163,184,.25);
-  color:#e5e7eb;
-}
-.site-footer a{ color:#7dd3fc; text-decoration:underline; text-underline-offset:4px; }
-
-/* ————— Cards: alinear botones al fondo ————— */
+/* Cards: alinear botones abajo y unificar estilo */
 .tool-card{ display:flex; flex-direction:column; height:100%; }
 .tool-card .tool-cta{ margin-top:auto; }
 
-/* ————— Botón formal (azul institucional) ————— */
 .btn-eval{
   display:inline-flex; align-items:center; justify-content:center;
   padding:.625rem 1.25rem; border-radius:1rem; font-weight:600;
@@ -72,4 +63,14 @@ body.modal-open { overflow: hidden; }
   text-decoration:none;
 }
 .btn-eval:hover{ filter:brightness(1.06); }
+
+/* Footer centrado y homogéneo */
+.site-footer{ margin-top:4rem; }
+.site-footer .footer-wrap{
+  max-width:64rem; margin:0 auto; padding:.875rem 1.25rem;
+  border-radius:14px; text-align:center;
+  background:rgba(11,17,28,.55); border:1px solid rgba(148,163,184,.25);
+  color:#e5e7eb;
+}
+.site-footer a{ color:#7dd3fc; text-decoration:underline; text-underline-offset:4px; }
 
