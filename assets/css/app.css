@@ -6,7 +6,16 @@ label { margin-right:12px; }
 .card.conditional { border-color:#f59e0b; }
 .card.forbidden { border-color:#ef4444; opacity:.8; }
 .tag { display:inline-block; margin:4px 6px 0 0; padding:2px 8px; border-radius:999px; background:#27304a; font-size:12px; }
-.subtype { display:flex; align-items:center; gap:8px; }
+.subtype { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.subtype-label { display:flex; align-items:center; gap:8px; }
 .subtype .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; }
 .subtype.valid .dot { background:#10b981; }
+.subtype-invalid { font-size:12px; opacity:.75; }
+.ver-btn { background:#1d253d; color:#93c5fd; border:1px solid #1e3a8a; border-radius:999px; padding:4px 12px; font-size:12px; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; transition:background .2s ease, color .2s ease; }
+.ver-btn:hover { background:#2563eb; color:#0f172a; }
 h3 { margin:0 0 8px; }
+.img-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:9999}
+.img-modal.hidden{display:none}
+.img-modal img{max-width:min(92vw,1200px);max-height:88vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.img-modal .close{position:absolute;top:16px;right:16px;font-size:28px;background:#111;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
+#imgModalCaption{position:absolute;left:0;right:0;bottom:20px;color:#fff;text-align:center;opacity:.9}

@@ -1,3 +1,5 @@
+import { wireViewButtons } from "./joint-viewer.js";
+
 export function renderUI({ row, result }) {
   const cards = document.querySelector("#cards");
   cards.innerHTML = "";
@@ -21,13 +23,25 @@ export function renderUI({ row, result }) {
       ${noteList.length ? `<div style="margin-top:8px">Notas de referencia: ${noteList.map(n=>`<span class="tag note">Nota ${n}</span>`).join(" ")}</div>` : ""}
       <div style="margin-top:8px">Subtipos:</div>
       <div>${ev.subtypes.map(s=>`
-        <div class="subtype ${s.valid?'valid':''}">
-          <span class="dot"></span><span>${s.name}</span> ${s.valid?'':'(no válido por clase/OD)'}
+        <div class="subtype ${s.valid ? 'valid' : ''}">
+          <div class="subtype-label">
+            <span class="dot"></span>
+            <span>${s.name}</span>
+            ${s.valid ? '' : '<span class="subtype-invalid">(no válido por clase/OD)</span>'}
+          </div>
+          <button class="ver-btn" type="button"
+                  data-action="view-joint"
+                  data-subtype-id="${s.id}"
+                  data-subtype-name="${s.name}">
+            VER
+          </button>
         </div>`).join("")}
       </div>
     `;
     cards.appendChild(el);
   });
+
+  wireViewButtons(cards);
 
   const notes = document.querySelector("#notes");
   if (row) {
