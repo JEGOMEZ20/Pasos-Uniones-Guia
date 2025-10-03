@@ -4,59 +4,34 @@
   <meta charset="utf-8" />
   <title>LR • Juntas mecánicas</title>
   <link rel="stylesheet" href="assets/css/app.css">
+  <style>
+    .home-wrap{max-width:1100px;margin:40px auto;padding:0 16px}
+    .cards{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+    .card{border-radius:16px;padding:20px;background:#151b2f;border:1px solid rgba(255,255,255,.07)}
+    .card h2{margin:0 0 8px}
+    .card p{opacity:.85}
+    .btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;border:1px solid #1e3a8a;background:#1d253d;color:#93c5fd;text-decoration:none}
+    .btn:hover{background:#2563eb;color:#0f172a}
+  </style>
 </head>
 <body>
-  <h1>Evaluador LR — Juntas mecánicas</h1>
+  <div class="home-wrap">
+    <h1>Evaluador LR — Juntas mecánicas</h1>
+    <p class="small">Elige una opción para continuar.</p>
 
-  <section id="form">
-    <label>Reglamento activo</label>
-    <select id="regulation">
-      <option value="ships" selected>LR Ships</option>
-      <option value="naval">LR Naval Ships</option>
-    </select>
+    <div class="cards">
+      <div class="card">
+        <h2>Evaluador multi-norma (LR Ships / LR Naval)</h2>
+        <p>Analiza compatibilidad por sistema, ubicación, clase y OD. Incluye visor de subtipos e imágenes.</p>
+        <a class="btn" href="app.html">Abrir evaluador</a>
+      </div>
 
-    <label>Sistema</label>
-    <select id="system"></select>
-
-    <label>Ubicación/espacio</label>
-    <select id="space">
-      <option value="machinery_cat_A">Espacio de máquinas Cat. A</option>
-      <option value="accommodation">Alojamientos</option>
-      <option value="munition_store">Pañol de munición</option>
-      <option value="other_machinery_accessible">Otros espacios de maquinaria (accesibles)</option>
-      <option value="cargo_hold">Bodega</option>
-      <option value="tank">Tanque</option>
-      <option value="open_deck">Cubierta abierta</option>
-    </select>
-
-    <label>Clase</label>
-    <select id="pipeClass">
-      <option>I</option><option selected>II</option><option>III</option>
-    </select>
-
-    <label>OD (mm)</label>
-    <input id="od" type="number" step="0.1" value="60.3">
-
-    <label><input type="checkbox" id="pumpRoom"> Sala de bombas</label>
-    <label><input type="checkbox" id="asMain"> Slip-type como medio principal</label>
-    <label><input type="checkbox" id="notEasy"> No fácilmente accesible</label>
-
-    <button id="eval">Evaluar compatibilidad</button>
-  </section>
-
-  <section id="cards" class="grid">
-    <!-- se pintan 3 tarjetas: pipe_unions / compression_couplings / slip_on_joints -->
-  </section>
-
-  <section id="notes"></section>
-
-  <!-- Visor de imágenes de juntas -->
-  <div id="imgModal" class="img-modal hidden" role="dialog" aria-modal="true" aria-label="Vista de imagen">
-    <button class="close" type="button" aria-label="Cerrar">×</button>
-    <img id="imgModalPic" alt="">
-    <div id="imgModalCaption"></div>
+      <div class="card">
+        <h2>Visor ligero (legacy)</h2>
+        <p>Versión sin dependencias adicionales (para pruebas o dispositivos lentos).</p>
+        <a class="btn" href="asesor-grip-type-nobabel.html">Abrir visor ligero</a>
+      </div>
+    </div>
   </div>
-
-  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

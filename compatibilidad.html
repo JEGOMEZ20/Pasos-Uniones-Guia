@@ -490,8 +490,12 @@
   <!-- Modal que contiene el evaluador de juntas/uniones -->
   <div id="juntasModal" class="lrj-modal" aria-hidden="true">
     <button class="lrj-close" type="button" aria-label="Cerrar">×</button>
+    <!-- Botón Inicio -->
+    <button id="lrjHome" class="lrj-close" type="button" aria-label="Ir al inicio" style="right:auto; left:16px">
+      Inicio
+    </button>
     <iframe id="juntasFrame"
-            src="Pasos-Uniones-Guia/index.html"
+            src=""
             title="Evaluador LR — Juntas mecánicas"
             loading="lazy"
             referrerpolicy="no-referrer"
@@ -1468,9 +1472,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     const openBtn = document.getElementById('btnJuntasLR');
     const modal   = document.getElementById('juntasModal');
     const close   = modal.querySelector('.lrj-close');
+    const homeBtn = document.getElementById('lrjHome');
     const frame   = document.getElementById('juntasFrame');
 
+    // Abrir SIEMPRE la portada local del evaluador (./index.html)
+    const HOME_URL = new URL('./index.html', window.location.href).toString();
+
     function openModal() {
+      frame.src = HOME_URL;            // portada (tarjetas)
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
     }
@@ -1478,11 +1487,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     function closeModal() {
       modal.classList.remove('open');
       modal.setAttribute('aria-hidden', 'true');
-      // frame.src = frame.src;
+      // Opcional: limpiar
+      // frame.src = '';
     }
 
     openBtn.addEventListener('click', openModal);
     close.addEventListener('click', closeModal);
+    homeBtn.addEventListener('click', () => { frame.src = HOME_URL; });
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
