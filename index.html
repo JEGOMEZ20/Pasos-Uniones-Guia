@@ -6,9 +6,15 @@
   <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
-  <h1>Evaluador LR Ships — Juntas mecánicas</h1>
+  <h1>Evaluador LR — Juntas mecánicas</h1>
 
   <section id="form">
+    <label>Reglamento activo</label>
+    <select id="regulation">
+      <option value="ships" selected>LR Ships</option>
+      <option value="naval">LR Naval Ships</option>
+    </select>
+
     <label>Sistema</label>
     <select id="system"></select>
 
@@ -16,6 +22,7 @@
     <select id="space">
       <option value="machinery_cat_A">Espacio de máquinas Cat. A</option>
       <option value="accommodation">Alojamientos</option>
+      <option value="munition_store">Pañol de munición</option>
       <option value="other_machinery_accessible">Otros espacios de maquinaria (accesibles)</option>
       <option value="cargo_hold">Bodega</option>
       <option value="tank">Tanque</option>
