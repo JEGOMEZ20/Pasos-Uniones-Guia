@@ -396,11 +396,6 @@
         Basado en norma GL para compatibilidad de rutas de tuberías; para agua potable se
         considera IMO. Criterios complementados con la experiencia del astillero COTECMAR.
       </p>
-      <div class="header-actions">
-        <button id="btnJuntasLR" type="button" class="btn-primary header-cta">
-          Evaluador LR — Juntas mecánicas
-        </button>
-      </div>
     </div>
     <div class="header-brand">
       <img src="assets/joints/cotec.jpg" alt="Cotecmar" />
@@ -485,21 +480,6 @@
         <tbody></tbody>
       </table>
     </div>
-  </div>
-
-  <!-- Modal que contiene el evaluador de juntas/uniones -->
-  <div id="juntasModal" class="lrj-modal" aria-hidden="true">
-    <button class="lrj-close" type="button" aria-label="Cerrar">×</button>
-    <!-- Botón Inicio -->
-    <button id="lrjHome" class="lrj-close" type="button" aria-label="Ir al inicio" style="right:auto; left:16px">
-      Inicio
-    </button>
-    <iframe id="juntasFrame"
-            src=""
-            title="Evaluador LR — Juntas mecánicas"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-            allow="fullscreen"></iframe>
   </div>
 
   <footer>
@@ -1466,43 +1446,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   resetNotes();
   cleanseLegacyTableRefs();
 });
-</script>
-<script>
-  (function () {
-    const openBtn = document.getElementById('btnJuntasLR');
-    const modal   = document.getElementById('juntasModal');
-    const close   = modal.querySelector('.lrj-close');
-    const homeBtn = document.getElementById('lrjHome');
-    const frame   = document.getElementById('juntasFrame');
-
-    // Abrir SIEMPRE la portada local del evaluador (./index.html)
-    const HOME_URL = new URL('./index.html', window.location.href).toString();
-
-    function openModal() {
-      frame.src = HOME_URL;            // portada (tarjetas)
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeModal() {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-      // Opcional: limpiar
-      // frame.src = '';
-    }
-
-    openBtn.addEventListener('click', openModal);
-    close.addEventListener('click', closeModal);
-    homeBtn.addEventListener('click', () => { frame.src = HOME_URL; });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
-    });
-  })();
 </script>
 </body>
 </html>
