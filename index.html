@@ -2,35 +2,156 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>LR • Juntas mecánicas</title>
-  <link rel="stylesheet" href="assets/css/app.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Herramientas normativas — Juntas mecánicas</title>
   <style>
-    .home-wrap{max-width:1100px;margin:40px auto;padding:0 16px}
-    .cards{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
-    .card{border-radius:16px;padding:20px;background:#151b2f;border:1px solid rgba(255,255,255,.07)}
-    .card h2{margin:0 0 8px}
-    .card p{opacity:.85}
-    .btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;border:1px solid #1e3a8a;background:#1d253d;color:#93c5fd;text-decoration:none}
-    .btn:hover{background:#2563eb;color:#0f172a}
+    :root{
+      --bg:#0e1320;
+      --panel:#0f172a;
+      --panel-soft:rgba(15,23,42,.55);
+      --ink:#e9eef8;
+      --ink-soft:#c9d4ee;
+      --mut:#8aa0c6;
+      --ring:rgba(148,163,184,.18);
+      --shadow:0 16px 40px rgba(8,47,73,.35);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", ui-sans-serif, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    .wrap{max-width:1200px;margin:auto;padding:28px 20px 40px}
+    h1{
+      font-size: clamp(28px, 4.2vw, 44px);
+      letter-spacing:-.01em;
+      margin:0 0 8px;
+    }
+    .sublead{
+      margin:0;
+      color:var(--ink-soft);
+      line-height:1.6;
+      font-size:clamp(14px, 1.8vw, 18px);
+      max-width:980px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap:22px;
+      margin-top:26px;
+    }
+    .card{
+      background:var(--panel-soft);
+      border-radius:var(--radius);
+      padding:28px;
+      border:1px solid var(--ring);
+      box-shadow: var(--shadow);
+    }
+    .card h2{
+      margin:0 0 12px;
+      font-size: clamp(22px, 2.6vw, 30px);
+      letter-spacing:-.01em;
+    }
+    .card p{
+      margin:0 0 18px;
+      color:var(--ink-soft);
+      line-height:1.6;
+      font-size:16px;
+    }
+    .actions{margin-top:18px}
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:16px 22px;
+      border-radius:999px;
+      color:#0b1220;
+      font-weight:600;
+      text-decoration:none;
+      border:0;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .2s ease, filter .2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .btn:hover{transform: translateY(-1px); filter: brightness(1.02)}
+    .btn:active{transform: translateY(0)}
+    /* Azul (como el primario de compatibilidad) */
+    .btn-primary{
+      background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+      color:#061120;
+    }
+    /* Morado/rosa (como la tarjeta del asesor) */
+    .btn-alt{
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color:#0e1220;
+    }
+    .eyebrow{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:var(--mut);
+      margin-bottom:8px;
+      display:inline-block;
+    }
+    .card .eyebrow{margin-bottom:10px}
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-top:10px;
+      color:var(--mut);
+      font-size:13px;
+    }
+    .brand img{width:44px;height:44px;border-radius:12px;object-fit:cover;box-shadow:var(--shadow)}
+    @media (max-width:940px){
+      .grid{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
-  <div class="home-wrap">
-    <h1>Evaluador LR — Juntas mecánicas</h1>
-    <p class="small">Elige una opción para continuar.</p>
+  <div class="wrap">
+    <span class="eyebrow">Herramientas</span>
+    <h1>Herramientas normativas para sistemas de tuberías</h1>
+    <p class="sublead">
+      Accede a los asistentes interactivos desarrollados para comprobar requisitos reglamentarios en buques.
+      Elige la función que necesitas: compatibilidad de tuberías que atraviesan tanques y espacios, o el
+      asesor para juntas flexibles tipo Grip (Slip-on) según LR Naval Ships / LR Ships.
+    </p>
 
-    <div class="cards">
-      <div class="card">
-        <h2>Evaluador multi-norma (LR Ships / LR Naval)</h2>
-        <p>Analiza compatibilidad por sistema, ubicación, clase y OD. Incluye visor de subtipos e imágenes.</p>
-        <a class="btn" href="app.html">Abrir evaluador</a>
-      </div>
+    <div class="grid">
+      <!-- Tarjeta 1 -->
+      <section class="card">
+        <span class="eyebrow">GL · TABLA 11.5</span>
+        <h2>Evaluador De Pasos De Tuberias En Diferentes Espacios</h2>
+        <p>
+          Versión sin dependencias adicionales, pensada para pruebas o dispositivos lentos. Calcula compatibilidad de paso
+          a través de <b>tanques y espacios</b> y presenta el <b>espesor mínimo</b> por material.
+        </p>
+        <div class="actions">
+          <a class="btn btn-alt" href="compatibilidad.html">Abrir evaluador</a>
+        </div>
+      </section>
 
-      <div class="card">
-        <h2>Visor ligero (legacy)</h2>
-        <p>Versión sin dependencias adicionales (para pruebas o dispositivos lentos).</p>
-        <a class="btn" href="compatibilidad.html">Abrir visor ligero</a>
-      </div>
+      <!-- Tarjeta 2 -->
+      <section class="card">
+        <span class="eyebrow">LR SHIPS · LR NAVAL</span>
+        <h2>Evaluador Multi-noma (LR Ships / LR Naval) Para Selección De Juntas</h2>
+        <p>
+          Analiza compatibilidad por <b>sistema</b>, <b>ubicación</b>, <b>clase</b> y <b>OD</b>. Incluye visor de subtipos e imágenes.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="asesor-grip-type-multi.html">Abrir evaluador</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="brand">
+      <img src="assets/joints/cotec.jpg" alt="COTECMAR">
+      <span>Desarrollado para COTECMAR · DVMPR-GEDIN</span>
     </div>
   </div>
 </body>
