@@ -24,7 +24,7 @@ h3 { margin:0 0 8px; }
 
 body.modal-open { overflow: hidden; }
 
-/* Logo homogéneo, arriba-derecha */
+/* Logo homogéneo arriba-derecha */
 .logo-badge{
   position:absolute; right:24px; top:-6px;
   width:88px; height:88px; border-radius:16px;
@@ -35,23 +35,24 @@ body.modal-open { overflow: hidden; }
 .logo-badge img{ width:68%; height:68%; object-fit:contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.35)); }
 
 /* Reserva lateral para que el H1 no choque con el logo */
-.hero-pr{ padding-right:120px; }
-@media (max-width:1024px){ .hero-pr{ padding-right:100px; } }
+.hero-pr{ padding-right:120px !important; }
+@media (max-width:1024px){ .hero-pr{ padding-right:100px !important; } }
 @media (max-width:640px){
   .logo-badge{ width:72px; height:72px; right:16px; top:-6px; }
-  .hero-pr{ padding-right:84px; }
+  .hero-pr{ padding-right:84px !important; }
 }
 
-/* Títulos del héroe (sin cortes raros) */
+/* H1 homogéneo en TODAS las vistas (mismo tamaño) */
 .hero-title{
   line-height:1.1; letter-spacing:-0.01em; color:#f8fafc;
-  text-wrap: balance;      /* reparte el texto en 2 líneas de forma estética */
-  hyphens: none;           /* evita "ubi-ción" */
-  word-break: normal;      /* no romper palabras */
+  hyphens:none; word-break:normal;
+  /* Tamaños fijos por breakpoint (no auto-encoge) */
+  font-size: 2.25rem;               /* ~text-4xl */
 }
-.h1-two-lines{ max-width: 52ch; }  /* ayuda a mantener ~2 líneas en desktop */
+@media (min-width:768px){  .hero-title{ font-size: 3rem;   } } /* ~text-5xl */
+@media (min-width:1280px){ .hero-title{ font-size: 3.5rem; } } /* ~text-6xl aprox */
 
-/* Cards: alinear botones abajo y unificar estilo */
+/* Cards: alinear botones y estilo del botón */
 .tool-card{ display:flex; flex-direction:column; height:100%; }
 .tool-card .tool-cta{ margin-top:auto; }
 
