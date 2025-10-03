@@ -339,50 +339,38 @@
     };
 
     try {
-      const htm = (await import('https://unpkg.com/htm?module')).default;
+      // React + ReactDOM (client)
       const React = await import('https://esm.sh/react@18.2.0');
       const ReactDOM = await import('https://esm.sh/react-dom@18.2.0/client');
 
+      // HTM: IMPORTA Y *BIND* A React.createElement  ⬅️⬅️⬅️  ESTE ES EL FIX
+      const htm = (await import('https://unpkg.com/htm@3.1.1/dist/htm.module.js')).default;
+      const html = htm.bind(React.createElement);
+
+      // Módulos locales (deben existir en esas rutas)
       const { RULESETS } = await import('./rulesets/index.js');
       const { RegulationEngines } = await import('./engines.js');
       const { I18N } = await import('./i18n/index.js');
-      const { default: evaluateLRShips, evaluateGroups: evaluateLRShipsGroups } = await import('./dist/engine/lrShips.js');
-      const { default: evaluateLRNavalShips, evaluateGroups: evaluateLRNavalGroups } = await import('./dist/engine/evaluateLRNavalShips.js');
+      await import('./dist/engine/lrShips.js');
+      await import('./dist/engine/evaluateLRNavalShips.js');
       const ships = (await import('./dist/data/lr_ships_mech_joints.js')).default;
       const naval = (await import('./dist/data/lr_naval_ships_mech_joints.js')).default;
 
-      const createElement = React.createElement || React.default?.createElement;
-      if (typeof createElement !== 'function') {
-        throw new Error('React.createElement no disponible.');
-      }
-      const html = htm.bind(createElement);
-
+      // Tu UI modularizada
       const { default: App } = await import('./app-multi.js');
 
-      const rootElement = document.getElementById('root');
-      if (!rootElement) {
-        throw new Error('Elemento raíz no encontrado.');
-      }
-
-      const createRoot = ReactDOM?.createRoot || ReactDOM?.default?.createRoot;
-      if (typeof createRoot !== 'function') {
-        throw new Error('ReactDOM.createRoot no disponible.');
-      }
-
-      const root = createRoot(rootElement);
-      root.render(htm`<${App}
-        React=${React}
-        html=${html}
-        RULESETS=${RULESETS}
-        RegulationEngines=${RegulationEngines}
-        I18N=${I18N}
-        evaluateLRShips=${evaluateLRShips}
-        evaluateLRShipsGroups=${evaluateLRShipsGroups}
-        evaluateLRNavalShips=${evaluateLRNavalShips}
-        evaluateLRNavalGroups=${evaluateLRNavalGroups}
-        ships=${ships}
-        naval=${naval}
-      />`);
+      const rootEl = document.getElementById('root');
+      const createRoot = (ReactDOM.createRoot || ReactDOM.default?.createRoot);
+      if (!createRoot) throw new Error('ReactDOM.createRoot no disponible');
+      createRoot(rootEl).render(
+        html`<${App}
+          RULESETS=${RULESETS}
+          RegulationEngines=${RegulationEngines}
+          I18N=${I18N}
+          ships=${ships}
+          naval=${naval}
+        />`
+      );
     } catch (err) {
       showError(err);
       console.error(err);
