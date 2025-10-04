@@ -1048,29 +1048,37 @@ export default function App({
                     <option value="III">Clase III</option>
                   </select>
                 </label>
+
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-slate-300">Diámetro nominal - OD</span>
+                  <select
+                    className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                    value=${odMM ?? ''}
+                    onChange=${(e) => {
+                      const value = e.target.value;
+                      setOdMM(value ? parseFloat(value) : null);
+                      markPendingChanges();
+                    }}
+                  >
+                    <option value="" disabled>Selecciona un diámetro...</option>
+                    ${SCHEDULES.map((opt) => html`
+                      <option key=${opt.od} value=${opt.od}>${opt.label}</option>
+                    `)}
+                  </select>
+                </label>
               `
-            : null}
+            : html`
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-slate-300">Temperatura de diseño (°C)</span>
+                  <input
+                    type="number"
+                    step="1"
+                    className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                    value=${designTemperatureC}
+                    onChange=${(e) => { setDesignTemperatureC(parseFloat(e.target.value)); markPendingChanges(); }}
+                  />
+                </label>
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Diámetro nominal - OD</span>
-            <select
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-              value=${odMM ?? ''}
-              onChange=${(e) => {
-                const value = e.target.value;
-                setOdMM(value ? parseFloat(value) : null);
-                markPendingChanges();
-              }}
-            >
-              <option value="" disabled>Selecciona un diámetro...</option>
-              ${SCHEDULES.map((opt) => html`
-                <option key=${opt.od} value=${opt.od}>${opt.label}</option>
-              `)}
-            </select>
-          </label>
-
-          ${classMode === 'auto'
-            ? html`
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-slate-300">Presión de diseño (bar)</span>
                   <input
@@ -1083,17 +1091,23 @@ export default function App({
                 </label>
 
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-slate-300">Temperatura de diseño (°C)</span>
-                  <input
-                    type="number"
-                    step="1"
+                  <span className="text-slate-300">Diámetro nominal - OD</span>
+                  <select
                     className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-                    value=${designTemperatureC}
-                    onChange=${(e) => { setDesignTemperatureC(parseFloat(e.target.value)); markPendingChanges(); }}
-                  />
+                    value=${odMM ?? ''}
+                    onChange=${(e) => {
+                      const value = e.target.value;
+                      setOdMM(value ? parseFloat(value) : null);
+                      markPendingChanges();
+                    }}
+                  >
+                    <option value="" disabled>Selecciona un diámetro...</option>
+                    ${SCHEDULES.map((opt) => html`
+                      <option key=${opt.od} value=${opt.od}>${opt.label}</option>
+                    `)}
+                  </select>
                 </label>
-              `
-            : null}
+              `}
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 form-actions">
