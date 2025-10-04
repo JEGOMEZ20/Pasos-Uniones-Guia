@@ -934,7 +934,7 @@ export default function App({
 
   return html`
     <div className="pb-16">
-      <section className="relative hero-pr max-w-6xl mx-auto px-6 py-10">
+      <section className="relative hero-pr hero-section max-w-6xl mx-auto px-6 py-10">
         <div className="logo-badge" aria-hidden="true" role="presentation">
           <img src="assets/joints/cotec.jpg" alt="COTECMAR" />
         </div>
@@ -951,80 +951,80 @@ export default function App({
         <p className="mt-3 text-slate-300 max-w-3xl">
           Selecciona el reglamento LR aplicable, el sistema de tuberías y los parámetros de diseño…
         </p>
-        <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
+        <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300 hero-highlights">
           <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-emerald-300" /> Flujo unificado por norma (patrón estrategia)</span>
           <span className="inline-flex items-center gap-2"><${ShieldIcon} className="w-5 h-5 text-sky-300" /> Datos y notas aislados por conjunto de reglas</span>
         </div>
       </section>
 
       <div className="max-w-6xl mx-auto px-4">
-        <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Reglamento activo</span>
-            <select
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              value=${ruleId}
-              onChange=${handleRuleChange}
-            >
-              ${Object.entries(RULESETS).map(([key, rule]) => html`
-                <option key=${key} value=${key}>${rule.title}</option>
-              `)}
-            </select>
-              <small className="text-slate-400">${rules.subtitle}</small>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Sistema / Servicio</span>
-            <select
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-              value=${selectedSystemId ?? ''}
-              onChange=${(e) => { setSelectedSystemId(e.target.value); markPendingChanges(); }}
-            >
-              ${groupedSystems.order.map((groupKey) => html`
-                <optgroup key=${groupKey} label=${tGroup(groupKey)}>
-                  ${groupedSystems.byGroup.get(groupKey).map((item) => html`
-                    <option value=${item.id}>${tSystem(item.id)}</option>
-                  `)}
-                </optgroup>
-              `)}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Ubicación / espacio</span>
-            <select
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-              value=${space}
-              onChange=${(e) => { setSpace(e.target.value); markPendingChanges(); }}
-            >
-              ${SPACES.map((opt) => html`
-                <option key=${opt.id} value=${opt.id}>${opt.label}</option>
-              `)}
-            </select>
-          </label>
-
-          <div className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Modo de clase de tubería</span>
-            <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-1 flex gap-1">
-              <button
-                type="button"
-                className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'manual'
-                  ? 'bg-sky-500 text-slate-900 shadow'
-                  : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
-                onClick=${() => handleClassModeChange('manual')}
+        <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8 form-panel">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 form-grid">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-300">Reglamento activo</span>
+              <select
+                className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                value=${ruleId}
+                onChange=${handleRuleChange}
               >
-                Clase
-              </button>
-              <button
-                type="button"
-                className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'auto'
-                  ? 'bg-sky-500 text-slate-900 shadow'
-                  : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
-                onClick=${() => handleClassModeChange('auto')}
+                ${Object.entries(RULESETS).map(([key, rule]) => html`
+                  <option key=${key} value=${key}>${rule.title}</option>
+                `)}
+              </select>
+                <small className="text-slate-400">${rules.subtitle}</small>
+            </label>
+  
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-300">Sistema / Servicio</span>
+              <select
+                className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                value=${selectedSystemId ?? ''}
+                onChange=${(e) => { setSelectedSystemId(e.target.value); markPendingChanges(); }}
               >
-                Manual
-              </button>
+                ${groupedSystems.order.map((groupKey) => html`
+                  <optgroup key=${groupKey} label=${tGroup(groupKey)}>
+                    ${groupedSystems.byGroup.get(groupKey).map((item) => html`
+                      <option value=${item.id}>${tSystem(item.id)}</option>
+                    `)}
+                  </optgroup>
+                `)}
+              </select>
+            </label>
+  
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-300">Ubicación / espacio</span>
+              <select
+                className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
+                value=${space}
+                onChange=${(e) => { setSpace(e.target.value); markPendingChanges(); }}
+              >
+                ${SPACES.map((opt) => html`
+                  <option key=${opt.id} value=${opt.id}>${opt.label}</option>
+                `)}
+              </select>
+            </label>
+  
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-300">Modo de clase de tubería</span>
+              <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-1 flex gap-1">
+                <button
+                  type="button"
+                  className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'manual'
+                    ? 'bg-sky-500 text-slate-900 shadow'
+                    : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
+                  onClick=${() => handleClassModeChange('manual')}
+                >
+                  Clase
+                </button>
+                <button
+                  type="button"
+                  className=${`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${classMode === 'auto'
+                    ? 'bg-sky-500 text-slate-900 shadow'
+                    : 'bg-transparent text-slate-200 hover:bg-slate-700/60'}`}
+                  onClick=${() => handleClassModeChange('auto')}
+                >
+                  Manual
+                </button>
             </div>
             <small className="text-slate-400">
               ${classMode === 'manual'
@@ -1094,34 +1094,34 @@ export default function App({
                 </label>
               `
             : null}
-        </div>
+          </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-900 font-semibold px-5 py-2 rounded-lg transition"
-            onClick=${computeEvaluation}
-            disabled=${!selectedSystemId || !systems.length}
-          >
-            <${SearchIcon} /> Evaluar compatibilidad
-          </button>
-          ${hasPendingChanges || evaluationError
-            ? html`
-                <div className="flex flex-col gap-1">
-                  ${hasPendingChanges
-                    ? html`<span className="text-sm text-slate-300">Ajustar Valores Para Evaluar</span>`
-                    : null}
-                  ${evaluationError
-                    ? html`<span className="text-sm text-rose-300">${evaluationError}</span>`
-                    : null}
+          <div className="mt-6 flex flex-wrap items-center gap-3 form-actions">
+            <button
+              className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-900 font-semibold px-5 py-2 rounded-lg transition"
+              onClick=${computeEvaluation}
+              disabled=${!selectedSystemId || !systems.length}
+            >
+              <${SearchIcon} /> Evaluar compatibilidad
+            </button>
+            ${hasPendingChanges || evaluationError
+              ? html`
+                  <div className="flex flex-col gap-1">
+                    ${hasPendingChanges
+                      ? html`<span className="text-sm text-slate-300">Ajustar Valores Para Evaluar</span>`
+                      : null}
+                    ${evaluationError
+                      ? html`<span className="text-sm text-rose-300">${evaluationError}</span>`
+                      : null}
                 </div>
               `
             : null}
-        </div>
-      </section>
+          </div>
+        </section>
 
       ${system ? html`
         <section className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 shadow-lg shadow-slate-900/40 mb-8">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3 selection-summary">
             <div>
               <p className="text-sm text-slate-400 uppercase tracking-wide">Grupo</p>
               <p className="text-lg font-semibold">${translatedGroup}</p>
@@ -1135,7 +1135,7 @@ export default function App({
               <p className="text-lg font-semibold">${evaluation?.usedClass ?? clazz}</p>
             </div>
           </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3 text-sm text-slate-300">
+          <div className="mt-4 grid gap-4 sm:grid-cols-3 text-sm text-slate-300 selection-details">
             <div>
               <span className="block text-slate-400">Condición</span>
               <span className="font-medium">${translatedCondition || '—'}</span>
@@ -1187,7 +1187,7 @@ export default function App({
               </div>
             </dl>
           </article>
-          <div className="result-row">
+          <div className="result-row responsive-grid">
             ${['pipeUnions', 'compression', 'slipOn'].map((category) => renderCategoryCard(category))}
           </div>
 

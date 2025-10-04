@@ -48,6 +48,19 @@
       align-items: stretch;
     }
 
+    .result-row.responsive-grid {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .form-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .selection-summary,
+    .selection-details {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
     .result-card {
       display: flex;
       flex-direction: column;
@@ -300,6 +313,127 @@
 
       .result-card {
         min-height: 0;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .hero-section {
+        padding-top: 3rem;
+        padding-bottom: 2.5rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-section {
+        text-align: center;
+        padding-inline: 1.5rem;
+      }
+
+      .hero-section .hero-title {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-section p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-section .logo-badge {
+        position: static;
+        margin: 0 auto 1.5rem;
+      }
+
+      .hero-highlights {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hero-highlights span {
+        justify-content: center;
+      }
+
+      .form-panel {
+        padding: 1.5rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .form-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .form-actions > *:not(button) {
+        width: 100%;
+      }
+
+      .result-card {
+        padding: 16px;
+      }
+
+      .result-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .result-header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .status-pill {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
+      .option-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .option-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .option-actions .chip {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .hero-section {
+        padding-inline: 1.25rem;
+      }
+
+      .hero-section .hero-title {
+        font-size: clamp(2.2rem, 8vw, 2.6rem);
+      }
+
+      .hero-section .hero-highlights span {
+        text-align: left;
+        justify-content: flex-start;
+      }
+
+      .form-panel {
+        padding: 1.25rem;
+      }
+
+      .result-row.responsive-grid {
+        gap: 16px;
+      }
+
+      .option-item {
+        gap: 12px;
+        padding: 12px 14px;
       }
     }
 
