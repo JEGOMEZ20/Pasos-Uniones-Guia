@@ -42,10 +42,19 @@ body.modal-open { overflow: hidden; }
   .hero-pr{ padding-right:84px !important; }
 }
 
+/* Refuerzo de títulos principales */
+.font-extrabold{
+  font-family:"Inter","Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  font-weight:800;
+  letter-spacing:-0.01em;
+}
+
 /* H1 homogéneo en TODAS las vistas (mismo tamaño) */
 .hero-title{
   line-height:1.1; letter-spacing:-0.01em; color:#f8fafc;
   hyphens:none; word-break:normal;
+  font-family:"Inter","Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  font-weight:800;
   /* Tamaños fijos por breakpoint (no auto-encoge) */
   font-size: 2.25rem;               /* ~text-4xl */
 }
