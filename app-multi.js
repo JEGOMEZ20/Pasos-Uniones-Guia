@@ -1271,11 +1271,7 @@ export default function App({
               : html`<p className="text-sm text-slate-400">Sin requisitos adicionales configurados para esta norma.</p>`}
           </section>
         </section>
-      ` : html`
-        <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6 text-sm text-slate-300">
-          Configura los parámetros y pulsa <strong>Evaluar compatibilidad</strong> para generar el informe.
-        </div>
-      `}
+      ` : null}
       </div>
 
       ${viewer?.open ? html`
