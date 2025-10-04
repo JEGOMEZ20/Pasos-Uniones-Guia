@@ -302,6 +302,37 @@
         min-height: 0;
       }
     }
+
+    /* Reserva de espacio para que el footer no suba mientras carga la app */
+    #root {
+      min-height: 68vh;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Estado de arranque: mostramos un skeleton simple y ocultamos footer */
+    .booting #root::before {
+      content: "Cargando evaluador…";
+      font-size: 0.95rem;
+      color: #9fb7d1;
+      opacity: .9;
+    }
+
+    .booting footer.site-footer {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    /* Transición suave al estar lista la app */
+    footer.site-footer {
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    .ready footer.site-footer {
+      opacity: 1;
+      transform: none;
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen">
@@ -314,11 +345,16 @@
   <div id="root" class="min-h-[40vh]"></div>
 
   <script type="module">
+    document.documentElement.classList.add('booting');
+
     const rootEl = document.getElementById('root');
 
     const showError = (err) => {
-      if (!rootEl) return;
-      rootEl.innerHTML = `<pre style="white-space:pre-wrap">${(err && (err.stack || err.message)) || err}</pre>`;
+      if (rootEl) {
+        rootEl.innerHTML = `<pre style="white-space:pre-wrap">${(err && (err.stack || err.message)) || err}</pre>`;
+      }
+      document.documentElement.classList.remove('booting');
+      document.documentElement.classList.add('ready');
     };
 
     try {
@@ -370,6 +406,9 @@
           naval=${navalMod.default}
         />`
       );
+
+      document.documentElement.classList.remove('booting');
+      document.documentElement.classList.add('ready');
     } catch (err) {
       showError(err);
       console.error(err);
