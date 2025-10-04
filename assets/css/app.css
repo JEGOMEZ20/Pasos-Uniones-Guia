@@ -59,9 +59,15 @@ body.modal-open { overflow: hidden; }
 .btn-eval{
   display:inline-flex; align-items:center; justify-content:center;
   padding:.625rem 1.25rem; border-radius:1rem; font-weight:600;
-  color:#0a1220; background:linear-gradient(90deg,#21c8f6,#637bff);
+  color:#041223; background:linear-gradient(96deg,#33c6ff,#6e9cff);
   box-shadow:0 6px 24px rgba(3,13,38,.35); transition:filter .2s ease;
   text-decoration:none;
+}
+.tool-card--compat .btn-eval{
+  background:linear-gradient(105deg,#3bd9ff 0%,#8df9ff 100%);
+}
+.tool-card--multi .btn-eval{
+  background:linear-gradient(105deg,#8cb5ff 0%,#597bff 100%);
 }
 .btn-eval:hover{ filter:brightness(1.06); }
 

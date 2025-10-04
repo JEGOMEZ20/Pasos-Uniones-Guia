@@ -68,6 +68,8 @@
     .gap-6{gap:1.5rem;}
     .items-stretch{align-items:stretch;}
     .tool-card{display:flex;flex-direction:column;height:100%;box-shadow:var(--shadow);}
+    .tool-card--compat{background-color:rgba(147,197,253,.32);}
+    .tool-card--multi{background-color:rgba(125,211,252,.32);}
     .tool-card p{margin:0 0 18px;color:var(--ink-soft);line-height:1.6;font-size:16px;}
     .card-head{min-height:4.5rem;}
     .rounded-3xl{border-radius:1.5rem;}
@@ -130,7 +132,7 @@
 
     <div class="grid gap-6 md:grid-cols-2 items-stretch">
       <!-- TARJETA IZQUIERDA -->
-      <article class="tool-card rounded-3xl border border-slate-700/60 bg-slate-900/40 p-6">
+      <article class="tool-card tool-card--compat rounded-3xl border border-slate-700/60 bg-slate-900/40 p-6">
         <span class="eyebrow">GL · TABLA 11.5</span>
         <h3 class="card-head text-2xl font-extrabold leading-tight">Evaluador de pasos de tuberías en diferentes espacios</h3>
         <p>
@@ -143,7 +145,7 @@
       </article>
 
       <!-- TARJETA DERECHA -->
-      <article class="tool-card rounded-3xl border border-slate-700/60 bg-slate-900/40 p-6">
+      <article class="tool-card tool-card--multi rounded-3xl border border-slate-700/60 bg-slate-900/40 p-6">
         <span class="eyebrow">LR SHIPS · LR NAVAL</span>
         <h3 class="card-head text-2xl font-extrabold leading-tight">Evaluador multi-norma (LR Ships / LR Naval) para selección de juntas</h3>
         <p>
