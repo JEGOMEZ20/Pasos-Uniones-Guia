@@ -503,7 +503,7 @@ export default function App({
   const [selectedSystemId, setSelectedSystemId] = useState(null);
   const [classMode, setClassMode] = useState('manual');
   const [clazz, setClazz] = useState('II');
-  const [odMM, setOdMM] = useState(60.3);
+  const [odMM, setOdMM] = useState(null);
   const [designPressureBar, setDesignPressureBar] = useState(7.5);
   const [designTemperatureC, setDesignTemperatureC] = useState(25);
   const [space, setSpace] = useState('other_machinery');
@@ -545,13 +545,6 @@ export default function App({
       setSelectedSystemId(systems[0]?.id ?? null);
     }
   }, [systems, selectedSystemId]);
-
-  useEffect(() => {
-    const defaultSchedule = SCHEDULES.find((item) => Math.abs(item.od - 60.3) < 1e-6) || SCHEDULES[0];
-    if (defaultSchedule) {
-      setOdMM(defaultSchedule.od);
-    }
-  }, []);
 
   useEffect(() => {
     resetEvaluationState();
@@ -650,6 +643,10 @@ export default function App({
   function computeEvaluation() {
     if (!selectedSystemId) {
       setEvaluationError('Selecciona un sistema antes de evaluar.');
+      return;
+    }
+    if (!Number.isFinite(odMM)) {
+      setEvaluationError('Selecciona un diámetro antes de evaluar.');
       return;
     }
     try {
@@ -1050,12 +1047,17 @@ export default function App({
             : null}
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">OD (mm)</span>
+            <span className="text-slate-300">Diámetro nominal - OD</span>
             <select
               className="bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2"
-              value=${odMM}
-              onChange=${(e) => { setOdMM(parseFloat(e.target.value)); markPendingChanges(); }}
+              value=${odMM ?? ''}
+              onChange=${(e) => {
+                const value = e.target.value;
+                setOdMM(value ? parseFloat(value) : null);
+                markPendingChanges();
+              }}
             >
+              <option value="" disabled>Selecciona un diámetro...</option>
               ${SCHEDULES.map((opt) => html`
                 <option key=${opt.od} value=${opt.od}>${opt.label}</option>
               `)}
@@ -1101,7 +1103,7 @@ export default function App({
             ? html`
                 <div className="flex flex-col gap-1">
                   ${hasPendingChanges
-                    ? html`<span className="text-sm text-amber-300">Hay cambios sin evaluar.</span>`
+                    ? html`<span className="text-sm text-slate-300">Ajustar Valores Para Evaluar</span>`
                     : null}
                   ${evaluationError
                     ? html`<span className="text-sm text-rose-300">${evaluationError}</span>`
