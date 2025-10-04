@@ -502,7 +502,7 @@ export default function App({
   const [ruleId, setRuleId] = useState(() => getInitialRule());
   const [selectedSystemId, setSelectedSystemId] = useState(null);
   const [classMode, setClassMode] = useState('manual');
-  const [clazz, setClazz] = useState('II');
+  const [clazz, setClazz] = useState('');
   const [odMM, setOdMM] = useState(null);
   const [designPressureBar, setDesignPressureBar] = useState(7.5);
   const [designTemperatureC, setDesignTemperatureC] = useState(25);
@@ -647,6 +647,10 @@ export default function App({
     }
     if (!Number.isFinite(odMM)) {
       setEvaluationError('Selecciona un diámetro antes de evaluar.');
+      return;
+    }
+    if (classMode === 'manual' && !clazz) {
+      setEvaluationError('Selecciona una clase antes de evaluar.');
       return;
     }
     try {
@@ -1038,6 +1042,7 @@ export default function App({
                     value=${clazz}
                     onChange=${(e) => { setClazz(e.target.value); markPendingChanges(); }}
                   >
+                    <option value="" disabled>Selecciona una clase...</option>
                     <option value="I">Clase I</option>
                     <option value="II">Clase II</option>
                     <option value="III">Clase III</option>
