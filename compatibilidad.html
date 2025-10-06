@@ -893,12 +893,12 @@ function computeNotes(systemKey, spaceKey) {
 
   // 1) Agua potable con negras/grises → IMO
   if (isDW && (isBW || isGW)) {
-    return 'Clasificación considerando IMO. No aplica GL 2015 no indica la relación de agua potable con aguas negras/grises.';
+    return 'Clasificación considerando IMO. No aplica GL 2015 esta no indica la relación de agua potable con aguas negras/grises.';
   }
 
   // 2) Cualquier combinación que incluya negras o grises (sin potable) → COTECMAR
   if (isBW || isGW) {
-    return 'Definición estander de COTECMAR, considerando experiencia  mantenibilidad. Mas detalles Confirmar con Diseñador.';
+    return 'Definición estander de COTECMAR, considerando experiencia y mantenibilidad. Mas detalles Confirmar con Diseñador.';
   }
 
   // 3) Resto de combinaciones → GL 2015
