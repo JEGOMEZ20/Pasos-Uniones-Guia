@@ -891,22 +891,17 @@ function computeNotes(systemKey, spaceKey) {
   const isGW = systemKey === 'Greywater lines'  || spaceKey === 'Greywater Tanks';
   const isDW = systemKey === 'Drinking water lines' || spaceKey === 'Drinking water tanks';
 
-  // Regla 1: Agua potable en relación con negras/grises → IMO
+  // 1) Agua potable con negras/grises → IMO
   if (isDW && (isBW || isGW)) {
     return 'Clasificación considerando IMO. GL 2015 no detalla la relación de agua potable con aguas negras/grises.';
   }
 
-  // Regla 2: Sólo grises (sin agua potable) → COTECMAR
-  if (isGW && !isDW) {
+  // 2) Cualquier combinación que incluya negras o grises (sin potable) → COTECMAR
+  if (isBW || isGW) {
     return 'Definición según COTECMAR. Confirmar con Diseñador.';
   }
 
-  // Regla 3 (por defecto): sin negras ni grises → GL 2015
-  if (!isBW && !isGW) {
-    return 'Definición tomada de GL 2015.';
-  }
-
-  // Fallback (p.ej., negras sin potable): GL 2015
+  // 3) Resto de combinaciones → GL 2015
   return 'Definición tomada de GL 2015.';
 }
 function pickSchedule(mat,od,sMin){
@@ -1177,6 +1172,9 @@ function calc(){
   const matLabelBase=MATERIAL_ES?.[mat] || materialSel.options[materialSel.selectedIndex]?.text || 'Material';
   const table=document.getElementById('outTbl');
   const {key:daKeyRaw,label:daLabel}=getDaSelection();
+
+  const noteText = computeNotes(system, locationSel);
+  setNote(noteText);
 
   if(daKeyRaw==null || daKeyRaw===''){
     resetResults();
