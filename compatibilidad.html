@@ -862,7 +862,7 @@ const SYSTEMS_LABELS = {
 };
 
 // Mensaje canónico para “–”
-const MSG_AGREEMENT = 'Validar con el diseñador del sistema y con casa clasificadora';
+const MSG_AGREEMENT = 'Consultar con el diseñador del sistema, para validar alternativas';
 
 const mmFormatter = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 function formatMM(value){
@@ -893,16 +893,16 @@ function computeNotes(systemKey, spaceKey) {
 
   // 1) Agua potable con negras/grises → IMO
   if (isDW && (isBW || isGW)) {
-    return 'Clasificación considerando IMO. GL 2015 no detalla la relación de agua potable con aguas negras/grises.';
+    return 'Clasificación considerando IMO. No aplica GL 2015 no indica la relación de agua potable con aguas negras/grises.';
   }
 
   // 2) Cualquier combinación que incluya negras o grises (sin potable) → COTECMAR
   if (isBW || isGW) {
-    return 'Definición según COTECMAR. Confirmar con Diseñador.';
+    return 'Definición según COTECMAR. Mas detalles Confirmar con Diseñador.';
   }
 
   // 3) Resto de combinaciones → GL 2015
-  return 'Definición tomada de GL 2015.';
+  return 'Definición conceptual tomada de GL.';
 }
 function pickSchedule(mat,od,sMin){
   const orderSteel=['5','10','40','80','160'];
