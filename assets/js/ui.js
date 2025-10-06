@@ -21,22 +21,32 @@ export function renderUI({ row, result }) {
       ${ev.reasons.length ? `<div style="margin-top:8px">Motivos:<br>${ev.reasons.map(r=>`• ${r}`).join("<br>")}</div>` : ""}
       ${clauseList.length ? `<div style="margin-top:8px">Cláusulas: ${clauseList.map(c=>`<span class="tag clause">${c}</span>`).join(" ")}</div>` : ""}
       ${noteList.length ? `<div style="margin-top:8px">Notas de referencia: ${noteList.map(n=>`<span class="tag note">Nota ${n}</span>`).join(" ")}</div>` : ""}
+      ${(ev.status==="forbidden" && (ev.reasons.some(r=>/Nota\s*2/i.test(r)) || noteList.includes(2)))
+        ? `<div style="margin-top:8px"><span class="tag danger">Prohibido por Nota 2</span></div>`
+        : ""}
       <div style="margin-top:8px">Subtipos:</div>
-      <div>${ev.subtypes.map(s=>`
-        <div class="subtype ${s.valid ? 'valid' : ''}">
-          <div class="subtype-label">
-            <span class="dot"></span>
-            <span>${s.name}</span>
-            ${s.valid ? '' : '<span class="subtype-invalid">(no válido por clase/OD)</span>'}
-          </div>
-          <button class="ver-btn" type="button"
-                  data-action="view-joint"
-                  data-subtype-id="${s.id}"
-                  data-subtype-name="${s.name}">
-            VER
-          </button>
-        </div>`).join("")}
-      </div>
+      <div>${
+        ev.subtypes.map(s=>{
+          const disabled = ev.status === "forbidden";
+          const btn = disabled
+            ? `<button class="ver-btn disabled" type="button" aria-disabled="true" title="No disponible: prohibido por nota/cláusula">VER</button>`
+            : `<button class="ver-btn" type="button"
+                        data-action="view-joint"
+                        data-subtype-id="${s.id}"
+                        data-subtype-name="${s.name}">
+                 VER
+               </button>`;
+          return `
+            <div class="subtype ${s.valid ? 'valid' : ''} ${disabled ? 'disabled' : ''}">
+              <div class="subtype-label">
+                <span class="dot"></span>
+                <span>${s.name}</span>
+                ${s.valid ? '' : '<span class="subtype-invalid">(no válido por clase/OD)</span>'}
+              </div>
+              ${btn}
+            </div>`;
+        }).join("")
+      }</div>
     `;
     cards.appendChild(el);
   });

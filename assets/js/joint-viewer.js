@@ -45,6 +45,9 @@ function closeImageModal() {
 export function wireViewButtons(root = document) {
   root.querySelectorAll('[data-action="view-joint"]').forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.classList.contains("disabled") || btn.getAttribute("aria-disabled") === "true") {
+        return;
+      }
       const id = btn.dataset.subtypeId;
       const name = btn.dataset.subtypeName || btn.textContent.trim();
       openImageModal(getJointImageSrc(id), name);
