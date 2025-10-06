@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Evaluador LR — Juntas mecánicas (Base)</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+
+  <style>
+    /* Fallback mínimo por si no carga app.css */
+    body{font-family:system-ui,Segoe UI,Inter,Arial,sans-serif;background:#0f172a;color:#e5e7eb;margin:0;padding:24px}
+    h1{font-size:28px;margin:8px 0 18px}
+    .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+    label{display:flex;flex-direction:column;font-size:14px;gap:6px}
+    select,input,button{padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
+    button#eval{background:#0ea5e9;border:0;font-weight:600}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+    .card{border-radius:14px;padding:16px;border:2px solid #334155;background:#0b1220}
+    .card .title{font-size:18px;font-weight:700;margin-bottom:6px}
+    .status{font-weight:800}
+    .card.allowed{border-color:#16a34a}
+    .card.conditional{border-color:#f59e0b}
+    .card.forbidden{border-color:#b91c1c;background:#2a0f12;position:relative}
+    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid #334155;font-size:12px;margin-right:6px}
+    .tag.note{background:#1f2937}
+    .dot{width:8px;height:8px;border-radius:999px;display:inline-block;margin-right:8px}
+    .subtype{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px dashed #334155}
+    .subtype:first-child{border-top:0}
+    .subtype.invalid .subtype-label{opacity:.7}
+    .subtype-label{display:flex;align-items:center;gap:6px}
+    .subtype-invalid{font-size:12px;opacity:.75;margin-left:8px}
+    .ver-btn{padding:6px 10px;border-radius:999px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
+    .card.forbidden .subtype-label{text-decoration:line-through;opacity:.8}
+    .ver-btn.disabled{opacity:.5;pointer-events:none;cursor:not-allowed}
+    .card.forbidden::after{content:"";position:absolute;inset:0;background:
+      repeating-linear-gradient(45deg,rgba(185,28,28,.12)0 12px,transparent 12px 24px);pointer-events:none;border-radius:inherit}
+    /* Modal */
+    .modal.hidden{display:none}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+    .modal .panel{background:#0b1220;border:1px solid #334155;border-radius:16px;max-width:min(92vw,980px);width:100%;padding:12px}
+    .modal .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .modal img{max-width:100%;height:auto;border-radius:10px}
+    .close{background:#1f2937;border:0;color:#e5e7eb;border-radius:8px;padding:6px 10px}
+    .summary{margin-top:18px;border-radius:14px;border:1px solid #334155;background:#0b1220;padding:16px}
+  </style>
+</head>
+<body>
+  <a href="./index.html" style="color:#93c5fd;">← Inicio</a>
+  <h1>Evaluador LR — Juntas mecánicas</h1>
+
+  <div class="controls">
+    <label>Reglamento activo
+      <select id="regulation">
+        <option value="ships">LR Ships</option>
+        <option value="naval">LR Naval</option>
+      </select>
+    </label>
+
+    <label>Sistema
+      <select id="system"></select>
+    </label>
+
+    <label>Ubicación/espacio
+      <select id="space">
+        <option value="machinery_cat_A">Espacio de máquinas Cat. A</option>
+        <option value="accommodation">Alojamientos</option>
+        <option value="other_machinery_accessible">Otros espacios de maquinaria (accesibles)</option>
+        <option value="cargo_hold">Bodega de carga</option>
+        <option value="tank">Tanque</option>
+        <option value="open_deck">Cubierta abierta</option>
+      </select>
+    </label>
+
+    <label>Clase
+      <select id="pipeClass">
+        <option value="I">I</option>
+        <option value="II" selected>II</option>
+        <option value="III">III</option>
+      </select>
+    </label>
+
+    <label>OD (mm)
+      <input id="od" type="number" step="0.1" value="60.3" />
+    </label>
+
+    <label><input id="pumpRoom" type="checkbox" /> Sala de bombas</label>
+    <label><input id="asMain" type="checkbox" /> Slip-type como medio principal</label>
+    <label><input id="notEasy" type="checkbox" /> No fácilmente accesible</label>
+
+    <button id="eval" type="button">Evaluar compatibilidad</button>
+  </div>
+
+  <div id="cards" class="cards"></div>
+
+  <div class="summary" id="notes" aria-live="polite"></div>
+
+  <!-- Modal visor de juntas -->
+  <div id="imgModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="head">
+        <strong id="imgModalCaption">Vista de junta</strong>
+        <button class="close" type="button" aria-label="Cerrar">Cerrar</button>
+      </div>
+      <img id="imgModalPic" alt="" />
+    </div>
+  </div>
+
+  <!-- Capa base (funciona sin React) -->
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -478,76 +478,10 @@
   </div>
   <div id="root" class="min-h-[40vh]"></div>
 
-  <script type="module">
-    document.documentElement.classList.add('booting');
-
-    const rootEl = document.getElementById('root');
-
-    const showError = (err) => {
-      if (rootEl) {
-        rootEl.innerHTML = `<pre style="white-space:pre-wrap">${(err && (err.stack || err.message)) || err}</pre>`;
-      }
-      document.documentElement.classList.remove('booting');
-      document.documentElement.classList.add('ready');
-    };
-
-    try {
-      // 1) React + ReactDOM
-      const React = await import('https://esm.sh/react@18.2.0');
-      const ReactDOM = await import('https://esm.sh/react-dom@18.2.0/client');
-
-      // 2) HTM → bind a React.createElement (si NO se hace, aparece "reading 'apply'")
-      const htmMod = await import('https://unpkg.com/htm@3.1.1/dist/htm.module.js');
-      const html = htmMod.default.bind(React.createElement);
-
-      // 3) Módulos locales que App necesita (cargar en paralelo)
-      const [
-        { RULESETS },
-        { RegulationEngines },
-        { I18N },
-        shipsMod,
-        navalMod,
-        { default: App },
-        { default: evaluateLRShips, evaluateGroups: evaluateLRShipsGroups },
-        { default: evaluateLRNavalShips, evaluateGroups: evaluateLRNavalGroups },
-      ] = await Promise.all([
-        import('./rulesets/index.js'),
-        import('./engines.js'),
-        import('./i18n/index.js'),
-        import('./dist/data/lr_ships_mech_joints.js'),
-        import('./dist/data/lr_naval_ships_mech_joints.js'),
-        import('./app-multi.js'),
-        import('./dist/engine/lrShips.js'),
-        import('./dist/engine/evaluateLRNavalShips.js'),
-      ]);
-
-      // 4) Montaje
-      const createRoot = (ReactDOM.createRoot || ReactDOM.default?.createRoot);
-      if (!createRoot) throw new Error('ReactDOM.createRoot no disponible');
-
-      createRoot(rootEl).render(
-        html`<${App}
-          React=${React}
-          html=${html}
-          RULESETS=${RULESETS}
-          RegulationEngines=${RegulationEngines}
-          I18N=${I18N}
-          evaluateLRShips=${evaluateLRShips}
-          evaluateLRShipsGroups=${evaluateLRShipsGroups}
-          evaluateLRNavalShips=${evaluateLRNavalShips}
-          evaluateLRNavalGroups=${evaluateLRNavalGroups}
-          ships=${shipsMod.default}
-          naval=${navalMod.default}
-        />`
-      );
-
-      document.documentElement.classList.remove('booting');
-      document.documentElement.classList.add('ready');
-    } catch (err) {
-      showError(err);
-      console.error(err);
-    }
-  </script>
+  <script>
+  // UI multi temporalmente deshabilitada mientras se verifica el render correcto.
+  window.location.replace("asesor-grip-type-base.html");
+</script>
 
   <footer class="site-footer">
     <div class="footer-wrap">
