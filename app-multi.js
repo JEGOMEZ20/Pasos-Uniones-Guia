@@ -69,6 +69,15 @@ const STATUS_LABELS = {
   forbidden: "No permitido",
 };
 
+const VALID_RESULT_STATUSES = new Set(["allowed", "conditional", "forbidden"]);
+
+function normalizeStatus(value, fallback = "forbidden") {
+  if (value === "blocked") {
+    return "forbidden";
+  }
+  return VALID_RESULT_STATUSES.has(value) ? value : fallback;
+}
+
 const STOP_WORDS = new Set([
   "system",
   "systems",
@@ -410,11 +419,6 @@ function parseViewerHash(hash) {
   }
   return { kind: raw, mode: "image" };
 }
-
-const canInspect = (group, subtypeAllowed) => {
-  if (!group) return Boolean(subtypeAllowed);
-  return group.status !== 'forbidden' && Boolean(subtypeAllowed);
-};
 
 function createSearchIcon(h) {
   return ({ className = "w-4 h-4", ...props }) =>
@@ -775,9 +779,11 @@ export default function App({
     if (!evaluation) return null;
     const rawAllowed = Boolean(evaluation.allowed?.[category]);
     const detail = evaluation.categoryEvaluations?.[category];
-    const status = detail?.status ?? (rawAllowed ? 'allowed' : 'forbidden');
+    const fallbackStatus = rawAllowed ? 'allowed' : 'forbidden';
+    const status = normalizeStatus(detail?.status, fallbackStatus);
     const allowed = status !== 'forbidden';
     const titles = JOINT_CATEGORY_TITLES[category] || { es: category, en: category };
+    const subtypeJointIds = CATEGORY_SUBTYPE_JOINTS[category] || [];
     let subtitleExtra = '';
     let items = [];
 
@@ -788,6 +794,7 @@ export default function App({
         {
           kind: 'pipe_welded_brazed',
           enabled: allowed,
+          jointKey: subtypeJointIds[0],
         },
       ];
     } else if (category === 'compression') {
@@ -808,6 +815,17 @@ export default function App({
       }));
     }
 
+    items = items.map((item, idx) => {
+      const jointKey = item.jointKey ?? subtypeJointIds[idx];
+      const subtypeResult = jointKey ? detail?.subtypeResults?.[jointKey] : null;
+      const fallback = item.enabled ? 'allowed' : 'forbidden';
+      return {
+        ...item,
+        jointKey,
+        status: normalizeStatus(subtypeResult?.status, fallback),
+      };
+    });
+
     const statusTextMap = {
       allowed: 'Se puede usar',
       conditional: 'Uso condicionado',
@@ -822,7 +840,9 @@ export default function App({
     const notesApplied = Array.isArray(detail?.notesApplied) ? detail.notesApplied : [];
     const reasons = Array.isArray(detail?.reasons) ? detail.reasons : [];
     const clauses = Array.isArray(detail?.clauses) ? detail.clauses : [];
-    const groupEval = detail ?? { status };
+    const hasForbiddenNote2 =
+      status === 'forbidden' &&
+      (notesApplied.includes(2) || reasons.some((reason) => typeof reason === 'string' && /Nota\s*2/i.test(reason)));
 
     return html`
       <article className=${cardClass} key=${category}>
@@ -845,14 +865,20 @@ export default function App({
           </div>
         </header>
         <div className="block-subtitle">${subtitle}</div>
+        ${hasForbiddenNote2
+          ? html`<ul className="chip-list" style=${{ marginTop: 8 }}>
+              <li className="chip chip-note">Prohibido por Nota 2</li>
+            </ul>`
+          : null}
         <div className="result-body">
           <ul className="option-list">
             ${items.map((item, idx) => {
               if (!item?.kind) return null;
               const labels = getJointLabels(item.kind);
-              const disabled = !canInspect(groupEval, item.enabled);
+              const optionStatus = normalizeStatus(item.status, item.enabled ? 'allowed' : 'forbidden');
+              const isForbidden = status === 'forbidden' || optionStatus === 'forbidden';
               return html`
-                <li className=${`option-item${disabled ? ' disabled' : ''}`} key=${`${item.kind}-${idx}`}>
+                <li className=${`option-item${isForbidden ? ' disabled' : ''}`} key=${`${item.kind}-${idx}`}>
                   <div className="option-text">
                     <span className="option-es">${labels.es}</span>
                     <span className="option-en">(${labels.en})</span>
@@ -860,11 +886,18 @@ export default function App({
                   <div className="option-actions">
                     <button
                       type="button"
-                      className="chip"
-                      disabled=${disabled}
-                      onClick=${() => openViewer(item.kind)}
+                      className="chip chip--ghost"
+                      disabled=${isForbidden}
+                      aria-disabled=${isForbidden ? 'true' : 'false'}
+                      onClick=${(event) => {
+                        if (isForbidden) {
+                          event?.preventDefault?.();
+                          return;
+                        }
+                        openViewer(item.kind);
+                      }}
                     >
-                      ver
+                      VER
                     </button>
                   </div>
                 </li>
