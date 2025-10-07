@@ -1,0 +1,60 @@
+{
+  "space_rules": [
+    {
+      "applies_if_space_in": ["machinery_category_A","accommodation","munition_store"],
+      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"],
+      "require_fire_resistant_type": true,
+      "comment": "Note 2 (Cat A, munition stores, accommodation): slip-on not accepted. Fire-resistant types per Notes 1/4 as applicable.",
+      "refs": ["Table 1.5.3 Note 2","Note 1","Note 4"]
+    },
+    {
+      "applies_if_space_in": ["open_deck_low_fire_risk"],
+      "forbid_joints": [],
+      "require_fire_resistant_type": false,
+      "comment": "Note 3: exception on open decks of little/no fire risk.",
+      "refs": ["Table 1.5.3 Note 3"]
+    },
+    {
+      "applies_if_space_in": ["cargo_hold","tank"],
+      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"],
+      "comment": "5.10.9: Generally slip-on not to be used in cargo holds, tanks, or inaccessible spaces. In tanks only if same medium.",
+      "refs": ["5.10.9"]
+    },
+    {
+      "applies_if_space_in": ["weather_deck"],
+      "forbid_joints": [],
+      "comment": "5.10.11: Restrained slip-on for steam ≤10 bar on weather decks (expansion).",
+      "refs": ["5.10.11"]
+    },
+    {
+      "applies_if_space_in": ["dry_space"],
+      "forbid_joints": [],
+      "comment": "Note 6: Deck drains (internal) only above limit of watertight integrity (enforce at placement level).",
+      "refs": ["Table 1.5.3 Note 6"]
+    }
+  ],
+  "global_rules": [
+    {
+      "id": "naval_tailoring",
+      "condition": "Naval Administration may impose stricter shock/fire/watertight requirements",
+      "effect": "apply tailoring document (Vol 1, Pt 1, Ch 2, 3.2) to override or restrict joints",
+      "refs": ["5.10.2"]
+    },
+    {
+      "id": "no_mech_joints_below_side_direct",
+      "condition": "section_directly_connected_below_watertight_limit OR tanks_with_flammable_fluids",
+      "effect": "avoid mechanical joints",
+      "refs": ["5.10.6"]
+    },
+    {
+      "id": "slip_type_not_main_means",
+      "condition": "slip_type_slip_on_as_main_connection",
+      "effect": "not permitted except to accommodate axial deformation",
+      "refs": ["5.10.10"]
+    }
+  ],
+  "test_equivalence": {
+    "30min_dry": ["8dry_22wet","30min_wet"],
+    "8dry_22wet": ["30min_wet"]
+  }
+}
