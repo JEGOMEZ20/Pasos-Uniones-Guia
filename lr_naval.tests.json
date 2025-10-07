@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Cargo oil <60°C en Cat. A (Naval)",
+    "input": { "systemKey":"flammables_lt60.cargo_oil_lines", "spaceKey":"machinery_category_A", "klass":"III", "od_mm":60 },
+    "expect": {
+      "slip_on.machine_grooved":"NO",
+      "slip_on.grip":"NO",
+      "slip_on.slip":"NO",
+      "notes":[1,2],
+      "fire_test":"30min_dry"
+    }
+  },
+  {
+    "name": "Fuel oil (maquinaria) en Cat. A (Naval)",
+    "input": { "systemKey":"ships_machinery.fuel_oil_lines", "spaceKey":"machinery_category_A", "klass":"II", "od_mm":50 },
+    "expect": {
+      "slip_on.machine_grooved":"NO",
+      "slip_on.grip":"NO",
+      "slip_on.slip":"NO",
+      "notes":[1,2,3],
+      "fire_test":"30min_wet"
+    }
+  },
+  {
+    "name": "Slip-on en tanque con MISMO medio (Naval, §5.10.9 excepción)",
+    "input": { "systemKey":"flammables_lt60.cargo_oil_lines", "spaceKey":"tank_same_medium", "klass":"III", "od_mm":60, "inside_tank_medium_same": true },
+    "expect": {
+      "slip_on.machine_grooved":"SI",
+      "slip_on.grip":"SI",
+      "slip_on.slip":"SI",
+      "notes":[],
+      "fire_test":"30min_dry"
+    }
+  },
+  {
+    "name": "Slip-on en tanque con OTRO medio (Naval, §5.10.9 prohibido)",
+    "input": { "systemKey":"flammables_lt60.cargo_oil_lines", "spaceKey":"tank_other_medium", "klass":"III", "od_mm":60, "inside_tank_medium_same": false },
+    "expect": {
+      "slip_on.machine_grooved":"NO",
+      "slip_on.grip":"NO",
+      "slip_on.slip":"NO",
+      "notes":[9],
+      "fire_test":"30min_dry"
+    }
+  }
+]

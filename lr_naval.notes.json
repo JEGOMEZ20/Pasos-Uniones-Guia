@@ -1,66 +1,90 @@
 {
-  "always_note_ids": [7],
-  "test_equivalence": {
-    "30min_dry": ["8dry_22wet", "30min_wet"],
-    "8dry_22wet": ["30min_wet"]
-  },
+  "schema": "lr_naval.notes.v1",
   "space_rules": [
     {
       "note_ids": [2],
       "refs": ["Note 2"],
-      "applies_if_space_in": ["machinery_category_A","accommodation","munition_store"],
-      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"]
-    },
-    {
-      "note_ids": [2],
-      "refs": ["Note 2"],
-      "applies_if_space_in": ["machinery_other"],
-      "advisory": "Slip-on permitido en otros espacios de máquinas si está visible y accesible."
+      "applies_if_space_in": ["machinery_category_A", "accommodation", "munition_store"],
+      "forbid_joints": [
+        "slip_on.machine_grooved",
+        "slip_on.grip",
+        "slip_on.slip"
+      ],
+      "advisory": "Slip-on no aceptados en Máquinas Cat. A, Acomodación o Pañoles de Munición."
     },
     {
       "note_ids": [1],
       "refs": ["Note 1"],
       "applies_if_space_in": ["machinery_category_A"],
       "require_fire_resistant_type": true,
-      "advisory": "En el ‘bilge main’ de Cat. A, material del acople: acero/CuNi o equivalente."
+      "advisory": "En Cat. A las juntas deben ser de tipo resistente al fuego. (Adicional: bilge main en Cat. A debe ser acero/CuNi o equivalente)."
     },
     {
       "note_ids": [3],
       "refs": ["Note 3"],
-      "applies_if_space_in": ["open_deck_low_fire_risk","weather_deck"],
-      "require_fire_resistant_type": false
+      "applies_if_space_in": ["open_deck_low_fire_risk"],
+      "advisory": "En cubierta abierta con poco o nulo riesgo de fuego (SOLAS II-2/9.2.3.3.2.2(10)) puede exceptuarse el requisito de tipo resistente al fuego, salvo líneas de fuel oil."
     },
     {
       "note_ids": [6],
       "refs": ["Note 6"],
-      "applies_if_space_in": ["accommodation","machinery_other","machinery_category_A","dry_space"],
-      "advisory": "Deck drains (internos) solo por encima del límite de integridad estanca."
+      "applies_if_space_in": ["above_limit_watertight_integrity_only"],
+      "advisory": "Sistemas de desagüe internos sólo por encima del límite de estanqueidad."
     },
     {
-      "note_ids": [7],
-      "refs": ["Note 7"],
-      "applies_if_space_in": ["weather_deck","protected_space"],
-      "advisory": "Requisitos específicos para HVAC trunking y gas turbine intakes/uptakes según secciones aplicables."
+      "note_ids": [9],
+      "refs": ["5.10.9"],
+      "applies_if_space_in": ["cargo_hold", "tank_other_medium", "not_easily_accessible"],
+      "forbid_joints": [
+        "slip_on.machine_grooved",
+        "slip_on.grip",
+        "slip_on.slip"
+      ],
+      "advisory": "En bodegas, tanques u otros espacios no fácilmente accesibles no se usan slip-on. Dentro de tanques sólo si el fluido es el mismo del tanque."
+    },
+    {
+      "note_ids": [10],
+      "refs": ["5.10.10"],
+      "applies_if_space_in": ["weather_deck"],
+      "advisory": "Slip-type como medio principal de unión no está permitido, salvo para compensar deformación axial; ‘restrained slip-on’ permitido en condiciones específicas."
     }
   ],
-  "global_rules": [
-    {
-      "note_ids": [4],
-      "refs": ["Note 4"],
-      "applies_if_system_in": ["aircraft_vehicle_fuel_oil_lt60","aircraft_vehicle_fuel_oil_gt60"],
-      "force_fire_resistant_type": true
+  "notes_text": {
+    "1": {
+      "es": "Las juntas mecánicas deben ser de tipo resistente al fuego cuando se instalen en espacios de maquinaria de Categoría A. Las uniones mecánicas en la ‘bilge main’ en Cat. A deben ser de acero, CuNi o material equivalente.",
+      "en": "Mechanical joints are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings fitted on the bilge main in Category A machinery spaces are to be of steel, CuNi or equivalent material."
     },
-    {
-      "note_ids": [3],
-      "refs": ["Note 3"],
-      "applies_if_system_in": ["ships_machinery_fuel_oil"],
-      "force_fire_resistant_type": true
+    "2": {
+      "es": "Las juntas tipo slip-on no se aceptan dentro de espacios de maquinaria de Categoría A, pañoles de munición ni espacios de alojamiento. Se aceptan en otros espacios de maquinaria/servicio si están en posiciones visibles y accesibles.",
+      "en": "Slip-on joints are not accepted inside machinery spaces of Category A, munition stores, or accommodation spaces. Slip-on joints are accepted in other machinery and service spaces provided the joints are in easily visible and accessible positions."
     },
-    {
-      "note_ids": [5],
-      "refs": ["5.10.10","5.10.11"],
-      "applies_if_system_in": ["steam_general"],
-      "advisory": "Slip type no como medio principal salvo compensación axial. ‘Restrained’ slip-on permitido en weather deck ≤10 bar."
+    "3": {
+      "es": "Las juntas mecánicas deben ser de tipo resistente al fuego, excepto cuando se instalen en cubiertas abiertas con poco o nulo riesgo de fuego según SOLAS II-2/9.2.3.3.2.2(10).",
+      "en": "Mechanical joints are to be of an approved fire-resistant type, except when fitted on open decks having little or no fire risk as defined in SOLAS Ch II-2 Reg. 9.2.3.3.2.2(10)."
+    },
+    "4": {
+      "es": "Juntas de tipo resistente al fuego (aplicable como requisito adicional según la fila del sistema).",
+      "en": "Mechanical joints are to be of an approved fire-resistant type (as required by the service row)."
+    },
+    "5": {
+      "es": "Ver 5.10.10 (otras acotaciones para vapor/expansión axial).",
+      "en": "See 5.10.10 (further steam/axial expansion provisions)."
+    },
+    "6": {
+      "es": "Sólo por encima del límite de estanqueidad.",
+      "en": "Only above the limit of watertight integrity."
+    },
+    "7": {
+      "es": "Los requisitos para conductos HVAC o tomas/descargas de turbinas de gas se abordan en sus secciones respectivas.",
+      "en": "Requirements for HVAC trunking or gas turbine uptakes and intakes are addressed in the relevant Sections."
+    },
+    "9": {
+      "es": "§5.10.9: Generalmente los slip-on no se usan en bodegas, tanques y espacios no fácilmente accesibles. Dentro de tanques sólo si el medio conducido es el mismo que el contenido del tanque.",
+      "en": "§5.10.9: Generally, slip-on joints are not to be used in cargo holds, tanks, and other spaces not easily accessible. Inside tanks may be accepted only where the medium conveyed is the same as that in the tanks."
+    },
+    "10": {
+      "es": "§5.10.10: El uso de slip-type como medio principal de unión no está permitido salvo para compensar deformación axial (p.ej., ‘restrained slip-on’ en condiciones específicas).",
+      "en": "§5.10.10: Usage of slip type slip-on joints as the main means of pipe connection is not permitted except where compensation of axial pipe deformation is necessary (e.g., restrained slip-on in specific conditions)."
     }
-  ]
+  }
 }
