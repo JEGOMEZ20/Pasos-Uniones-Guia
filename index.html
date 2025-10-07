@@ -30,27 +30,22 @@
     main { padding:0 5vw 64px; }
     h1 { font-size:2.4rem; margin:0 0 12px; letter-spacing:-0.02em; }
     p.lead { color:var(--muted); margin-top:0; max-width:640px; }
-    .layout { display:grid; grid-template-columns: minmax(0,420px) minmax(0,1fr); gap:24px; align-items:start; }
-    form { background:var(--bg-panel); border:1px solid rgba(148,163,184,.18); border-radius:24px; padding:24px; box-shadow:0 24px 50px rgba(2,6,23,.45); }
-    .form-row { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:18px; }
-    label { display:block; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; color:var(--muted); }
-    select, input[type="number"] { width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(148,163,184,.35); background:#0b1727; color:var(--ink); font-size:15px; }
-    select:focus, input[type="number"]:focus { outline:2px solid var(--accent); border-color:var(--accent); }
-    button[type="submit"] { display:inline-flex; align-items:center; gap:10px; border-radius:12px; border:0; background:var(--accent); color:#041628; font-weight:700; padding:12px 18px; cursor:pointer; }
-    button[type="submit"]:hover { filter:brightness(1.1); }
-    .helper { color:var(--muted); font-size:0.9rem; margin-top:8px; min-height:1.4em; }
-    .cards-wrapper { background:var(--bg-panel); border:1px solid rgba(148,163,184,.18); border-radius:24px; padding:24px; box-shadow:0 24px 50px rgba(2,6,23,.35); min-height:220px; }
-    #cards { display:grid; gap:16px; }
-    .card { border-radius:16px; padding:16px; background:#111a26; box-shadow:0 2px 8px rgba(0,0,0,.3); }
-    .card--blocked { outline:2px solid var(--danger); background:#1a0f14; }
+    .panel.compact{padding:16px;border-radius:16px;background:#0d1622}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px}
+    .field label{display:block;margin-bottom:.25rem;opacity:.85}
+    .result-cards{margin-top:16px}
+    .card{border-radius:16px;padding:16px;background:#111a26;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:16px}
+    .card--blocked{outline:2px solid #ff5577;background:#1a0f14}
+    .badge{padding:.25rem .5rem;border-radius:999px;font-size:.8rem}
+    .badge--ok{background:#0e8a5c}
+    .badge--danger{background:#b9314f}
+    .muted{opacity:.8}
+    .note-chip{margin-right:.5rem;padding:.15rem .45rem;border-radius:8px;border:1px solid #6ea8fe;background:#0d1b2a;color:#cfe0ff;cursor:pointer}
+    .note-chip:hover{filter:brightness(1.2)}
+    .btn-primary{background:#18aaff;border:none;border-radius:8px;padding:.6rem 1rem;color:#02121f;cursor:pointer}
+    .btn-primary:hover{filter:brightness(1.1)}
     .card__head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
     .card__head h3 { margin:0; font-size:1.1rem; }
-    .badge { padding:0.25rem 0.6rem; border-radius:999px; font-size:0.75rem; font-weight:700; }
-    .badge--ok { background:#0f5132; color:#bbf7d0; }
-    .badge--danger { background:#5f1d2a; color:#fecdd3; }
-    .muted { color:var(--muted); font-size:0.9rem; }
-    .note-chip { margin-right:0.5rem; padding:0.2rem 0.5rem; border-radius:8px; border:1px solid #6ea8fe; background:#0d1b2a; color:#cfe0ff; cursor:pointer; font-size:0.8rem; }
-    .note-chip:hover { filter:brightness(1.15); }
     .btn-see { margin-top:12px; padding:0.45rem 0.9rem; border-radius:10px; border:1px solid transparent; background:#1d4ed8; color:#fff; font-weight:600; cursor:pointer; }
     .btn-see[disabled] { opacity:0.5; cursor:not-allowed; }
     dialog.modal { border:none; border-radius:16px; padding:22px; background:#0f172a; color:var(--ink); max-width:600px; box-shadow:0 24px 60px rgba(0,0,0,.55); }
@@ -59,9 +54,6 @@
     dialog p { color:var(--muted); }
     dialog form { display:flex; justify-content:flex-end; margin-top:16px; padding:0; background:transparent; box-shadow:none; border:none; }
     dialog .btn { background:var(--accent); border:0; border-radius:10px; padding:10px 16px; color:#041628; font-weight:700; cursor:pointer; }
-    @media (max-width: 980px) {
-      .layout { grid-template-columns:1fr; }
-    }
   </style>
 </head>
 <body>
@@ -76,86 +68,58 @@
     </nav>
   </header>
   <main>
-    <section>
-      <h2 style="margin:0 0 16px;">Guía LR Ships</h2>
-      <div class="layout">
-        <form id="form-lr-ships">
-        <div class="form-row">
-          <div>
-            <label for="select-system">Sistema / Línea</label>
-            <select id="select-system" required></select>
-          </div>
-          <div>
-            <label for="select-space">Espacio</label>
-            <select id="select-space" required></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div>
-            <label for="select-class">Clase de tubería</label>
-            <select id="select-class" required>
-              <option value="I">Clase I</option>
-              <option value="II">Clase II</option>
-              <option value="III">Clase III</option>
-            </select>
-          </div>
-          <div>
-            <label for="input-od">Diámetro exterior (mm)</label>
-            <input id="input-od" type="number" min="1" step="0.1" placeholder="Ej. 60" required />
-          </div>
-        </div>
-        <button type="submit">Evaluar</button>
-        <div class="helper" id="helper-text"></div>
-        </form>
-        <section class="cards-wrapper">
-          <h3 style="margin-top:0">Resultado</h3>
-          <div id="cards"></div>
-        </section>
-      </div>
-    </section>
+    <section class="panel compact">
+      <h2>Asesor de juntas (LR Ships &amp; Naval)</h2>
+      <p class="muted">Selecciona norma y parámetros. La app cargará automáticamente los catálogos correctos.</p>
 
-    <section>
-      <h2 style="margin:48px 0 16px 0;">Guía LR Naval</h2>
-      <div class="layout">
-        <form id="form-lr-naval">
-          <div class="form-row">
-            <div>
-              <label for="select-system-naval">Sistema / Línea</label>
-              <select id="select-system-naval" required></select>
-            </div>
-            <div>
-              <label for="select-space-naval">Espacio</label>
-              <select id="select-space-naval" required></select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div>
-              <label for="select-class-naval">Clase de tubería</label>
-              <select id="select-class-naval" required>
-                <option value="I">Clase I</option>
-                <option value="II">Clase II</option>
-                <option value="III">Clase III</option>
-              </select>
-            </div>
-            <div>
-              <label for="input-od-naval">Diámetro exterior (mm)</label>
-              <input id="input-od-naval" type="number" min="1" step="0.1" placeholder="Ej. 60" required />
-            </div>
-          </div>
-          <div class="form-row" id="tank-same-wrapper" style="display:none;">
-            <label style="grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.95rem; letter-spacing:0; text-transform:none;">
-              <input type="checkbox" id="chk-tank-same" />
-              Medio dentro del tanque es el mismo que el del sistema
-            </label>
-          </div>
-          <button type="submit">Evaluar</button>
-          <div class="helper" id="helper-text-naval"></div>
-        </form>
-        <section class="cards-wrapper">
-          <h3 style="margin-top:0">Resultado</h3>
-          <div id="cards-naval"></div>
-        </section>
-      </div>
+      <form id="form-lr" class="grid">
+        <div class="field">
+          <label for="select-norm">Norma</label>
+          <select id="select-norm" required>
+            <option value="lr_ships">LR Buques (Ships)</option>
+            <option value="lr_naval">LR Naval</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="select-system">Sistema / Línea</label>
+          <select id="select-system" required></select>
+        </div>
+
+        <div class="field">
+          <label for="select-space">Espacio / Compartimento</label>
+          <select id="select-space" required></select>
+        </div>
+
+        <div class="field">
+          <label for="select-class">Clase de tubería</label>
+          <select id="select-class">
+            <option value="I">Clase I</option>
+            <option value="II">Clase II</option>
+            <option value="III" selected>Clase III</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="input-od">Diámetro exterior (mm)</label>
+          <input id="input-od" type="number" inputmode="numeric" min="1" placeholder="Ej. 60" required>
+        </div>
+
+        <!-- Solo visible cuando el espacio sea tanque (Naval §5.10.9) -->
+        <div class="field" id="field-tank-same" style="display:none">
+          <label>
+            <input id="chk-tank-same" type="checkbox">
+            Tanque con el mismo medio del sistema (Naval §5.10.9)
+          </label>
+        </div>
+
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="btn-eval" class="btn-primary">Evaluar</button>
+        </div>
+      </form>
+
+      <div id="result" class="result-cards"></div>
     </section>
   </main>
 
@@ -168,211 +132,6 @@
     </form>
   </dialog>
 
-  <script type="module">
-    import { evaluateLRShips, getNoteText } from './rules-lr-ships.js';
-    import { evaluateLRNaval, getNavalNoteText } from './rules-lr-naval.js';
-
-    const systemSelect = document.querySelector('#select-system');
-    const spaceSelect = document.querySelector('#select-space');
-    const classSelect = document.querySelector('#select-class');
-    const odInput = document.querySelector('#input-od');
-    const cardsHost = document.querySelector('#cards');
-    const helperText = document.querySelector('#helper-text');
-
-    const navalSystemSelect = document.querySelector('#select-system-naval');
-    const navalSpaceSelect = document.querySelector('#select-space-naval');
-    const navalClassSelect = document.querySelector('#select-class-naval');
-    const navalOdInput = document.querySelector('#input-od-naval');
-    const navalCardsHost = document.querySelector('#cards-naval');
-    const navalHelperText = document.querySelector('#helper-text-naval');
-    const tankSameWrapper = document.querySelector('#tank-same-wrapper');
-    const tankSameCheckbox = document.querySelector('#chk-tank-same');
-
-    const SPACES = [
-      { value: 'machinery_category_A', label: 'Máquinas Categoría A' },
-      { value: 'accommodation', label: 'Acomodaciones' },
-      { value: 'service_space', label: 'Espacio de servicio' },
-      { value: 'pump_room', label: 'Sala de bombas' },
-      { value: 'open_deck', label: 'Cubierta abierta' },
-      { value: 'weather_deck', label: 'Weather deck' },
-      { value: 'machinery_other', label: 'Máquinas (otros)' }
-    ];
-
-    function fillSpaces() {
-      spaceSelect.innerHTML = '';
-      for (const item of SPACES) {
-        const opt = document.createElement('option');
-        opt.value = item.value;
-        opt.textContent = item.label;
-        spaceSelect.appendChild(opt);
-      }
-    }
-
-    async function loadSystems() {
-      const res = await fetch('./lr_ships.table_service.json');
-      const data = await res.json();
-      const rows = Array.isArray(data) ? data : Object.values(data);
-      const options = rows.filter(r => r?.key && r?.label_es).map(r => ({
-        value: r.key,
-        label: r.label_es
-      }));
-      systemSelect.innerHTML = '';
-      for (const item of options) {
-        const opt = document.createElement('option');
-        opt.value = item.value;
-        opt.textContent = item.label;
-        systemSelect.appendChild(opt);
-      }
-    }
-
-    function renderToHost(host, cards, noteProvider) {
-      host.innerHTML = '';
-      if (!cards.length) {
-        host.innerHTML = '<p class="muted">Sin resultados para la selección.</p>';
-        return;
-      }
-      for (const card of cards) {
-        host.appendChild(cardNode(card, noteProvider));
-      }
-    }
-
-    function cardNode(card, noteProvider) {
-      const node = document.createElement('article');
-      node.className = `card ${card.status === 'NO PERMITIDO' ? 'card--blocked' : ''}`;
-      node.innerHTML = `
-        <div class="card__head">
-          <h3>${card.title}</h3>
-          <span class="badge ${card.status === 'NO PERMITIDO' ? 'badge--danger' : 'badge--ok'}">${card.status}</span>
-        </div>
-        <div class="card__body">
-          ${card.reason ? `<p class="muted">${card.reason}</p>` : ''}
-          ${card.fire_resistant_tag ? `<p class="muted">${card.fire_resistant_tag}</p>` : ''}
-          ${card.fire_test ? `<p class="muted">${card.fire_test}</p>` : ''}
-          ${notesChips(card.notes)}
-          <button class="btn-see" ${card.status === 'NO PERMITIDO' ? 'disabled aria-disabled="true"' : ''}>VER</button>
-        </div>
-      `;
-      node.querySelectorAll('.note-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          const id = chip.getAttribute('data-id');
-          const { es, en } = noteProvider(id);
-          showNoteModal(`Nota ${id}`, es, en);
-        });
-      });
-      return node;
-    }
-
-    function notesChips(ids = []) {
-      if (!ids.length) return '<p class="muted">Notas aplicadas: —</p>';
-      const chips = ids.map(id => `<button type="button" class="note-chip" data-id="${id}">N${id}</button>`).join(' ');
-      return `<p class="muted">Notas aplicadas: ${chips}</p>`;
-    }
-
-    const modal = document.querySelector('#note-modal');
-    function showNoteModal(title, es, en) {
-      modal.querySelector('.modal-title').textContent = title;
-      modal.querySelector('.modal-es').textContent = es;
-      modal.querySelector('.modal-en').textContent = en;
-      modal.showModal();
-    }
-
-    function renderCards(cards) {
-      renderToHost(cardsHost, cards, getNoteText);
-    }
-
-    function renderNaval(cards) {
-      renderToHost(navalCardsHost, cards, getNavalNoteText);
-    }
-
-    fillSpaces();
-    loadSystems();
-
-    fillNavalSpaces();
-    loadNavalSystems();
-
-    document.querySelector('#form-lr-ships')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const systemKey = systemSelect.value;
-      const spaceKey = spaceSelect.value;
-      const klass = classSelect.value;
-      const od = Number(odInput.value);
-      if (!systemKey || !spaceKey || !klass || !od) {
-        helperText.textContent = 'Completa todos los campos con valores válidos.';
-        return;
-      }
-      helperText.textContent = '';
-      const { cards } = evaluateLRShips({ systemKey, spaceKey, klass, od_mm: od });
-      renderCards(cards);
-    });
-
-    const NAVAL_SPACES = [
-      { value: 'machinery_category_A', label: 'Máquinas Categoría A' },
-      { value: 'accommodation', label: 'Acomodaciones' },
-      { value: 'munition_store', label: 'Pañol de municiones' },
-      { value: 'open_deck_low_fire_risk', label: 'Cubierta abierta (bajo riesgo de fuego)' },
-      { value: 'weather_deck', label: 'Weather deck' },
-      { value: 'cargo_hold', label: 'Bodega de carga' },
-      { value: 'tank_same_medium', label: 'Tanque (mismo medio)' },
-      { value: 'tank_other_medium', label: 'Tanque (otro medio)' },
-      { value: 'not_easily_accessible', label: 'Espacio de difícil acceso' },
-      { value: 'above_limit_watertight_integrity_only', label: 'Sobre límite de estanqueidad' }
-    ];
-
-    function fillNavalSpaces() {
-      if (!navalSpaceSelect) return;
-      navalSpaceSelect.innerHTML = '';
-      for (const item of NAVAL_SPACES) {
-        const opt = document.createElement('option');
-        opt.value = item.value;
-        opt.textContent = item.label;
-        navalSpaceSelect.appendChild(opt);
-      }
-      updateTankCheckbox();
-    }
-
-    async function loadNavalSystems() {
-      if (!navalSystemSelect) return;
-      const res = await fetch('./lr_naval.table_service.json');
-      const data = await res.json();
-      const rows = Array.isArray(data) ? data : Object.values(data);
-      const options = rows.filter(r => r?.key && r?.label_es).map(r => ({
-        value: r.key,
-        label: r.label_es
-      }));
-      navalSystemSelect.innerHTML = '';
-      for (const item of options) {
-        const opt = document.createElement('option');
-        opt.value = item.value;
-        opt.textContent = item.label;
-        navalSystemSelect.appendChild(opt);
-      }
-    }
-
-    function updateTankCheckbox() {
-      if (!navalSpaceSelect || !tankSameWrapper) return;
-      const value = navalSpaceSelect.value;
-      const isTank = value === 'tank_same_medium' || value === 'tank_other_medium';
-      tankSameWrapper.style.display = isTank ? 'block' : 'none';
-      if (!isTank && tankSameCheckbox) tankSameCheckbox.checked = false;
-    }
-
-    navalSpaceSelect?.addEventListener('change', updateTankCheckbox);
-
-    document.querySelector('#form-lr-naval')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const systemKey = navalSystemSelect?.value;
-      const spaceKey = navalSpaceSelect?.value;
-      const klass = navalClassSelect?.value;
-      const od = Number(navalOdInput?.value);
-      if (!systemKey || !spaceKey || !klass || !od) {
-        if (navalHelperText) navalHelperText.textContent = 'Completa todos los campos con valores válidos.';
-        return;
-      }
-      if (navalHelperText) navalHelperText.textContent = '';
-      const insideTankSame = Boolean(tankSameCheckbox?.checked);
-      const { cards } = evaluateLRNaval({ systemKey, spaceKey, klass, od_mm: od, inside_tank_medium_same: insideTankSame });
-      renderNaval(cards);
-    });
-  </script>
+  <script type="module" src="./rules-router.js"></script>
 </body>
 </html>
