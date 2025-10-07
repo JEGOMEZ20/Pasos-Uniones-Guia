@@ -67,7 +67,7 @@
 <body>
   <header>
     <div>
-      <h1>Asesor de juntas (LR Ships)</h1>
+      <h1>Asesor de juntas (LR Ships &amp; Naval)</h1>
       <p class="lead">Selecciona el sistema, espacio y clase para verificar qué tipos de junta slip-on o mecánica están permitidos según LR.</p>
     </div>
     <nav>
@@ -76,8 +76,10 @@
     </nav>
   </header>
   <main>
-    <div class="layout">
-      <form id="form-lr-ships">
+    <section>
+      <h2 style="margin:0 0 16px;">Guía LR Ships</h2>
+      <div class="layout">
+        <form id="form-lr-ships">
         <div class="form-row">
           <div>
             <label for="select-system">Sistema / Línea</label>
@@ -104,12 +106,57 @@
         </div>
         <button type="submit">Evaluar</button>
         <div class="helper" id="helper-text"></div>
-      </form>
-      <section class="cards-wrapper">
-        <h2 style="margin-top:0">Resultado</h2>
-        <div id="cards"></div>
-      </section>
-    </div>
+        </form>
+        <section class="cards-wrapper">
+          <h3 style="margin-top:0">Resultado</h3>
+          <div id="cards"></div>
+        </section>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin:48px 0 16px 0;">Guía LR Naval</h2>
+      <div class="layout">
+        <form id="form-lr-naval">
+          <div class="form-row">
+            <div>
+              <label for="select-system-naval">Sistema / Línea</label>
+              <select id="select-system-naval" required></select>
+            </div>
+            <div>
+              <label for="select-space-naval">Espacio</label>
+              <select id="select-space-naval" required></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label for="select-class-naval">Clase de tubería</label>
+              <select id="select-class-naval" required>
+                <option value="I">Clase I</option>
+                <option value="II">Clase II</option>
+                <option value="III">Clase III</option>
+              </select>
+            </div>
+            <div>
+              <label for="input-od-naval">Diámetro exterior (mm)</label>
+              <input id="input-od-naval" type="number" min="1" step="0.1" placeholder="Ej. 60" required />
+            </div>
+          </div>
+          <div class="form-row" id="tank-same-wrapper" style="display:none;">
+            <label style="grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.95rem; letter-spacing:0; text-transform:none;">
+              <input type="checkbox" id="chk-tank-same" />
+              Medio dentro del tanque es el mismo que el del sistema
+            </label>
+          </div>
+          <button type="submit">Evaluar</button>
+          <div class="helper" id="helper-text-naval"></div>
+        </form>
+        <section class="cards-wrapper">
+          <h3 style="margin-top:0">Resultado</h3>
+          <div id="cards-naval"></div>
+        </section>
+      </div>
+    </section>
   </main>
 
   <dialog id="note-modal" class="modal">
@@ -123,6 +170,7 @@
 
   <script type="module">
     import { evaluateLRShips, getNoteText } from './rules-lr-ships.js';
+    import { evaluateLRNaval, getNavalNoteText } from './rules-lr-naval.js';
 
     const systemSelect = document.querySelector('#select-system');
     const spaceSelect = document.querySelector('#select-space');
@@ -130,6 +178,15 @@
     const odInput = document.querySelector('#input-od');
     const cardsHost = document.querySelector('#cards');
     const helperText = document.querySelector('#helper-text');
+
+    const navalSystemSelect = document.querySelector('#select-system-naval');
+    const navalSpaceSelect = document.querySelector('#select-space-naval');
+    const navalClassSelect = document.querySelector('#select-class-naval');
+    const navalOdInput = document.querySelector('#input-od-naval');
+    const navalCardsHost = document.querySelector('#cards-naval');
+    const navalHelperText = document.querySelector('#helper-text-naval');
+    const tankSameWrapper = document.querySelector('#tank-same-wrapper');
+    const tankSameCheckbox = document.querySelector('#chk-tank-same');
 
     const SPACES = [
       { value: 'machinery_category_A', label: 'Máquinas Categoría A' },
@@ -168,18 +225,18 @@
       }
     }
 
-    function renderCards(cards) {
-      cardsHost.innerHTML = '';
+    function renderToHost(host, cards, noteProvider) {
+      host.innerHTML = '';
       if (!cards.length) {
-        cardsHost.innerHTML = '<p class="muted">Sin resultados para la selección.</p>';
+        host.innerHTML = '<p class="muted">Sin resultados para la selección.</p>';
         return;
       }
       for (const card of cards) {
-        cardsHost.appendChild(cardNode(card));
+        host.appendChild(cardNode(card, noteProvider));
       }
     }
 
-    function cardNode(card) {
+    function cardNode(card, noteProvider) {
       const node = document.createElement('article');
       node.className = `card ${card.status === 'NO PERMITIDO' ? 'card--blocked' : ''}`;
       node.innerHTML = `
@@ -189,6 +246,7 @@
         </div>
         <div class="card__body">
           ${card.reason ? `<p class="muted">${card.reason}</p>` : ''}
+          ${card.fire_resistant_tag ? `<p class="muted">${card.fire_resistant_tag}</p>` : ''}
           ${card.fire_test ? `<p class="muted">${card.fire_test}</p>` : ''}
           ${notesChips(card.notes)}
           <button class="btn-see" ${card.status === 'NO PERMITIDO' ? 'disabled aria-disabled="true"' : ''}>VER</button>
@@ -197,7 +255,7 @@
       node.querySelectorAll('.note-chip').forEach(chip => {
         chip.addEventListener('click', () => {
           const id = chip.getAttribute('data-id');
-          const { es, en } = getNoteText(id);
+          const { es, en } = noteProvider(id);
           showNoteModal(`Nota ${id}`, es, en);
         });
       });
@@ -218,8 +276,19 @@
       modal.showModal();
     }
 
+    function renderCards(cards) {
+      renderToHost(cardsHost, cards, getNoteText);
+    }
+
+    function renderNaval(cards) {
+      renderToHost(navalCardsHost, cards, getNavalNoteText);
+    }
+
     fillSpaces();
     loadSystems();
+
+    fillNavalSpaces();
+    loadNavalSystems();
 
     document.querySelector('#form-lr-ships')?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -234,6 +303,75 @@
       helperText.textContent = '';
       const { cards } = evaluateLRShips({ systemKey, spaceKey, klass, od_mm: od });
       renderCards(cards);
+    });
+
+    const NAVAL_SPACES = [
+      { value: 'machinery_category_A', label: 'Máquinas Categoría A' },
+      { value: 'accommodation', label: 'Acomodaciones' },
+      { value: 'munition_store', label: 'Pañol de municiones' },
+      { value: 'open_deck_low_fire_risk', label: 'Cubierta abierta (bajo riesgo de fuego)' },
+      { value: 'weather_deck', label: 'Weather deck' },
+      { value: 'cargo_hold', label: 'Bodega de carga' },
+      { value: 'tank_same_medium', label: 'Tanque (mismo medio)' },
+      { value: 'tank_other_medium', label: 'Tanque (otro medio)' },
+      { value: 'not_easily_accessible', label: 'Espacio de difícil acceso' },
+      { value: 'above_limit_watertight_integrity_only', label: 'Sobre límite de estanqueidad' }
+    ];
+
+    function fillNavalSpaces() {
+      if (!navalSpaceSelect) return;
+      navalSpaceSelect.innerHTML = '';
+      for (const item of NAVAL_SPACES) {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        navalSpaceSelect.appendChild(opt);
+      }
+      updateTankCheckbox();
+    }
+
+    async function loadNavalSystems() {
+      if (!navalSystemSelect) return;
+      const res = await fetch('./lr_naval.table_service.json');
+      const data = await res.json();
+      const rows = Array.isArray(data) ? data : Object.values(data);
+      const options = rows.filter(r => r?.key && r?.label_es).map(r => ({
+        value: r.key,
+        label: r.label_es
+      }));
+      navalSystemSelect.innerHTML = '';
+      for (const item of options) {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        navalSystemSelect.appendChild(opt);
+      }
+    }
+
+    function updateTankCheckbox() {
+      if (!navalSpaceSelect || !tankSameWrapper) return;
+      const value = navalSpaceSelect.value;
+      const isTank = value === 'tank_same_medium' || value === 'tank_other_medium';
+      tankSameWrapper.style.display = isTank ? 'block' : 'none';
+      if (!isTank && tankSameCheckbox) tankSameCheckbox.checked = false;
+    }
+
+    navalSpaceSelect?.addEventListener('change', updateTankCheckbox);
+
+    document.querySelector('#form-lr-naval')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const systemKey = navalSystemSelect?.value;
+      const spaceKey = navalSpaceSelect?.value;
+      const klass = navalClassSelect?.value;
+      const od = Number(navalOdInput?.value);
+      if (!systemKey || !spaceKey || !klass || !od) {
+        if (navalHelperText) navalHelperText.textContent = 'Completa todos los campos con valores válidos.';
+        return;
+      }
+      if (navalHelperText) navalHelperText.textContent = '';
+      const insideTankSame = Boolean(tankSameCheckbox?.checked);
+      const { cards } = evaluateLRNaval({ systemKey, spaceKey, klass, od_mm: od, inside_tank_medium_same: insideTankSame });
+      renderNaval(cards);
     });
   </script>
 </body>

@@ -1,5 +1,17 @@
 {
+  "pipe_union": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
+
   "pipe_unions.welded_brazed": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
+
+  "compression": {
     "I":   { "allowed": true,  "od_mm_max": 60.3 },
     "II":  { "allowed": true,  "od_mm_max": 60.3 },
     "III": { "allowed": true }
