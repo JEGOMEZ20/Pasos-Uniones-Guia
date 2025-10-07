@@ -1,115 +1,48 @@
 {
   "test_equivalence": {
-    "30min_dry": [
-      "8dry_22wet",
-      "30min_wet"
-    ],
-    "8dry_22wet": [
-      "30min_wet"
-    ]
+    "30min_dry": ["8dry_22wet", "30min_wet"],
+    "8dry_22wet": ["30min_wet"]
   },
   "space_rules": [
     {
-      "refs": [
-        "12.2 Note 2"
-      ],
-      "applies_if_space_in": [
-        "machinery_category_A",
-        "accommodation"
-      ],
-      "forbid_joints": [
-        "slip_on.machine_grooved",
-        "slip_on.grip",
-        "slip_on.slip"
-      ]
+      "refs": ["Note 1"],
+      "applies_if_space_in": ["machinery_category_A"],
+      "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
+      "require_installation_fire_test": true,
+      "advisory": "Cat. A machinery spaces require fire test (installation) and restrict slip-on joints."
     },
     {
-      "refs": [
-        "MSC/Circ.734",
-        "12.2 Note 2"
-      ],
-      "applies_if_space_in": [
-        "machinery_other"
-      ],
-      "advisory": "Slip-on permitido solo si visible y accesible."
+      "refs": ["Note 2"],
+      "applies_if_space_in": ["machinery_other", "machinery_category_A"],
+      "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
+      "advisory": "Slip-on joints not permitted in machinery spaces (except as noted)."
     },
     {
-      "refs": [
-        "12.2 Note 3"
-      ],
-      "applies_if_space_in": [
-        "open_deck_low_fire_risk",
-        "weather_deck"
-      ],
-      "require_fire_resistant_type": false
+      "refs": ["Note 3"],
+      "applies_if_space_in": ["cargo_tank", "ballast_tank", "double_bottom"],
+      "require_fire_resistant_type": true,
+      "advisory": "Requires fire-resistant type in tanks and double bottoms."
     },
     {
-      "refs": [
-        "12.2 Note 3"
-      ],
-      "applies_if_space_in": [
-        "open_deck_low_fire_risk",
-        "weather_deck"
-      ],
-      "applies_if_system_in": [
-        "fuel_oil_lines"
-      ],
-      "require_fire_resistant_type": true
+      "refs": ["Note 4"],
+      "applies_if_space_in": ["machinery_category_A"],
+      "require_installation_fire_test": true,
+      "advisory": "Installation fire test required for fuel oil lines in Cat. A spaces."
     },
     {
-      "refs": [
-        "12.2 Note 1"
-      ],
-      "applies_if_space_in": [
-        "pump_room",
-        "open_deck_low_fire_risk",
-        "weather_deck"
-      ],
-      "require_installation_fire_test": true
+      "refs": ["Note 5"],
+      "applies_if_space_in": ["accommodation", "service_space"],
+      "advisory": "Deck drains (internal) must be above the bulkhead deck and fitted with traps."
     },
     {
-      "refs": [
-        "12.2 Note 4"
-      ],
-      "applies_if_space_in": [
-        "machinery_category_A"
-      ],
-      "require_installation_fire_test": true
+      "refs": ["Note 6"],
+      "applies_if_space_in": ["open_deck_low_fire_risk", "weather_deck"],
+      "advisory": "Check weather deck protection requirements for slip-on joints."
     },
     {
-      "refs": [
-        "12.2 Note 5"
-      ],
-      "applies_if_space_in": [
-        "dry_space",
-        "accommodation",
-        "machinery_other",
-        "machinery_category_A"
-      ],
-      "advisory": "Deck drains (internos) solo por encima del límite de integridad estanca."
-    },
-    {
-      "refs": [
-        "12.2 Note 6"
-      ],
-      "applies_if_space_in": [
-        "open_deck_low_fire_risk",
-        "weather_deck"
-      ],
-      "advisory": "Slip type en cubierta si P≤10 bar."
-    },
-    {
-      "refs": [
-        "12.2 Note 8"
-      ],
-      "applies_if_space_in": [
-        "weather_deck"
-      ],
-      "applies_if_system_in": [
-        "steam_general"
-      ],
-      "advisory": "Solo 'restrained' slip-on en vapor y P≤1 MPa."
+      "refs": ["Note 8"],
+      "applies_if_space_in": ["weather_deck"],
+      "advisory": "Restrained slip-on joints allowed on weather deck up to 1 MPa."
     }
-  ],
-  "global_rules": []
+  ]
 }

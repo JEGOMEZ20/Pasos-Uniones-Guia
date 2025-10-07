@@ -1,13 +1,49 @@
 {
-  "pipe_unions.welded_brazed": { "I":{"allowed":true,"od_mm_max":60.3},"II":{"allowed":true,"od_mm_max":60.3},"III":{"allowed":true,"od_mm_max":null} },
+  "pipe_unions.welded_brazed": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
 
-  "compression.swage": { "I":{"allowed":false,"od_mm_max":null},"II":{"allowed":false,"od_mm_max":null},"III":{"allowed":true,"od_mm_max":null} },
-  "compression.bite":  { "I":{"allowed":true,"od_mm_max":60.3},"II":{"allowed":true,"od_mm_max":60.3},"III":{"allowed":true,"od_mm_max":null} },
-  "compression.typical_compression": { "I":{"allowed":true,"od_mm_max":60.3},"II":{"allowed":true,"od_mm_max":60.3},"III":{"allowed":true,"od_mm_max":null} },
-  "compression.flared":{ "I":{"allowed":true,"od_mm_max":60.3},"II":{"allowed":true,"od_mm_max":60.3},"III":{"allowed":true,"od_mm_max":null} },
-  "compression.press": { "I":{"allowed":false,"od_mm_max":null},"II":{"allowed":false,"od_mm_max":null},"III":{"allowed":true,"od_mm_max":null} },
+  "compression.swage": {
+    "I":   { "allowed": false },
+    "II":  { "allowed": false },
+    "III": { "allowed": true }
+  },
+  "compression.bite": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
+  "compression.typical_compression": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
+  "compression.flared": {
+    "I":   { "allowed": true,  "od_mm_max": 60.3 },
+    "II":  { "allowed": true,  "od_mm_max": 60.3 },
+    "III": { "allowed": true }
+  },
+  "compression.press": {
+    "I":   { "allowed": false },
+    "II":  { "allowed": false },
+    "III": { "allowed": true }
+  },
 
-  "slip_on.machine_grooved": { "I":{"allowed":true,"od_mm_max":null},"II":{"allowed":true,"od_mm_max":null},"III":{"allowed":true,"od_mm_max":null} },
-  "slip_on.grip":            { "I":{"allowed":false,"od_mm_max":null},"II":{"allowed":true,"od_mm_max":null},"III":{"allowed":true,"od_mm_max":null} },
-  "slip_on.slip":            { "I":{"allowed":false,"od_mm_max":null},"II":{"allowed":true,"od_mm_max":null},"III":{"allowed":true,"od_mm_max":null} }
+  "slip_on.machine_grooved": {
+    "I":   { "allowed": true },
+    "II":  { "allowed": true },
+    "III": { "allowed": true }
+  },
+  "slip_on.grip": {
+    "I":   { "allowed": false },
+    "II":  { "allowed": true },
+    "III": { "allowed": true }
+  },
+  "slip_on.slip": {
+    "I":   { "allowed": false },
+    "II":  { "allowed": true },
+    "III": { "allowed": true }
+  }
 }
