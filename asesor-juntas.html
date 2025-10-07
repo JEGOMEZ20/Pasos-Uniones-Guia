@@ -28,6 +28,11 @@
   .joint-card header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
   .joint-card h4{margin:0;font-size:15px}
   .notes{font-size:12px;color:var(--mut);margin-top:10px}
+  .note-section{margin-top:12px;padding:12px;border-radius:14px;background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.25)}
+  .note-section h5{margin:0 0 8px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:rgba(226,232,240,.76)}
+  .note-list{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;color:var(--ink)}
+  .note-list li{list-style:disc}
+  .note-id{font-weight:700;color:#f8fafc}
   .lr-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
   .lr-modal.open{display:flex}
   .lr-modal .box{background:#0b1220;border-radius:14px;max-width:min(95vw,1024px);max-height:90vh;padding:10px;border:1px solid rgba(148,163,184,.25)}
@@ -38,7 +43,7 @@
 </head>
 <body>
 <div class="wrap">
-  <nav><a href="./index.html">← Volver al inicio</a></nav>
+  <nav><a href="./compatibilidad.html">Compatibilidad de tuberías</a></nav>
   <h1 style="margin:10px 0 16px">Asesor de juntas (LR)</h1>
   <div class="grid">
     <section class="card">
@@ -184,12 +189,19 @@ const JOINT_FIRE_SUSCEPTIBLE = new Set([
 const $ = (q)=>document.querySelector(q);
 const normSel = $("#norm"), sysSel = $("#system"), spSel = $("#space"), clSel = $("#pclass"), odInp = $("#od");
 const results = $("#results"), help = $("#help"), notesBox = $("#notesBox");
+let currentNoteTexts = {};
 
 let I18N = {}; // almacena i18n para uso global (optgroups, labels)
 
 async function j(url){ const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(url); return r.json(); }
 function text(i18n, key, fallback){ return i18n[key] ?? fallback ?? key; }
 const chip = (label)=> `<span class="pill" style="color:#cbd5e1;border-color:#475569;background:rgba(71,85,105,.2)">${label}</span>`;
+const escapeHtml = (str = "") => String(str)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
 
 /* =======================
    CARGA DE DATOS
@@ -499,12 +511,8 @@ function renderResults(list){
     results.appendChild(card);
 
     const notesBlock = card.querySelector(".notes-block");
-    const fila = (r.system_note_ids||[]).length
-      ? `<div class="notes" style="opacity:.7;margin-top:6px">Notas de la fila: ${r.system_note_ids.map(n=>`N${n}`).join(", ")}</div>`
-      : "";
-    const aplic = (r.applied_note_ids||[]).length
-      ? `<div class="notes" style="margin-top:6px">Notas aplicadas: ${r.applied_note_ids.map(n=>`N${n}`).join(", ")}</div>`
-      : "";
+    const fila = noteSection(r.system_note_ids, "Notas de la fila");
+    const aplic = noteSection(r.applied_note_ids, "Notas aplicadas");
     if (fila || aplic) {
       notesBlock.innerHTML = fila + aplic;
     } else {
@@ -518,6 +526,16 @@ function renderResults(list){
       });
     }
   }
+}
+
+function noteSection(ids = [], heading){
+  if (!ids.length) return "";
+  const items = ids.map(id => {
+    const info = currentNoteTexts?.[String(id)];
+    const body = info?.es || info?.en || "Sin descripción disponible.";
+    return `<li><span class="note-id">Nota ${id}:</span> ${escapeHtml(body)}</li>`;
+  }).join("");
+  return `<div class="note-section"><h5>${heading}</h5><ul class="note-list">${items}</ul></div>`;
 }
 
 /* =======================
@@ -565,6 +583,7 @@ window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeImage(); });
         help.textContent = "Ingresa un OD (mm) válido.";
         return;
       }
+      currentNoteTexts = normData?.notes?.notes_text || {};
       notesBox.textContent = (normId==="LR_SHIPS")
         ? "Secuencia: 12.2.8 → notas → 12.2.9; aplica equivalencias de ensayo."
         : "Secuencia: 1.5.3 → notas → 1.5.4; considerar tailoring Naval si aplica.";
