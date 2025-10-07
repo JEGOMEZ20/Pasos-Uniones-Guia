@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Asesores de Tuberías · Inicio</title>
+<link rel="stylesheet" href="assets/css/app.css">
+<style>
+  :root{
+    --bg:#0f172a;--bg-card:rgba(15,23,42,.82);--border:rgba(148,163,184,.18);
+    --ink:#e2e8f0;--mut:rgba(148,163,184,.7);--accent:#38bdf8;
+  }
+  body{margin:0;background:radial-gradient(circle at top,#1e293b 0%,#0f172a 55%,#020617 100%);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;}
+  .wrap{max-width:1240px;margin:0 auto;padding:48px 24px 64px;}
+  h1{margin:0 0 10px;letter-spacing:-.01em}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;margin-top:24px}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:24px;padding:22px;box-shadow:0 20px 45px rgba(2,6,23,.55)}
+  .card h3{margin:0 0 6px}
+  .card p{margin:0 0 14px;color:var(--mut)}
+  .btn{display:inline-flex;gap:10px;align-items:center;background:#0ea5e9;border:0;border-radius:12px;color:#041628;font-weight:700;padding:10px 16px;text-decoration:none}
+  .btn:hover{background:#38bdf8}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Asesores de tuberías</h1>
+    <p class="muted">Selecciona el módulo que quieres abrir.</p>
+    <div class="grid">
+      <article class="card">
+        <h3>Compatibilidad de paso</h3>
+        <p>Verifica si una línea puede pasar por un espacio o tanque específico.</p>
+        <a class="btn" href="./compatibilidad.html">Abrir compatibilidad</a>
+      </article>
+      <article class="card">
+        <h3>Asesor de juntas (LR)</h3>
+        <p>Determina el tipo de unión permitido según sistema, espacio, OD y clase.</p>
+        <a class="btn" href="./asesor-juntas.html">Abrir asesor LR</a>
+      </article>
+    </div>
+  </div>
+</body>
+</html>
