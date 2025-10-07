@@ -100,40 +100,98 @@
 </div>
 
 <script type="module">
-/* ========= Config & constants ========= */
-const REGISTRY_URL = "./norms.registry.json"; // luego podrás apuntar a “la otra web”
+/* =======================
+   CONFIG (GitHub Pages)
+   ======================= */
+const REGISTRY_URL = "./norms.registry.json";
 const I18N_URL     = "./i18n.es.json";
 
+/* =======================
+   DATA CONSTANTS (UI)
+   ======================= */
 const SPACES = [
   "machinery_category_A","machinery_other","accommodation","open_deck_low_fire_risk","pump_room",
   "cargo_hold","tank","weather_deck","protected_space","dry_space","water_tank","munition_store"
 ];
 
 const JOINT_IMAGE = {
-  "pipe_unions.welded_brazed": "assets/joints/pipe_welded_brazed.jpg",
-  "compression.swage": "assets/joints/compression_swage.jpg",
-  "compression.bite": "assets/joints/compression_bite.jpg",
-  "compression.typical_compression": "assets/joints/compression_typical.jpg",
-  "compression.flared": "assets/joints/compression_flared.jpg",
-  "compression.press": "assets/joints/compression_press.jpg",
-  "slip_on.machine_grooved": "assets/joints/slip_machine_grooved.jpg",
-  "slip_on.grip": "assets/joints/slip_grip.jpg",
-  "slip_on.slip": "assets/joints/slip_slip.jpg"
+  "pipe_unions.welded_brazed": "assets/joints/welded_brazed.png",
+  "compression.swage": "assets/joints/compression_swage.png",
+  "compression.bite": "assets/joints/compression_bite.png",
+  "compression.typical_compression": "assets/joints/compression_typical.png",
+  "compression.flared": "assets/joints/compression_flared.png",
+  "compression.press": "assets/joints/compression_press.png",
+  "slip_on.machine_grooved": "assets/joints/slip_machine_grooved.png",
+  "slip_on.grip": "assets/joints/slip_grip.png",
+  "slip_on.slip": "assets/joints/slip_slip.png"
 };
 
 const NORM_LABEL = { "LR_SHIPS":"LR Buques (Ships)", "LR_NAVAL":"LR Naval" };
 
-/* ========= Helpers ========= */
+/* Títulos ES para “grupos” tal como vienen en tus JSON (incluye sinónimos) */
+const GROUP_LABELS_ES = {
+  "Flammable fluids (<60°C)": "Fluidos inflamables (f.p. ≤ 60°C)",
+  "Flammable fluids (>60°C)": "Fluidos inflamables (f.p. > 60°C)",
+  "Flammable fluids (flash point < 60oC)": "Fluidos inflamables (f.p. ≤ 60°C)",
+  "Flammable fluids (flash point > 60oC)": "Fluidos inflamables (f.p. > 60°C)",
+  "Inert gas": "Gas inerte",
+  "Sea water": "Agua de mar",
+  "Fresh water": "Agua dulce",
+  "Sanitary/drains/scuppers": "Sanitarios / drenajes / imbornales",
+  "Sounding/vent": "Aforos / venteos",
+  "Miscellaneous": "Varios"
+};
+
+/* Formateo legible de ensayos de fuego */
+const FIRE_TEST_PRETTY = {
+  "30min_dry": "30 min seco",
+  "30min_wet": "30 min húmedo",
+  "8dry_22wet": "8 min seco + 22 min húmedo",
+  "not_required": "No requerido"
+};
+const fmtFireTest = (code)=> FIRE_TEST_PRETTY[code||"not_required"] || code;
+
+/* Resumen breve de notas (tooltip) */
+const NOTE_SNIPPETS = {
+  LR_SHIPS: {
+    1: "Ensayo de fuego en salas de bombas/cubierta abierta.",
+    2: "Slip-on no en Cat. A/acomodación (MSC/Circ.734).",
+    3: "Tipo resistente al fuego; excepción cubierta abierta de bajo riesgo.",
+    4: "Ensayo de fuego en Cat. A.",
+    5: "Drenajes internos: sobre cubierta de francobordo/límite estanco.",
+    6: "Slip type en cubierta si P≤10 bar.",
+    7: "Equivalencias de ensayo.",
+    8: "Steam: restrained slip-on ≤1 MPa en weather deck."
+  },
+  LR_NAVAL: {
+    1: "Cat. A: tipo resistente al fuego; bilge main acero/CuNi.",
+    2: "Slip-on no en Cat. A/munitions/accommodation.",
+    3: "Excepción cubierta abierta (bajo riesgo).",
+    4: "Tipo resistente al fuego.",
+    5: "Steam: restrained slip-on ≤10 bar en weather deck.",
+    6: "Drenajes internos: por encima del límite de integridad estanca.",
+    7: "HVAC/Intakes-Uptakes: ver secciones específicas."
+  }
+};
+
+/* =======================
+   DOM HELPERS
+   ======================= */
 const $ = (q)=>document.querySelector(q);
 const normSel = $("#norm"), sysSel = $("#system"), spSel = $("#space"), clSel = $("#pclass"), odInp = $("#od");
 const results = $("#results"), help = $("#help"), notesBox = $("#notesBox");
 
+let I18N = {}; // almacena i18n para uso global (optgroups, labels)
+
 async function j(url){ const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(url); return r.json(); }
 function text(i18n, key, fallback){ return i18n[key] ?? fallback ?? key; }
+const chip = (label)=> `<span class="pill" style="color:#cbd5e1;border-color:#475569;background:rgba(71,85,105,.2)">${label}</span>`;
 
-/* ========= Carga de datos ========= */
+/* =======================
+   CARGA DE DATOS
+   ======================= */
 async function loadAll() {
-  const i18n = await j(I18N_URL);
+  I18N = await j(I18N_URL);
   const reg  = await j(REGISTRY_URL);
 
   const loadNorm = async (id) => {
@@ -143,13 +201,24 @@ async function loadAll() {
   };
   const norms = {};
   for (const id of Object.keys(reg)) norms[id] = await loadNorm(id);
-  return { i18n, norms };
+  return { i18n: I18N, norms };
 }
 
-/* ========= Lógica de evaluación (completa) ========= */
+/* =======================
+   EVALUACIÓN (LR SHIPS / NAVAL)
+   ======================= */
+function unifyFireTest(base, required, eq){
+  if (!required) return base || "not_required";
+  if (!base || base==="not_required") return required;
+  if (base===required) return base;
+  const supersets = (eq && eq[base]) || [];
+  return supersets.includes(required) ? base : required;
+}
+
 /**
  * input: { normId, system, space, od_mm, piping_class }
  * normData: { service:Array, classes:Object, notes:{space_rules:[],global_rules:[],test_equivalence:{}} }
+ * Devuelve lista de joints con: status, razones, chips (ensayo/tipo fuego), notas y refs aplicadas.
  */
 function evaluate(input, normData){
   const out = [];
@@ -177,6 +246,7 @@ function evaluate(input, normData){
   let fire_resistant_required = false;
   let fire_test = row.fire_test ?? "not_required";
   const eq = normData.notes?.test_equivalence || { "30min_dry":["8dry_22wet","30min_wet"], "8dry_22wet":["30min_wet"] };
+  const appliedRefs = [];
 
   (normData.notes?.space_rules||[]).forEach(rule=>{
     if(Array.isArray(rule.applies_if_space_in) && rule.applies_if_space_in.includes(space)){
@@ -185,6 +255,7 @@ function evaluate(input, normData){
       if(rule.require_fire_test){
         fire_test = unifyFireTest(fire_test, rule.require_fire_test, eq);
       }
+      (rule.refs||[]).forEach(r=> appliedRefs.push(r));
     }
   });
 
@@ -207,27 +278,28 @@ function evaluate(input, normData){
       }
     }
 
-    // condicional si exige tipo resistente al fuego o ensayo
     if (status === "allowed" && (fire_resistant_required || (fire_test && fire_test !== "not_required"))) {
       status = "conditional";
       if (fire_resistant_required) reasons.push("Requires fire-resistant type");
-      if (fire_test && fire_test !== "not_required") reasons.push(`Requires fire test: ${fire_test}`);
+      if (fire_test && fire_test!=="not_required") reasons.push(`Requires fire test: ${fmtFireTest(fire_test)}`);
     }
 
-    out.push({ joint, status, reasons, fire_test, fire_resistant_required });
+    out.push({
+      joint, status,
+      reasons,
+      fire_test, fire_resistant_required,
+      note_nums: row.notes || [],
+      applied_refs: Array.from(new Set(appliedRefs))
+    });
   }
   // Orden: allowed → conditional → forbidden
   const rank = { allowed:0, conditional:1, forbidden:2 };
   return out.sort((a,b)=> rank[a.status]-rank[b.status] || a.joint.localeCompare(b.joint));
 }
 
-function unifyFireTest(base, required, eq){
-  if (base === required) return base;
-  const supersets = eq[base] || [];
-  return supersets.includes(required) ? base : required;
-}
-
-/* ========= Render ========= */
+/* =======================
+   RENDER / UI
+   ======================= */
 function fillSelect(el, values, i18n, keyPrefix){
   el.innerHTML = "";
   for(const v of values){
@@ -238,14 +310,54 @@ function fillSelect(el, values, i18n, keyPrefix){
   }
 }
 
-function renderResults(i18n, list){
+/* Selector de Sistemas/Líneas agrupado por grupo (optgroup) */
+function refreshSystems(norms){
+  const n = norms[normSel.value];
+  const groups = {};
+  for (const r of n.service) {
+    const g = r.system_group || "Miscellaneous";
+    (groups[g] ||= []).push(r.system);
+  }
+  const groupKeys = Object.keys(groups).sort((a,b)=>{
+    const A = GROUP_LABELS_ES[a] || a, B = GROUP_LABELS_ES[b] || b;
+    return A.localeCompare(B, "es");
+  });
+
+  sysSel.innerHTML = "";
+  for (const g of groupKeys) {
+    const og = document.createElement("optgroup");
+    og.label = GROUP_LABELS_ES[g] || g;
+    const systems = [...new Set(groups[g])]
+      .sort((a,b)=> text(I18N,"system."+a,a).localeCompare(text(I18N,"system."+b,b),"es"));
+    for (const s of systems) {
+      const o = document.createElement("option");
+      o.value = s;
+      o.textContent = text(I18N,"system."+s,s);
+      og.appendChild(o);
+    }
+    sysSel.appendChild(og);
+  }
+}
+
+/* Traducción rápida de “razones” a ES corto */
+function tReason(s){
+  if (s.startsWith("Service table")) return "La tabla de servicio no permite este tipo de unión para el sistema.";
+  if (s.startsWith("Space note"))    return "Las notas del espacio seleccionado prohíben esta unión.";
+  if (s.startsWith("Class table: not allowed")) return "La tabla por clase no permite esta unión en la clase seleccionada.";
+  if (s.startsWith("Class table: OD"))          return s.replace("Class table:","Tabla por clase:").replace("exceeds","excede");
+  if (s.startsWith("Requires fire test"))       return s.replace("Requires fire test:","Requiere ensayo de fuego:");
+  return s;
+}
+
+function renderResults(list){
+  const results = $("#results");
   results.innerHTML = "";
   if(!list.length){
     results.innerHTML = `<div class="notes">No hay resultados para la selección actual.</div>`;
     return;
   }
   for(const r of list){
-    const title = text(i18n, `joint.${r.joint}`, r.joint);
+    const title = text(I18N, `joint.${r.joint}`, r.joint);
     const pill =
       r.status==="allowed" ? '<span class="pill ok">Permitido</span>' :
       r.status==="conditional" ? '<span class="pill cond">Condicional</span>' :
@@ -255,37 +367,55 @@ function renderResults(i18n, list){
       ? `<button class="btn" disabled aria-disabled="true">VER</button>`
       : `<button class="btn" data-view="${r.joint}">VER</button>`;
 
+    // Chips compactos
+    const chips = [];
+    chips.push(chip(`Clase ${clSel.value}`));
+    chips.push(chip(`OD ${Number(odInp.value)} mm`));
+    if (r.fire_resistant_required) chips.push(chip("Tipo resistente al fuego"));
+    if (r.fire_test && r.fire_test!=="not_required") chips.push(chip(`Ensayo: ${fmtFireTest(r.fire_test)}`));
+
+    // Notas por número con tooltip
+    if (Array.isArray(r.note_nums) && r.note_nums.length){
+      const nn = r.note_nums.map(n => {
+        const tip = (NOTE_SNIPPETS[normSel.value]?.[n]) || `Nota ${n}`;
+        return `<span class="pill" title="${tip}">N${n}</span>`;
+      }).join(" ");
+      chips.push(nn);
+    }
+
+    // Refs aplicadas (p.ej., “2.12.8”)
+    if (Array.isArray(r.applied_refs) && r.applied_refs.length){
+      const rr = r.applied_refs.map(x=> `<span class="pill" title="${x}">${x}</span>`).join(" ");
+      chips.push(rr);
+    }
+
+    // Razones (traducidas) — cortas
     const reasons = r.reasons?.length
-      ? `<ul style="margin:8px 0 0 18px;font-size:13px">${r.reasons.map(x=>`<li>${x}</li>`).join("")}</ul>`
+      ? `<ul style="margin:8px 0 0 18px;font-size:13px">${r.reasons.map(x=>`<li>${tReason(x)}</li>`).join("")}</ul>`
       : "";
 
     const card = document.createElement("article");
     card.className = "card joint-card";
     card.innerHTML = `
       <header><h4>${title}</h4>${pill}</header>
+      <div class="notes" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${chips.join(" ")}</div>
       ${reasons}
-      <div class="notes">${hintFire(i18n, r)}</div>
       <div style="margin-top:10px">${btn}</div>
     `;
     results.appendChild(card);
 
     if(r.status!=="forbidden"){
       card.querySelector("button[data-view]")?.addEventListener("click", ()=>{
-        const img = JOINT_IMAGE[r.joint] || "assets/joints/not-found.jpg";
+        const img = JOINT_IMAGE[r.joint] || "assets/joints/placeholder.png";
         openImage(title, img);
       });
     }
   }
 }
 
-function hintFire(i18n, r){
-  const parts=[];
-  if(r.fire_resistant_required) parts.push("• Tipo resistente al fuego");
-  if(r.fire_test && r.fire_test!=="not_required") parts.push(`• Ensayo: ${r.fire_test}`);
-  return parts.length ? parts.join("  ") : text(i18n,"labels.notes","Notas aplicables")+": —";
-}
-
-/* ========= Modal imagen ========= */
+/* =======================
+   MODAL IMAGEN
+   ======================= */
 const modal = $("#imgModal"), imgEl = $("#imgView"), closeBtn = $("#imgClose");
 function openImage(title, src){ imgEl.src=src; imgEl.alt=title; modal.classList.add("open"); modal.setAttribute("aria-hidden","false"); }
 function closeImage(){ modal.classList.remove("open"); modal.setAttribute("aria-hidden","true"); imgEl.src=""; imgEl.alt=""; }
@@ -293,29 +423,25 @@ closeBtn.addEventListener("click", closeImage);
 modal.addEventListener("click",(e)=>{ if(e.target===modal) closeImage(); });
 window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeImage(); });
 
-/* ========= Bootstrap ========= */
+/* =======================
+   BOOTSTRAP
+   ======================= */
 (async function main(){
   try{
     help.textContent = "Cargando datos…";
-    const { i18n, norms } = await loadAll();
+    const { norms } = await loadAll();
 
-    // 1) Normas
+    // Normas
     const normIds = Object.keys(norms);
-    fillSelect(normSel, normIds, i18n, "norm.");
+    fillSelect(normSel, normIds, I18N, "norm.");
 
-    // 2) Espacios (con etiquetas ES)
-    fillSelect(spSel, SPACES, i18n, "space.");
+    // Espacios (ES)
+    fillSelect(spSel, SPACES, I18N, "space.");
 
-    // 3) Sistemas dinámicos por norma
-    const refreshSystems = ()=>{
-      const n = norms[normSel.value];
-      const systems = [...new Set(n.service.map(r=>r.system))];
-      systems.sort((a,b)=> text(i18n,"system."+a,a).localeCompare(text(i18n,"system."+b,b),'es'));
-      fillSelect(sysSel, systems, i18n, "system.");
-    };
-
-    normSel.addEventListener("change", refreshSystems);
-    refreshSystems();
+    // Sistemas agrupados por grupo
+    const doRefresh = ()=> refreshSystems(norms);
+    normSel.addEventListener("change", doRefresh);
+    doRefresh();
 
     help.textContent = "Listo. Completa los campos y pulsa Evaluar.";
     $("#btnEval").addEventListener("click", ()=>{
@@ -332,12 +458,11 @@ window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeImage(); });
         help.textContent = "Ingresa un OD (mm) válido.";
         return;
       }
-      // nota contextual sencilla (opcional)
       notesBox.textContent = (normId==="LR_SHIPS")
         ? "Secuencia: 12.2.8 → notas → 12.2.9; aplica equivalencias de ensayo."
         : "Secuencia: 1.5.3 → notas → 1.5.4; considerar tailoring Naval si aplica.";
       const res = evaluate(input, normData);
-      renderResults(i18n, res);
+      renderResults(res);
     });
 
   }catch(err){
