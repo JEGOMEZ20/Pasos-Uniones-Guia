@@ -1,36 +1,43 @@
 {
+  "always_note_ids": [7],
   "test_equivalence": {
     "30min_dry": ["8dry_22wet", "30min_wet"],
     "8dry_22wet": ["30min_wet"]
   },
   "space_rules": [
     {
+      "note_ids": [2],
       "refs": ["Note 2"],
       "applies_if_space_in": ["machinery_category_A","accommodation","munition_store"],
       "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"]
     },
     {
+      "note_ids": [2],
       "refs": ["Note 2"],
       "applies_if_space_in": ["machinery_other"],
       "advisory": "Slip-on permitido en otros espacios de máquinas si está visible y accesible."
     },
     {
+      "note_ids": [1],
       "refs": ["Note 1"],
       "applies_if_space_in": ["machinery_category_A"],
       "require_fire_resistant_type": true,
       "advisory": "En el ‘bilge main’ de Cat. A, material del acople: acero/CuNi o equivalente."
     },
     {
+      "note_ids": [3],
       "refs": ["Note 3"],
       "applies_if_space_in": ["open_deck_low_fire_risk","weather_deck"],
       "require_fire_resistant_type": false
     },
     {
+      "note_ids": [6],
       "refs": ["Note 6"],
       "applies_if_space_in": ["accommodation","machinery_other","machinery_category_A","dry_space"],
       "advisory": "Deck drains (internos) solo por encima del límite de integridad estanca."
     },
     {
+      "note_ids": [7],
       "refs": ["Note 7"],
       "applies_if_space_in": ["weather_deck","protected_space"],
       "advisory": "Requisitos específicos para HVAC trunking y gas turbine intakes/uptakes según secciones aplicables."
@@ -38,16 +45,19 @@
   ],
   "global_rules": [
     {
+      "note_ids": [4],
       "refs": ["Note 4"],
       "applies_if_system_in": ["aircraft_vehicle_fuel_oil_lt60","aircraft_vehicle_fuel_oil_gt60"],
       "force_fire_resistant_type": true
     },
     {
+      "note_ids": [3],
       "refs": ["Note 3"],
       "applies_if_system_in": ["ships_machinery_fuel_oil"],
       "force_fire_resistant_type": true
     },
     {
+      "note_ids": [5],
       "refs": ["5.10.10","5.10.11"],
       "applies_if_system_in": ["steam_general"],
       "advisory": "Slip type no como medio principal salvo compensación axial. ‘Restrained’ slip-on permitido en weather deck ≤10 bar."
