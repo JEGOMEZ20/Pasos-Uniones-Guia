@@ -1,10 +1,12 @@
 {
+  "always_note_ids": [7],
   "test_equivalence": {
     "30min_dry": ["8dry_22wet", "30min_wet"],
     "8dry_22wet": ["30min_wet"]
   },
   "space_rules": [
     {
+      "note_ids": [1],
       "refs": ["Note 1"],
       "applies_if_space_in": ["machinery_category_A"],
       "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
@@ -12,34 +14,40 @@
       "advisory": "Cat. A machinery spaces require fire test (installation) and restrict slip-on joints."
     },
     {
+      "note_ids": [2],
       "refs": ["Note 2"],
       "applies_if_space_in": ["machinery_other", "machinery_category_A"],
       "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
       "advisory": "Slip-on joints not permitted in machinery spaces (except as noted)."
     },
     {
+      "note_ids": [3],
       "refs": ["Note 3"],
       "applies_if_space_in": ["cargo_tank", "ballast_tank", "double_bottom"],
       "require_fire_resistant_type": true,
       "advisory": "Requires fire-resistant type in tanks and double bottoms."
     },
     {
+      "note_ids": [4],
       "refs": ["Note 4"],
       "applies_if_space_in": ["machinery_category_A"],
       "require_installation_fire_test": true,
       "advisory": "Installation fire test required for fuel oil lines in Cat. A spaces."
     },
     {
+      "note_ids": [5],
       "refs": ["Note 5"],
       "applies_if_space_in": ["accommodation", "service_space"],
       "advisory": "Deck drains (internal) must be above the bulkhead deck and fitted with traps."
     },
     {
+      "note_ids": [6],
       "refs": ["Note 6"],
       "applies_if_space_in": ["open_deck_low_fire_risk", "weather_deck"],
       "advisory": "Check weather deck protection requirements for slip-on joints."
     },
     {
+      "note_ids": [8],
       "refs": ["Note 8"],
       "applies_if_space_in": ["weather_deck"],
       "advisory": "Restrained slip-on joints allowed on weather deck up to 1 MPa."
