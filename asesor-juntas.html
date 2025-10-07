@@ -126,6 +126,12 @@ const JOINT_IMAGE = {
   "slip_on.slip": "assets/joints/slip_slip.png"
 };
 
+const JOINT_FIRE_SUSCEPTIBLE = new Set([
+  "compression.swage", "compression.bite", "compression.typical_compression",
+  "compression.flared", "compression.press",
+  "slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"
+]);
+
 const NORM_LABEL = { "LR_SHIPS":"LR Buques (Ships)", "LR_NAVAL":"LR Naval" };
 
 /* Títulos ES para “grupos” tal como vienen en tus JSON (incluye sinónimos) */
@@ -141,6 +147,17 @@ const GROUP_LABELS_ES = {
   "Sounding/vent": "Aforos / venteos",
   "Miscellaneous": "Varios"
 };
+const GROUP_ORDER = [
+  "Flammable fluids (flash point < 60°C)",
+  "Flammable fluids (<60°C)",
+  "Flammable fluids (flash point > 60°C)",
+  "Flammable fluids (>60°C)",
+  "Sea water",
+  "Fresh water",
+  "Sanitary/drains/scuppers",
+  "Sounding/vent",
+  "Miscellaneous"
+];
 
 /* Formateo legible de ensayos de fuego */
 const FIRE_TEST_PRETTY = {
@@ -224,44 +241,58 @@ function evaluate(input, normData){
   const out = [];
   const { system, space, od_mm, piping_class } = input;
 
-  // 1) fila de servicio
-  const row = normData.service.find(r => (r.system||"").toLowerCase() === system.toLowerCase());
-  if(!row){ return out; }
+  const row = normData.service.find(r => (r.system || "").toLowerCase() === system.toLowerCase());
+  if (!row) return out;
 
-  // 2) base permitidos por servicio
+  const typeFireTest = row.type_fire_test || row.fire_test || "not_required";
   const baseAllowed = new Set(row.allowed_joints || []);
 
-  // 3) restricciones de clase/OD
   const classOk = (joint) => {
     const c = normData.classes[joint]?.[piping_class];
-    if(!c || !c.allowed) return { ok:false, reason:`Class table: not allowed in Class ${piping_class}` };
+    if (!c || !c.allowed) return { ok: false, reason: `Class table: not allowed in Class ${piping_class}` };
     if (typeof c.od_mm_max === "number" && od_mm > c.od_mm_max) {
-      return { ok:false, reason:`Class table: OD ${od_mm}mm exceeds ${c.od_mm_max}mm` };
+      return { ok: false, reason: `Class table: OD ${od_mm}mm exceeds ${c.od_mm_max}mm` };
     }
-    return { ok:true };
+    return { ok: true };
   };
 
-  // 4) notas por espacio: prohibiciones + requisitos de fuego
-  const forbids = new Set();
-  let fire_resistant_required = false;
-  let fire_test = row.fire_test ?? "not_required";
-  const eq = normData.notes?.test_equivalence || { "30min_dry":["8dry_22wet","30min_wet"], "8dry_22wet":["30min_wet"] };
-  const appliedRefs = [];
+  const eq = normData.notes?.test_equivalence || {
+    "30min_dry": ["8dry_22wet", "30min_wet"],
+    "8dry_22wet": ["30min_wet"]
+  };
 
-  (normData.notes?.space_rules||[]).forEach(rule=>{
-    if(Array.isArray(rule.applies_if_space_in) && rule.applies_if_space_in.includes(space)){
-      (rule.forbid_joints||[]).forEach(j => forbids.add(j));
-      if(rule.require_fire_resistant_type) fire_resistant_required = true;
-      if(rule.require_fire_test){
-        fire_test = unifyFireTest(fire_test, rule.require_fire_test, eq);
-      }
-      (rule.refs||[]).forEach(r=> appliedRefs.push(r));
-    }
+  let forceFireResistant = false;
+  (normData.notes?.global_rules || []).forEach(rule => {
+    const hitSystem = Array.isArray(rule.applies_if_system_in) && rule.applies_if_system_in.includes(system);
+    if (!hitSystem) return;
+    if (rule.force_fire_resistant_type === true) forceFireResistant = true;
   });
 
-  // 5) construir resultados para todos los joints conocidos (union de base + clase)
+  const forbids = new Set();
+  const appliedRefs = [];
+  let requireFireResistant = null;
+  let installFireTest = "not_required";
+
+  (normData.notes?.space_rules || []).forEach(rule => {
+    const hitSpace = Array.isArray(rule.applies_if_space_in) && rule.applies_if_space_in.includes(space);
+    const hitSystem = !rule.applies_if_system_in || rule.applies_if_system_in.includes(system);
+    if (!hitSpace || !hitSystem) return;
+
+    (rule.forbid_joints || []).forEach(j => forbids.add(j));
+    if (typeof rule.require_fire_resistant_type === "boolean") {
+      requireFireResistant = (requireFireResistant === true) ? true : rule.require_fire_resistant_type;
+    }
+    if (rule.require_installation_fire_test === true) {
+      installFireTest = unifyFireTest(installFireTest, typeFireTest || "not_required", eq);
+    }
+    if (rule.require_fire_test) {
+      installFireTest = unifyFireTest(installFireTest, rule.require_fire_test, eq);
+    }
+    (rule.refs || []).forEach(r => appliedRefs.push(r));
+  });
+
   const allJoints = Array.from(new Set([...Object.keys(normData.classes), ...baseAllowed]));
-  for(const joint of allJoints){
+  for (const joint of allJoints) {
     const reasons = [];
     let status = "forbidden";
 
@@ -271,30 +302,39 @@ function evaluate(input, normData){
       reasons.push("Space note: joint forbidden in selected space");
     } else {
       const ck = classOk(joint);
-      if(!ck.ok){
+      if (!ck.ok) {
         reasons.push(ck.reason);
       } else {
         status = "allowed";
       }
     }
 
-    if (status === "allowed" && (fire_resistant_required || (fire_test && fire_test !== "not_required"))) {
-      status = "conditional";
-      if (fire_resistant_required) reasons.push("Requires fire-resistant type");
-      if (fire_test && fire_test!=="not_required") reasons.push(`Requires fire test: ${fmtFireTest(fire_test)}`);
+    if (status === "allowed") {
+      const susceptible = JOINT_FIRE_SUSCEPTIBLE.has(joint);
+      const needsFireResistant = susceptible && (forceFireResistant === true || requireFireResistant === true);
+      const needsInstallTest = susceptible && (installFireTest && installFireTest !== "not_required");
+
+      if (needsFireResistant || needsInstallTest) {
+        status = "conditional";
+        if (needsFireResistant) reasons.push("Requires fire-resistant type");
+        if (needsInstallTest) reasons.push(`Requires fire test: ${installFireTest}`);
+      }
     }
 
     out.push({
-      joint, status,
+      joint,
+      status,
       reasons,
-      fire_test, fire_resistant_required,
+      type_fire_test: typeFireTest,
+      install_fire_test: installFireTest,
+      fire_resistant_required: (requireFireResistant === true || forceFireResistant === true),
       note_nums: row.notes || [],
       applied_refs: Array.from(new Set(appliedRefs))
     });
   }
-  // Orden: allowed → conditional → forbidden
-  const rank = { allowed:0, conditional:1, forbidden:2 };
-  return out.sort((a,b)=> rank[a.status]-rank[b.status] || a.joint.localeCompare(b.joint));
+
+  const rank = { allowed: 0, conditional: 1, forbidden: 2 };
+  return out.sort((a, b) => rank[a.status] - rank[b.status] || a.joint.localeCompare(b.joint));
 }
 
 /* =======================
@@ -318,8 +358,16 @@ function refreshSystems(norms){
     const g = r.system_group || "Miscellaneous";
     (groups[g] ||= []).push(r.system);
   }
+  const orderIndex = (g) => {
+    const idx = GROUP_ORDER.findIndex(x => x === g);
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+  };
   const groupKeys = Object.keys(groups).sort((a,b)=>{
-    const A = GROUP_LABELS_ES[a] || a, B = GROUP_LABELS_ES[b] || b;
+    const ai = orderIndex(a);
+    const bi = orderIndex(b);
+    if (ai !== bi) return ai - bi;
+    const A = GROUP_LABELS_ES[a] || a;
+    const B = GROUP_LABELS_ES[b] || b;
     return A.localeCompare(B, "es");
   });
 
@@ -345,7 +393,12 @@ function tReason(s){
   if (s.startsWith("Space note"))    return "Las notas del espacio seleccionado prohíben esta unión.";
   if (s.startsWith("Class table: not allowed")) return "La tabla por clase no permite esta unión en la clase seleccionada.";
   if (s.startsWith("Class table: OD"))          return s.replace("Class table:","Tabla por clase:").replace("exceeds","excede");
-  if (s.startsWith("Requires fire test"))       return s.replace("Requires fire test:","Requiere ensayo de fuego:");
+  if (s.startsWith("Requires fire test")) {
+    const parts = s.split(":");
+    const code = parts[1] ? parts[1].trim() : "not_required";
+    return `Requiere ensayo de fuego: ${fmtFireTest(code)}`;
+  }
+  if (s.startsWith("Requires fire-resistant type")) return "Requiere tipo resistente al fuego.";
   return s;
 }
 
@@ -371,8 +424,13 @@ function renderResults(list){
     const chips = [];
     chips.push(chip(`Clase ${clSel.value}`));
     chips.push(chip(`OD ${Number(odInp.value)} mm`));
+    if (r.type_fire_test && r.type_fire_test!=="not_required") {
+      chips.push(chip(`Ensayo (tipo): ${fmtFireTest(r.type_fire_test)}`));
+    }
     if (r.fire_resistant_required) chips.push(chip("Tipo resistente al fuego"));
-    if (r.fire_test && r.fire_test!=="not_required") chips.push(chip(`Ensayo: ${fmtFireTest(r.fire_test)}`));
+    if (r.install_fire_test && r.install_fire_test!=="not_required") {
+      chips.push(chip(`Ensayo (instalación): ${fmtFireTest(r.install_fire_test)}`));
+    }
 
     // Notas por número con tooltip
     if (Array.isArray(r.note_nums) && r.note_nums.length){

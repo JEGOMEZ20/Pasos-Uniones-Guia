@@ -1,80 +1,147 @@
 {
+  "test_equivalence": {
+    "30min_dry": [
+      "8dry_22wet",
+      "30min_wet"
+    ],
+    "8dry_22wet": [
+      "30min_wet"
+    ]
+  },
   "space_rules": [
     {
-      "applies_if_space_in": ["machinery_category_A"],
-      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"],
-      "require_fire_resistant_type": true,
-      "comment": "Note 2 + general fire-resistance in Cat A (Notes 3/4). Slip-on not accepted in Cat A.",
-      "refs": ["Table 12.2.8 Note 2","Note 3","Note 4","2.12.8"]
+      "refs": [
+        "Note 1"
+      ],
+      "applies_if_space_in": [
+        "pump_room",
+        "open_deck_low_fire_risk"
+      ],
+      "require_installation_fire_test": true
     },
     {
-      "applies_if_space_in": ["accommodation"],
-      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"],
-      "require_fire_resistant_type": true,
-      "comment": "Note 2: slip-on not accepted in accommodation.",
-      "refs": ["Table 12.2.8 Note 2","Note 3"]
+      "refs": [
+        "Note 2"
+      ],
+      "applies_if_space_in": [
+        "machinery_category_A",
+        "accommodation"
+      ],
+      "forbid_joints": [
+        "slip_on.machine_grooved",
+        "slip_on.grip",
+        "slip_on.slip"
+      ]
     },
     {
-      "applies_if_space_in": ["open_deck_low_fire_risk"],
-      "forbid_joints": [],
-      "require_fire_resistant_type": false,
-      "comment": "Note 3 exception on open decks with little/no fire risk and not fuel oil lines.",
-      "refs": ["Table 12.2.8 Note 3"]
+      "refs": [
+        "Note 3"
+      ],
+      "applies_if_space_in": [
+        "machinery_category_A",
+        "machinery_other",
+        "accommodation",
+        "pump_room",
+        "cargo_hold",
+        "tank",
+        "protected_space",
+        "dry_space",
+        "munition_store"
+      ],
+      "require_fire_resistant_type": true
     },
     {
-      "applies_if_space_in": ["pump_room"],
-      "forbid_joints": [],
-      "require_fire_resistant_type": true,
-      "comment": "Note 1: fire endurance test applies in pump-rooms/open decks (service table defines specific test).",
-      "refs": ["Table 12.2.8 Note 1"]
+      "refs": [
+        "Note 3"
+      ],
+      "applies_if_space_in": [
+        "open_deck_low_fire_risk",
+        "weather_deck"
+      ],
+      "require_fire_resistant_type": false
     },
     {
-      "applies_if_space_in": ["cargo_hold","tank"],
-      "forbid_joints": ["slip_on.machine_grooved","slip_on.grip","slip_on.slip"],
-      "comment": "2.12.8: Generally slip-on joints not to be used in cargo holds, tanks, or inaccessible spaces. Inside tanks only if medium is same.",
-      "refs": ["2.12.8"]
+      "refs": [
+        "Note 4"
+      ],
+      "applies_if_space_in": [
+        "machinery_category_A"
+      ],
+      "require_installation_fire_test": true
     },
     {
-      "applies_if_space_in": ["weather_deck"],
-      "forbid_joints": [],
-      "comment": "Note 6: Slip type slip-on permitted on deck if Pdesign ≤ 10 bar.",
-      "refs": ["Table 12.2.8 Note 6"]
+      "refs": [
+        "Note 5"
+      ],
+      "applies_if_space_in": [
+        "accommodation",
+        "machinery_other",
+        "machinery_category_A",
+        "dry_space"
+      ],
+      "advisory": "Deck drains (internos) solo por encima del límite de integridad estanca."
     },
     {
-      "applies_if_space_in": ["protected_space"],
-      "forbid_joints": [],
-      "comment": "CO2 inside protected space: joints materials melting point > 925°C.",
-      "refs": ["CO2 table remark"]
+      "refs": [
+        "Note 6"
+      ],
+      "applies_if_space_in": [
+        "weather_deck"
+      ],
+      "advisory": "Slip type permitido en cubierta si P≤10 bar."
+    },
+    {
+      "refs": [
+        "Note 8"
+      ],
+      "applies_if_space_in": [
+        "weather_deck"
+      ],
+      "advisory": "Steam: restrained slip-on ≤1 MPa en weather deck."
+    },
+    {
+      "refs": [
+        "2.12.8"
+      ],
+      "applies_if_space_in": [
+        "cargo_hold",
+        "tank"
+      ],
+      "forbid_joints": [
+        "slip_on.machine_grooved",
+        "slip_on.grip",
+        "slip_on.slip"
+      ],
+      "advisory": "Slip-on no en bodegas/tanques salvo mismo fluido (Pt 5 Ch 12 2.12.8)."
     }
   ],
   "global_rules": [
     {
-      "id": "minimize_mech_joints_flammable",
-      "condition": "fluid=flammable",
-      "effect": "minimize mechanical joints; prefer flanged to recognized standard",
-      "refs": ["2.12.7"]
+      "refs": [
+        "2.12.7"
+      ],
+      "advisory": "Minimizar uniones mecánicas en fluidos inflamables; preferir bridadas estandarizadas."
     },
     {
-      "id": "no_mech_joints_below_side_direct",
-      "condition": "section_directly_connected_to_ship_side_below_deck OR tanks_with_flammable_fluids",
-      "effect": "avoid mechanical joints",
-      "refs": ["2.12.5"]
+      "refs": [
+        "2.12.5"
+      ],
+      "advisory": "Evitar uniones mecánicas bajo la línea de flotación o en tanques de fluidos inflamables."
     },
     {
-      "id": "slip_type_not_main_means",
-      "condition": "slip_type_slip_on_as_main_connection",
-      "effect": "not permitted except to accommodate axial deformation",
-      "refs": ["2.12.9"]
+      "refs": [
+        "2.12.9"
+      ],
+      "advisory": "Slip type no como medio principal salvo compensar dilatación axial."
     },
     {
-      "id": "restrained_slip_on_steam",
-      "condition": "steam_pipes_on_weather_deck_oil_chemical_tankers AND Pdesign<=1MPa",
-      "effect": "restrained slip-on joints permitted (expansion)",
-      "refs": ["2.12.10"]
+      "refs": [
+        "2.12.10"
+      ],
+      "applies_if_system_in": [
+        "steam_general"
+      ],
+      "advisory": "Restrained slip-on permitido en weather deck ≤1 MPa (vapores)."
     }
-  ],
-  "test_equivalence": {
-    "30min_dry": ["8dry_22wet","30min_wet"],
-    "8dry_22wet": ["30min_wet"]
-  }
+  ]
 }
