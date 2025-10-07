@@ -1,56 +1,80 @@
 {
-  "always_note_ids": [7],
-  "test_equivalence": {
-    "30min_dry": ["8dry_22wet", "30min_wet"],
-    "8dry_22wet": ["30min_wet"]
-  },
+  "schema": "lr_ships.notes.v1",
   "space_rules": [
-    {
-      "note_ids": [1],
-      "refs": ["Note 1"],
-      "applies_if_space_in": ["machinery_category_A"],
-      "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
-      "require_installation_fire_test": true,
-      "advisory": "Cat. A machinery spaces require fire test (installation) and restrict slip-on joints."
-    },
     {
       "note_ids": [2],
       "refs": ["Note 2"],
-      "applies_if_space_in": ["machinery_other", "machinery_category_A"],
-      "forbid_joints": ["slip_on.machine_grooved", "slip_on.grip", "slip_on.slip"],
-      "advisory": "Slip-on joints not permitted in machinery spaces (except as noted)."
+      "applies_if_space_in": ["machinery_category_A", "accommodation"],
+      "forbid_joints": [
+        "slip_on.machine_grooved",
+        "slip_on.grip",
+        "slip_on.slip"
+      ],
+      "advisory": "Slip-on no aceptados en espacios Máquinas Cat. A ni Acomodaciones."
+    },
+    {
+      "note_ids": [1],
+      "refs": ["Note 1"],
+      "applies_if_space_in": ["pump_room", "open_deck", "weather_deck"],
+      "require_installation_fire_test": true,
+      "advisory": "Ensayo de resistencia al fuego requerido cuando la instalación está en salas de bombas o cubiertas abiertas."
     },
     {
       "note_ids": [3],
       "refs": ["Note 3"],
-      "applies_if_space_in": ["cargo_tank", "ballast_tank", "double_bottom"],
-      "require_fire_resistant_type": true,
-      "advisory": "Requires fire-resistant type in tanks and double bottoms."
-    },
-    {
-      "note_ids": [4],
-      "refs": ["Note 4"],
-      "applies_if_space_in": ["machinery_category_A"],
-      "require_installation_fire_test": true,
-      "advisory": "Installation fire test required for fuel oil lines in Cat. A spaces."
+      "applies_if_space_in": ["open_deck", "weather_deck"],
+      "require_fire_resistant_type": false,
+      "advisory": "Excepción de tipo resistente al fuego si está en cubierta abierta y no es fuel oil."
     },
     {
       "note_ids": [5],
       "refs": ["Note 5"],
       "applies_if_space_in": ["accommodation", "service_space"],
-      "advisory": "Deck drains (internal) must be above the bulkhead deck and fitted with traps."
-    },
-    {
-      "note_ids": [6],
-      "refs": ["Note 6"],
-      "applies_if_space_in": ["open_deck_low_fire_risk", "weather_deck"],
-      "advisory": "Check weather deck protection requirements for slip-on joints."
+      "advisory": "Drenajes internos solo por encima de la cubierta límite de estanqueidad."
     },
     {
       "note_ids": [8],
       "refs": ["Note 8"],
       "applies_if_space_in": ["weather_deck"],
-      "advisory": "Restrained slip-on joints allowed on weather deck up to 1 MPa."
+      "advisory": "Slip-on 'restrained' en vapor ≤1 MPa permitido en weather deck."
     }
-  ]
+  ],
+  "test_equivalence": {
+    "30min_dry": ["8dry_22wet", "30min_wet"],
+    "8dry_22wet": ["30min_wet"]
+  },
+  "notes_text": {
+    "1": {
+      "es": "Se debe aplicar un ensayo de resistencia al fuego cuando las juntas mecánicas se instalen en salas de bombas o cubiertas abiertas.",
+      "en": "A fire endurance test shall be applied when mechanical joints are installed in pump-rooms and open decks."
+    },
+    "2": {
+      "es": "Las juntas tipo slip-on no se aceptan dentro de espacios de maquinaria de Categoría A ni en espacios de alojamiento. Pueden aceptarse en otros espacios de maquinaria si están en posiciones visibles y accesibles.",
+      "en": "Slip-on joints are not accepted inside machinery spaces of Category A or accommodation spaces. They may be accepted in other machinery spaces provided the joints are located in easily visible and accessible positions."
+    },
+    "3": {
+      "es": "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, excepto cuando se instalen en cubiertas abiertas (según SOLAS II-2/9.2.3.3.2.2(10)) y no sean líneas de fuel oil.",
+      "en": "Mechanical joints are to be of approved fire-resistant types except in cases where installed on open decks, as defined in SOLAS Ch II-2 Reg. 9.2.3.3.2.2(10), and not used for fuel oil lines."
+    },
+    "4": {
+      "es": "Se requiere ensayo de resistencia al fuego cuando las juntas mecánicas se instalen dentro de espacios de máquinas de Categoría A.",
+      "en": "A fire endurance test shall be applied when mechanical joints are installed inside machinery spaces of category A."
+    },
+    "5": {
+      "es": "Solo por encima de la cubierta de francobordo (carga) o la cubierta de coronamiento (pasajeros).",
+      "en": "Only above bulkhead deck of passenger ships and freeboard deck of cargo ships."
+    },
+    "6": {
+      "es": "Las juntas slip-type pueden usarse en cubierta para presión de diseño ≤10 bar.",
+      "en": "Slip type slip-on joints may be used for pipes on deck with a design pressure of 10 bar or less."
+    },
+    "7": {
+      "es": "Equivalencias de ensayo: si pasó ‘30 min seco’, cubre ‘8 min seco + 22 min húmedo’ y ‘30 min húmedo’. Si pasó ‘8+22’, cubre ‘30 min húmedo’.",
+      "en": "Test equivalence: ‘30 min dry’ covers ‘8 min dry + 22 min wet’ and ‘30 min wet’; ‘8+22’ covers ‘30 min wet’."
+    },
+    "8": {
+      "es": "Para vapor: ver 2.12.10. Slip-on ‘restrained’ ≤1 MPa en weather deck permitido (expansión axial).",
+      "en": "Steam: see 2.12.10. Restrained slip-on ≤1 MPa on weather decks permitted (axial expansion)."
+    }
+  }
 }
