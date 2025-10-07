@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Cargo oil <60°C en Cat. A",
+    "input": { "systemKey":"flammables_lt60.cargo_oil_lines", "spaceKey":"machinery_category_A","klass":"III","od_mm":60 },
+    "expect": {
+      "slip_on.machine_grooved":"NO",
+      "slip_on.grip":"NO",
+      "slip_on.slip":"NO",
+      "notes":[2],
+      "fire_test": null
+    }
+  },
+  {
+    "name": "Cargo oil <60°C en open deck",
+    "input": { "systemKey":"flammables_lt60.cargo_oil_lines", "spaceKey":"open_deck","klass":"III","od_mm":60 },
+    "expect": {
+      "slip_on.machine_grooved":"SI",
+      "slip_on.grip":"SI",
+      "slip_on.slip":"SI",
+      "notes":[1,7],
+      "fire_test": "30min_dry"
+    }
+  },
+  {
+    "name": "Fuel oil en Cat. A",
+    "input": { "systemKey":"fuel_oil_lines", "spaceKey":"machinery_category_A","klass":"II","od_mm":50 },
+    "expect": {
+      "slip_on.machine_grooved":"NO",
+      "slip_on.grip":"NO",
+      "slip_on.slip":"NO",
+      "notes":[2,4,7],
+      "fire_test":"30min_wet"
+    }
+  }
+]
