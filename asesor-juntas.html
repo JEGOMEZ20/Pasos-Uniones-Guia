@@ -134,6 +134,8 @@ const GROUP_LABELS_ES = {
   "Flammable fluids (>60°C)": "Fluidos inflamables (f.p. > 60°C)",
   "Flammable fluids (flash point < 60oC)": "Fluidos inflamables (f.p. ≤ 60°C)",
   "Flammable fluids (flash point > 60oC)": "Fluidos inflamables (f.p. > 60°C)",
+  "Flammable fluids (flash point < 60°C)": "Fluidos inflamables (f.p. ≤ 60°C)",
+  "Flammable fluids (flash point > 60°C)": "Fluidos inflamables (f.p. > 60°C)",
   "Inert gas": "Gas inerte",
   "Sea water": "Agua de mar",
   "Fresh water": "Agua dulce",
@@ -141,6 +143,19 @@ const GROUP_LABELS_ES = {
   "Sounding/vent": "Aforos / venteos",
   "Miscellaneous": "Varios"
 };
+
+const GROUP_ORDER = [
+  "Flammable fluids (flash point < 60°C)",
+  "Flammable fluids (flash point > 60°C)",
+  "Flammable fluids (<60°C)",
+  "Flammable fluids (>60°C)",
+  "Inert gas",
+  "Sea water",
+  "Fresh water",
+  "Sanitary/drains/scuppers",
+  "Sounding/vent",
+  "Miscellaneous"
+];
 
 /* Formateo legible de ensayos de fuego */
 const FIRE_TEST_PRETTY = {
@@ -236,17 +251,16 @@ function evaluate(input, normData){
   const out = [];
   const { system, space, od_mm, piping_class } = input;
 
-  // 1) Fila del sistema
   const row = normData.service.find(r => (r.system||"").toLowerCase() === system.toLowerCase());
   if(!row) return out;
 
-  // Ensayo de homologación del TIPO (12.2.8) — informativo por defecto
+  // Ensayo de homologación del tipo (tabla de servicio)
   const typeFireTest = row.type_fire_test || row.fire_test || "not_required";
 
-  // 2) Base de joints permitidos por SERVICIO
+  // Servicio: joints permitidos
   const baseAllowed = new Set(row.allowed_joints || []);
 
-  // 3) Tabla por CLASE/OD
+  // Clase/OD
   const classOk = (joint) => {
     const c = normData.classes[joint]?.[piping_class];
     if(!c || !c.allowed) return { ok:false, reason:`Class table: not allowed in Class ${piping_class}` };
@@ -256,74 +270,80 @@ function evaluate(input, normData){
     return { ok:true };
   };
 
-  // 4) Notas por ESPACIO
-  const eq = normData.notes?.test_equivalence || { "30min_dry":["8dry_22wet","30min_wet"], "8dry_22wet":["30min_wet"] };
+  const eq = normData.notes?.test_equivalence || {
+    "30min_dry":["8dry_22wet","30min_wet"],
+    "8dry_22wet":["30min_wet"]
+  };
+
+  // --- Reglas globales por sistema (Naval) ---
+  let forceFireResistant = false;
+  (normData.notes?.global_rules||[]).forEach(rule=>{
+    const hitSystem = Array.isArray(rule.applies_if_system_in) && rule.applies_if_system_in.includes(system);
+    if(!hitSystem) return;
+    if (rule.force_fire_resistant_type === true) forceFireResistant = true;
+  });
+
+  // --- Reglas por espacio ---
   const forbids = new Set();
   const appliedRefs = [];
-  // flags por instalación (no por tipo)
-  let requireFireResistant = null; // null = no especificado; true/false = fuerza
-  let installFireTest = "not_required"; // ensayo exigido por espacio (N1/N4) si aplica
+  let requireFireResistant = null;          // por espacio
+  let installFireTest = "not_required";     // Ships: N1/N4. Naval: se quedará "not_required".
 
   (normData.notes?.space_rules||[]).forEach(rule=>{
-    // filtros de espacio y (opcional) sistema
     const hitSpace = Array.isArray(rule.applies_if_space_in) && rule.applies_if_space_in.includes(space);
     const hitSystem = !rule.applies_if_system_in || rule.applies_if_system_in.includes(system);
     if(!hitSpace || !hitSystem) return;
 
     (rule.forbid_joints||[]).forEach(j => forbids.add(j));
     if (typeof rule.require_fire_resistant_type === "boolean") {
-      // prioridad a TRUE si hay conflicto entre reglas
       requireFireResistant = (requireFireResistant===true) ? true : rule.require_fire_resistant_type;
     }
+    // Solo algunos JSON (Ships) traen este flag:
     if (rule.require_installation_fire_test === true) {
-      // cuando el espacio exige ensayo por instalación, toma el de la fila de servicio (con equivalencias)
       installFireTest = unifyFireTest(installFireTest, (typeFireTest||"not_required"), eq);
     }
     if (rule.require_fire_test) {
-      // regla que fuerza un código concreto (poco común en Ships; fallback)
       installFireTest = unifyFireTest(installFireTest, rule.require_fire_test, eq);
     }
     (rule.refs||[]).forEach(r=> appliedRefs.push(r));
   });
 
-  // 5) Construir resultados
+  // Construir resultados
   const allJoints = Array.from(new Set([...Object.keys(normData.classes), ...baseAllowed]));
   for(const joint of allJoints){
     const reasons = [];
     let status = "forbidden";
 
-    // Servicio
     if (!baseAllowed.has(joint)) {
       reasons.push("Service table: joint not permitted for system");
-    // Notas/espacio (prohibiciones)
     } else if (forbids.has(joint)) {
       reasons.push("Space note: joint forbidden in selected space");
-    // Clase/OD
     } else {
       const ck = classOk(joint);
       if(!ck.ok) reasons.push(ck.reason); else status = "allowed";
     }
 
-    // Condicionalidad SOLO por instalación (N1/N4/N3) y solo si el joint es susceptible
     if (status === "allowed") {
       const susceptible = JOINT_FIRE_SUSCEPTIBLE.has(joint);
-      const needsFireResistant = (requireFireResistant === true) && susceptible;
-      const needsInstallTest  = (installFireTest && installFireTest !== "not_required") && susceptible;
+      // Naval: 'forceFireResistant' puede venir por sistema; Ships: por espacio.
+      const needsFireResistant =
+        susceptible && (forceFireResistant === true || requireFireResistant === true);
+
+      const needsInstallTest =
+        susceptible && (installFireTest && installFireTest !== "not_required");
 
       if (needsFireResistant || needsInstallTest) {
         status = "conditional";
         if (needsFireResistant) reasons.push("Requires fire-resistant type");
-        if (needsInstallTest)  reasons.push(`Requires fire test: ${fmtFireTest(installFireTest)}`);
+        if (needsInstallTest)  reasons.push(`Requires fire test: ${installFireTest}`);
       }
     }
 
     out.push({
-      joint, status,
-      reasons,
-      // chips informativos
-      type_fire_test: typeFireTest,
-      install_fire_test: installFireTest,
-      fire_resistant_required: (requireFireResistant===true),
+      joint, status, reasons,
+      type_fire_test: typeFireTest,         // info (tipo)
+      install_fire_test: installFireTest,   // ships: instalación; naval: 'not_required'
+      fire_resistant_required: (requireFireResistant===true || forceFireResistant===true),
       note_nums: row.notes || [],
       applied_refs: Array.from(new Set(appliedRefs))
     });
@@ -355,6 +375,13 @@ function refreshSystems(norms){
     (groups[g] ||= []).push(r.system);
   }
   const groupKeys = Object.keys(groups).sort((a,b)=>{
+    const ia = GROUP_ORDER.indexOf(a);
+    const ib = GROUP_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) {
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      if (ia !== ib) return ia - ib;
+    }
     const A = GROUP_LABELS_ES[a] || a, B = GROUP_LABELS_ES[b] || b;
     return A.localeCompare(B, "es");
   });
