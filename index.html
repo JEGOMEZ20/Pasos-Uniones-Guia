@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guía de pasos – LR Ships / LR Naval</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <style>
+    :root {
+      --ink: #e2e8f0;
+      --mut: rgba(148,163,184,.76);
+      --border: rgba(148,163,184,.18);
+      --bg: radial-gradient(circle at top,#1e293b 0%,#0f172a 55%,#020617 100%);
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter,system-ui,-apple-system,"Segoe UI","Helvetica Neue",sans-serif;
+    }
+    main {
+      width: min(680px, 92vw);
+      padding: 42px 32px 46px;
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,.78);
+      box-shadow: 0 28px 60px rgba(2,6,23,.55);
+    }
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(26px, 4vw, 36px);
+    }
+    p {
+      margin: 0 0 24px;
+      color: var(--mut);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 16px;
+    }
+    a.card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 18px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(148,163,184,.25);
+      background: rgba(2,6,23,.55);
+      color: inherit;
+      text-decoration: none;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    a.card strong {
+      font-size: 17px;
+    }
+    a.card span {
+      color: var(--mut);
+      font-size: 14px;
+    }
+    a.card:hover,
+    a.card:focus-visible {
+      transform: translateY(-3px);
+      border-color: rgba(56,189,248,.65);
+      background: rgba(30,41,59,.85);
+      outline: none;
+    }
+    footer {
+      margin-top: 26px;
+      font-size: 13px;
+      color: rgba(148,163,184,.65);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Herramientas de compatibilidad LR</h1>
+    <p>Selecciona la herramienta que desees consultar. Ambas páginas funcionan con rutas relativas, por lo que se pueden abrir directamente desde GitHub Pages o de forma local sin configuración adicional.</p>
+    <ul>
+      <li>
+        <a class="card" href="asesor-juntas.html">
+          <strong>Asesor de juntas</strong>
+          <span>Consulta la idoneidad de uniones para sistemas y espacios específicos.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="compatibilidad.html">
+          <strong>Compatibilidad de tuberías</strong>
+          <span>Explora combinaciones de materiales y obtén notas de compatibilidad.</span>
+        </a>
+      </li>
+    </ul>
+    <footer>© Lloyd's Register · Referencia interna de compatibilidad de tuberías.</footer>
+  </main>
+</body>
+</html>
