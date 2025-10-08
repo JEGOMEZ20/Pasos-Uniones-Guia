@@ -157,23 +157,51 @@ export default function Evaluator({ dataset }: Props) {
             <input value={od} onChange={e => setOd(e.target.value)} placeholder="Ej. 76" type="number" min="0" step="0.1" />
           </div>
         </div>
-        <div className="checkbox-grid">
-          <label className="checkbox-item">
-            <input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} />
-            <span>Visible y accesible</span>
-          </label>
-          <label className="checkbox-item">
-            <input type="checkbox" checked={sameMedium} onChange={e => setSameMedium(e.target.checked)} />
-            <span>Mismo medio dentro del tanque</span>
-          </label>
-          <label className="checkbox-item">
-            <input type="checkbox" checked={axial} onChange={e => setAxial(e.target.checked)} />
-            <span>Compensa dilatación axial (slip type)</span>
-          </label>
-          <label className="checkbox-item">
-            <input type="checkbox" checked={aboveWLI} onChange={e => setAboveWLI(e.target.checked)} />
-            <span>Por encima del límite de estanqueidad</span>
-          </label>
+        <div className="form-grid toggle-grid">
+          <div className="form-field">
+            <label htmlFor="visible-select">Visible y accesible</label>
+            <select
+              id="visible-select"
+              value={visible ? 'yes' : 'no'}
+              onChange={e => setVisible(e.target.value === 'yes')}
+            >
+              <option value="yes">SI</option>
+              <option value="no">NO</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="same-medium-select">Mismo medio dentro del tanque</label>
+            <select
+              id="same-medium-select"
+              value={sameMedium ? 'yes' : 'no'}
+              onChange={e => setSameMedium(e.target.value === 'yes')}
+            >
+              <option value="yes">SI</option>
+              <option value="no">NO</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="axial-select">Compensa dilatación axial (slip type)</label>
+            <select
+              id="axial-select"
+              value={axial ? 'yes' : 'no'}
+              onChange={e => setAxial(e.target.value === 'yes')}
+            >
+              <option value="yes">SI</option>
+              <option value="no">NO</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="above-wli-select">Por encima del límite de estanqueidad</label>
+            <select
+              id="above-wli-select"
+              value={aboveWLI ? 'yes' : 'no'}
+              onChange={e => setAboveWLI(e.target.value === 'yes')}
+            >
+              <option value="yes">SI</option>
+              <option value="no">NO</option>
+            </select>
+          </div>
         </div>
         <div className="actions-row">
           <button type="button" className="btn" onClick={handleEvaluate}>Evaluar</button>
