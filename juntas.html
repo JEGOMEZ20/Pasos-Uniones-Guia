@@ -114,23 +114,38 @@
   .checks {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
-    margin-top: 12px;
+    gap: 16px;
+    margin-top: 16px;
   }
   .check-item {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 12px;
     font-size: 13px;
     color: var(--ink);
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(23, 35, 57, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(10, 16, 28, 0.36);
   }
   .check-item input {
-    margin-top: 3px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .check-text {
+    display: grid;
+    gap: 6px;
+    flex: 1;
   }
   .check-item label {
     font-size: 13px;
     color: var(--ink);
-    line-height: 1.45;
+    line-height: 1.5;
+    display: block;
+  }
+  .check-item .mut {
+    line-height: 1.4;
   }
   .btn {
     background: #0ea5e9;
@@ -175,6 +190,13 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 14px;
+    align-items: stretch;
+  }
+  .result-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 12px;
   }
   .group {
     background: var(--group);
@@ -224,7 +246,8 @@
     color: var(--mut);
   }
   .view-action {
-    margin-top: 18px;
+    margin-top: auto;
+    padding-top: 16px;
     display: flex;
     justify-content: flex-end;
   }
@@ -401,20 +424,28 @@
       <div class="checks">
         <div class="check-item">
           <input type="checkbox" id="chkVisible" checked>
-          <label for="chkVisible">Posición visible y accesible</label>
+          <div class="check-text">
+            <label for="chkVisible">Posición visible y accesible</label>
+          </div>
         </div>
         <div class="check-item">
           <input type="checkbox" id="chkSameMedium">
-          <label for="chkSameMedium">(Si está en tanque) Medio del tubo coincide con el del tanque</label>
+          <div class="check-text">
+            <label for="chkSameMedium">(Si está en tanque) Medio del tubo coincide con el del tanque</label>
+          </div>
         </div>
         <div class="check-item">
           <input type="checkbox" id="chkAxial">
-          <label for="chkAxial">(Slip type) Requiere compensación axial</label>
+          <div class="check-text">
+            <label for="chkAxial">(Slip type) Requiere compensación axial</label>
+          </div>
         </div>
         <div class="check-item">
           <input type="checkbox" id="chkAboveWLI" checked>
-          <label for="chkAboveWLI">(Drenajes) Por encima del límite de estanqueidad</label>
-          <div id="helpWLI" class="mut small mt-1">Requisito de la Nota 6 en LR Naval para drenes de cubierta internos.</div>
+          <div class="check-text">
+            <label for="chkAboveWLI">(Drenajes) Por encima del límite de estanqueidad</label>
+            <div id="helpWLI" class="mut small mt-1">Requisito de la Nota 6 en LR Naval para drenes de cubierta internos.</div>
+          </div>
         </div>
       </div>
       <div class="mt-3">
@@ -1356,7 +1387,7 @@ function cardHTML(ds, {joint,jt,status,reasons}){
   const rs = reasons?.length ? `<ul class="reasons">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : `<div class="small mut">Sin observaciones.</div>`;
   const figureCode = ds.id==='ships' ? '12.2.4/12.2.5' : '1.5.4/1.5.5';
   return `
-    <div class="card">
+    <div class="card result-card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="font-weight:600">${jtObj.label}</div>
         ${badge}
