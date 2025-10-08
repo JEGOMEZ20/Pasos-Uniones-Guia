@@ -35,57 +35,10 @@
     margin: 0 auto;
     padding: 48px 24px 64px;
   }
-  nav { margin-bottom: 28px; }
-  nav a {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: color 0.2s ease;
-  }
-  nav a:hover { color: #7dd3fc; }
   .relative { position: relative; }
   .mt-3 { margin-top: 0.75rem; }
   .text-slate-300 { color: rgba(203, 213, 225, 0.92); }
   .max-w-3xl { max-width: 48rem; }
-  .page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin-bottom: 32px;
-  }
-  .page-header .header-copy { flex: 1 1 380px; min-width: 260px; }
-  .page-header .header-brand {
-    flex: 0 0 auto;
-    max-width: 200px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding: 12px;
-    border-radius: 22px;
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 16px 40px rgba(8, 47, 73, 0.35);
-  }
-  .page-header .header-brand img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 14px;
-  }
-  .header-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-  }
-  .header-cta {
-    font-size: 15px;
-    padding: 12px 20px;
-  }
   h1 {
     font-size: clamp(26px, 4vw, 38px);
     margin: 0 0 12px;
@@ -428,12 +381,14 @@
 </head>
 <body>
 <div class="wrap">
-  <nav><a href="index.html">← Volver al inicio</a></nav>
-  <section class="relative hero-pr max-w-6xl mx-auto px-6">
-    <div class="logo-badge" aria-hidden="true" role="presentation">
-      <img src="assets/joints/cotec.jpg" alt="COTECMAR">
+  <header class="page-header">
+    <div class="left">
+      <a href="index.html" class="back-link">← Volver al inicio</a>
+      <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
     </div>
-
+    <div></div>
+  </header>
+  <section class="relative hero-pr max-w-6xl mx-auto px-6">
     <h1 class="hero-title font-extrabold">
       Compatibilidad De Paso para Tuberías
     </h1>

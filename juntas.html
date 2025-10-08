@@ -51,6 +51,13 @@
 </head>
 <body>
   <div class="wrap">
+    <header class="page-header">
+      <div class="left">
+        <a href="index.html" class="back-link">← Volver al inicio</a>
+        <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
+      </div>
+      <div></div>
+    </header>
     <div class="h1">Evaluador de juntas – LR</div>
 
     <!-- Controles -->
@@ -571,15 +578,15 @@ const DATASETS = {
 
 // === Mapeo imagen por tipo de junta (usa tus archivos en assets/joints) ===
 const JOINT_IMAGES = {
-  pipe_union_welded_brazed: 'welded_brazed.png',
-  comp_swage: 'compression_swage.png',
-  comp_bite: 'compression_bite.png',
-  comp_typical: 'compression_typical.png',
-  comp_flared: 'compression_flared.png',
-  comp_press: 'compression_press.png',
-  slip_mgrooved: 'slip_machine_grooved.png',
-  slip_grip: 'slip_grip.png',
-  slip_type: 'slip_slip.png'
+  pipe_union_welded_brazed: 'welded_brazed.jpg',
+  comp_swage: 'compression_swage.jpg',
+  comp_bite: 'compression_bite.jpg',
+  comp_typical: 'compression_typical.jpg',
+  comp_flared: 'compression_flared.jpg',
+  comp_press: 'compression_press.jpg',
+  slip_mgrooved: 'slip_machine_grooved.jpg',
+  slip_grip: 'slip_grip.jpg',
+  slip_type: 'slip_slip.jpg'
 };
 function jointImgPath(key){
   return 'assets/joints/' + (JOINT_IMAGES[key] || 'not-found.jpg');
