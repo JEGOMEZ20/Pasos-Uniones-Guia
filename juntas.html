@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Evaluador de juntas · LR (Naval/Ships)</title>
+<link rel="stylesheet" href="assets/css/app.css">
+<style>
+  :root{
+    --ink:#0f172a; --mut:#64748b; --card:#ffffff; --border:#e2e8f0;
+    --ok:#10b981; --warn:#f59e0b; --bad:#f43f5e; --group:#f8fafc;
+  }
+  body{background:#0b1220;color:#e5e7eb}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  .h1{font-size:20px;font-weight:700;margin:0 0 12px}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .card{background:var(--card); color:#0f172a; border:1px solid var(--border); border-radius:16px; padding:14px}
+  .lbl{display:block;font-size:12px;color:#475569;margin:0 0 6px}
+  select,input[type="number"]{width:100%;border:1px solid var(--border);border-radius:12px;padding:8px}
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:8px}
+  .btn{background:#0f172a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
+  .btn:hover{opacity:.9}
+  .badge{font-size:12px;border-radius:999px;border:1px solid;padding:2px 8px;font-weight:700}
+  .b-ok{color:#065f46;border-color:#34d399;background:#d1fae5}
+  .b-warn{color:#7c2d12;border-color:#fbbf24;background:#fef3c7}
+  .b-bad{color:#7f1d1d;border-color:#fda4af;background:#ffe4e6}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .group{background:var(--group); border:1px solid #e2e8f0; border-radius:18px; padding:12px}
+  .g-title{font-weight:700;font-size:14px}
+  .g-sub{font-size:12px;color:#64748b;margin-top:2px}
+  .note-chip,.rule-chip{font-size:11px;border-radius:999px;border:1px solid #93c5fd;background:#dbeafe;color:#1e3a8a;padding:2px 8px;cursor:pointer}
+  .mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}
+  .mut{color:#64748b}.small{font-size:12px}
+  .reasons{margin:6px 0 0 16px;font-size:12px}
+  .link{font-size:12px;text-decoration:underline;cursor:pointer}
+  /* Modal imagen */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.open{display:flex}
+  .modal .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;max-width:95vw;max-height:90vh}
+  .modal img{max-width:90vw;max-height:80vh;display:block}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="h1">Evaluador de juntas – LR</div>
+
+    <!-- Controles -->
+    <div class="card mb-3">
+      <div class="controls">
+        <div>
+          <label class="lbl">Norma</label>
+          <select id="stdSel">
+            <option value="naval">LR Naval</option>
+            <option value="ships">LR Ships (próximamente)</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Grupo de sistema</label>
+          <select id="groupSel"></select>
+        </div>
+        <div>
+          <label class="lbl">Sistema</label>
+          <select id="systemSel"></select>
+        </div>
+        <div>
+          <label class="lbl">Clase de tubería</label>
+          <select id="classSel">
+            <option value="I">Clase I</option>
+            <option value="II">Clase II</option>
+            <option value="III">Clase III</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Diámetro exterior (OD) [mm]</label>
+          <input id="odInp" type="number" value="25"/>
+        </div>
+        <div>
+          <label class="lbl">Espacio</label>
+          <select id="spaceSel"></select>
+        </div>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="chkVisible" checked> Posición visible y accesible</label>
+        <label><input type="checkbox" id="chkSameMedium"> (Si está en tanque) Medio del tubo coincide con el del tanque</label>
+        <label><input type="checkbox" id="chkAxial"> (Slip type) Requiere compensación axial</label>
+        <label><input type="checkbox" id="chkAboveWLI" checked> (Drenajes) Por encima del límite de estanqueidad</label>
+      </div>
+      <div class="mt-3">
+        <button id="btnEval" class="btn">Evaluar</button>
+      </div>
+    </div>
+
+    <!-- Notas -->
+    <div class="card mb-3">
+      <div class="small" id="notesWrap">
+        <div class="mb-2"><strong>Notas aplicables</strong></div>
+        <div id="notesChips"></div>
+        <div class="mt-2 mut small">Ensayo fuego (fila): <span id="fireRow">—</span> – ver Nota 7 para especificación.</div>
+        <div class="mt-3"><span class="rule-chip" data-rule="5.10.9">Regla 5.10.9</span> <span class="rule-chip" data-rule="5.10.10">Regla 5.10.10</span></div>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="results"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="imgModal" class="modal" onclick="this.classList.remove('open')">
+    <div class="box" onclick="event.stopPropagation()">
+      <img id="imgModalSrc" alt="Figura de junta"/>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   DATASETS (LR Naval listo; Ships: placeholder)
+   ========================= */
+const DATASETS = {
+  naval: buildNaval(),
+  ships: { id:'ships', title:'LR Ships', JOINT_TYPES:[], SPACES:[], NOTES:{}, GENERAL:{}, CLASS_RULES:{}, SYSTEM_GROUPS:[] }
+};
+
+// === Mapeo imagen por tipo de junta (usa tus archivos en assets/joints) ===
+const JOINT_IMAGES = {
+  pipe_union_welded_brazed: ['welded_brazed.png','pipe_welded_brazed.jpg'],
+  comp_swage: ['compression_swage.png','compression_swage.jpg'],
+  comp_bite: ['compression_bite.png','compression_bite.jpg'],
+  comp_typical: ['compression_typical.png','compression_typical.jpg'],
+  comp_flared: ['compression_flared.png','compression_flared.jpg'],
+  comp_press: ['compression_press.png','compression_press.jpg'],
+  slip_mgrooved: ['slip_machine_grooved.png','slip_machine_grooved.jpg'],
+  slip_grip: ['slip_grip.png','slip_grip.jpg'],
+  slip_type: ['slip_slip.png','slip_slip.jpg']
+};
+function jointImgPath(key){
+  const cands = JOINT_IMAGES[key] || [];
+  for(const f of cands){
+    // ruta final:
+    return 'assets/joints/'+f; // (simple: tomamos el primero)
+  }
+  return 'assets/joints/not-found.jpg';
+}
+
+/* ====== LR NAVAL (copiado del canvas) ====== */
+function buildNaval(){
+  const JOINT_TYPES = [
+    { key: "pipe_union_welded_brazed", group: "Pipe unions", label: "Unión roscada soldada/soldadura fuerte" },
+    { key: "comp_swage", group: "Compression couplings", label: "Compresión tipo swage" },
+    { key: "comp_bite", group: "Compression couplings", label: "Compresión tipo bite" },
+    { key: "comp_typical", group: "Compression couplings", label: "Compresión típica" },
+    { key: "comp_flared", group: "Compression couplings", label: "Compresión tipo flare" },
+    { key: "comp_press", group: "Compression couplings", label: "Compresión tipo press" },
+    { key: "slip_mgrooved", group: "Slip-on joints", label: "Slip-on ranurado a máquina" },
+    { key: "slip_grip", group: "Slip-on joints", label: "Slip-on tipo grip" },
+    { key: "slip_type", group: "Slip-on joints", label: "Slip-on tipo slip" },
+  ];
+  const SPACES = [
+    { key: "mach_cat_a", label: "Espacio de máquinas Cat. A" },
+    { key: "accommodation", label: "Acomodaciones" },
+    { key: "munitions", label: "Paños de municiones" },
+    { key: "other_mach_service", label: "Otros esp. de máquinas/servicio" },
+    { key: "open_deck", label: "Cubierta abierta" },
+    { key: "cargo_hold", label: "Bodega de carga" },
+    { key: "inside_tank", label: "Dentro de tanque" },
+  ];
+  const NOTES = {
+    n1:{id:"1",es:"Las juntas mecánicas con componentes que se deterioran con el fuego deben ser de tipo resistente al fuego cuando se instalen en espacios de máquinas Cat. A. En bilge main en Cat. A: acoplamientos de acero/CuNi o equivalente.",en:"Mechanical joints that include components which readily deteriorate in case of fire are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings on the bilge main in Category A are to be of steel, CuNi or equivalent."},
+    n2:{id:"2",es:"Los slip-on no se aceptan en espacios de máquinas Cat. A, pañoles de municiones o acomodaciones. En otros espacios de máquinas/servicio: sólo si están en posiciones visibles y accesibles.",en:"Slip-on joints are not accepted inside machinery spaces of Category A, munition stores, or accommodation spaces. Accepted in other machinery/service spaces only where joints are in easily visible and accessible positions."},
+    n3:{id:"3",es:"Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, excepto cuando estén en cubiertas abiertas con poco o nulo riesgo de incendio.",en:"Mechanical joints are to be of an approved fire-resistant type, except when fitted on open decks with little or no fire risk."},
+    n4:{id:"4",es:"Las juntas mecánicas deben ser de tipo resistente al fuego (ensayo requerido en ubicaciones indicadas).",en:"Mechanical joints are to be of an approved fire-resistant type (fire endurance test required at indicated locations)."},
+    n5:{id:"5",es:"Slip type no como medio principal; sólo si compensa deformación axial.",en:"Slip type not permitted as main means except where compensation of axial deformation is necessary."},
+    n6:{id:"6",es:"Sólo por encima del límite de estanqueidad al agua.",en:"Only permitted above the limit of watertight integrity."},
+    n7:{id:"7",es:"Condición de ensayo (30 dry / 8+22 / 30 wet) según aplique.",en:"Fire endurance test condition (30 dry / 8+22 / 30 wet) as applicable."},
+  };
+  const GENERAL = {
+    g1:{id:"5.10.9",es:"Slip-on generalmente no en bodegas/tanques; en tanques sólo si el medio coincide.",en:"Slip-on generally not to be used in cargo holds/tanks; inside tanks only where the medium is the same."},
+    g2:{id:"5.10.10",es:"Slip type no como medio principal salvo para compensar dilatación axial.",en:"Slip type not as main means except for axial deformation compensation."}
+  };
+  const CLASS_RULES = {
+    pipe_union_welded_brazed: { I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
+    comp_swage: { I:{allowed:false}, II:{allowed:false}, III:{allowed:true} },
+    comp_bite:  { I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
+    comp_typical:{ I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
+    comp_flared: { I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
+    comp_press:  { I:{allowed:false}, II:{allowed:false}, III:{allowed:true} },
+    slip_mgrooved:{ I:{allowed:true}, II:{allowed:true}, III:{allowed:true} },
+    slip_grip:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
+    slip_type:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
+  };
+  function allTrue(){
+    return {pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:true,slip_grip:true,slip_type:true};
+  }
+  const SYSTEM_GROUPS = [
+    { key:"flamm_lt60", label:"Fluidos inflamables (fp < 60°C)", systems:[
+      { key:"veh_aircraft_fuel_lt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allTrue(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"vent_lt60", label:"Líneas de venteo", allow:allTrue(), notes:["n3"], fire:"30 min dry" },
+    ]},
+    { key:"flamm_gt60", label:"Fluidos inflamables (fp > 60°C)", systems:[
+      { key:"veh_aircraft_fuel_gt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allTrue(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"machinery_fuel", label:"Líneas de combustible – maquinaria de a bordo", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"lube_oil", label:"Líneas de aceite lubricante", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"hydraulic_oil", label:"Aceite hidráulico", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
+    ]},
+    { key:"seawater", label:"Agua de mar", systems:[
+      { key:"bilge", label:"Líneas de achique (bilge)", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"hp_seawater", label:"Agua de mar HP / spray (no llenado permanente)", allow:allTrue(), notes:[], fire:"8 dry + 22 wet" },
+      { key:"fire_perm", label:"Contra-incendios (llenado permanente)", allow:allTrue(), notes:["n3"], fire:"30 min wet" },
+      { key:"fire_nonperm", label:"Contra-incendios (no permanente) / espuma / drencher", allow:allTrue(), notes:["n3"], fire:"8 dry + 22 wet" },
+      { key:"ballast", label:"Lastre", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
+    ]},
+    { key:"freshwater", label:"Agua dulce", systems:[
+      { key:"cooling_fw", label:"Refrigeración – agua dulce", allow:allTrue(), notes:["n1"], fire:"(no aplica)" },
+      { key:"chilled", label:"Agua helada (chilled)", allow:allTrue(), notes:["n1"], fire:"30 min wet" },
+      { key:"cond_return", label:"Retorno de condensado", allow:allTrue(), notes:["n1"], fire:"(dry)" },
+      { key:"demin", label:"Agua tratada/desmineralizada", allow:allTrue(), notes:[], fire:"(wet)" },
+      { key:"ancillary", label:"Sistemas auxiliares (FW)", allow:allTrue(), notes:[], fire:"(dry)" },
+    ]},
+    { key:"sanitary", label:"Sanitarios / drenajes / escuppers", systems:[
+      { key:"deck_drains_internal", label:"Drenajes de cubierta (internos)", allow:allTrue(), notes:["n6"], fire:"(no aplica)" },
+      { key:"sanitary_drains", label:"Drenajes sanitarios", allow:allTrue(), notes:[], fire:"(dry)" },
+      { key:"scuppers_overboard", label:"Scuppers y descarga (sobre costado)", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"(dry)" },
+    ]},
+    { key:"misc", label:"Misceláneos / gases / vapor", systems:[
+      { key:"air_hp", label:"Aire alta presión (HP)", allow:allTrue(), notes:["n1"], fire:"30 min dry" },
+      { key:"air_mp", label:"Aire media presión (MP)", allow:allTrue(), notes:["n1"], fire:"30 min dry" },
+      { key:"air_lp", label:"Aire baja presión (LP)", allow:allTrue(), notes:["n1"], fire:"(no aplica)" },
+      { key:"service_air", label:"Aire de servicio (no esencial)", allow:allTrue(), notes:[], fire:"(no aplica)" },
+      { key:"brine", label:"Salmuera (brine)", allow:allTrue(), notes:[], fire:"(wet)" },
+      { key:"co2", label:"CO₂ (fuera del espacio protegido)", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:["n1"], fire:"30 min dry" },
+      { key:"nitrogen", label:"Nitrógeno", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"30 min dry" },
+      { key:"steam", label:"Vapor", allow:{pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:false,slip_grip:false,slip_type:false}, notes:["n5"], fire:"(no aplica)" },
+    ]},
+  ];
+  return {
+    id:'naval', title:'LR Naval',
+    JOINT_TYPES, SPACES, NOTES, GENERAL,
+    CLASS_RULES, SYSTEM_GROUPS,
+    EXTRA:{
+      n2_forbiddenSpaces:['mach_cat_a','accommodation','munitions'],
+      n2_visibleOnlySpaces:['other_mach_service']
+    }
+  };
+}
+
+/* =========================
+   MOTOR DE EVALUACIÓN (JS puro)
+   ========================= */
+function evaluate(dataset, input, systemKey){
+  const group = dataset.SYSTEM_GROUPS.find(g => g.systems.some(s => s.key === systemKey));
+  const sys = group?.systems.find(s => s.key === systemKey);
+  if(!sys) return [];
+
+  const items = [];
+  for(const jt of dataset.JOINT_TYPES){
+    let status = sys.allow[jt.key] ? 'ok' : 'no';
+    const reasons = [];
+    if(status==='no'){
+      items.push({jt,status,reasons:['No permitido por Tabla 1.5.3 para este sistema.']});
+      continue;
+    }
+    const cr = dataset.CLASS_RULES[jt.key]?.[input.pipeClass];
+    if(cr){
+      if(!cr.allowed){ status='no'; reasons.push(`No permitido para Clase ${input.pipeClass} (Tabla 1.5.4).`); }
+      else if(cr.odLE && Number(input.od) > cr.odLE){ status='no'; reasons.push(`OD > ${cr.odLE} mm no permitido para Clase ${input.pipeClass}.`); }
+    }
+    if(status!=='no' && sys.notes?.length){
+      for(const nc of sys.notes){
+        if(nc==='n2' && jt.key.startsWith('slip_')){
+          const ban = dataset.EXTRA?.n2_forbiddenSpaces||[];
+          const vis = dataset.EXTRA?.n2_visibleOnlySpaces||[];
+          if(ban.includes(input.space)){ status='no'; reasons.push('Slip-on prohibido en este espacio (Nota 2).'); }
+          else if(vis.includes(input.space)){ if(status==='ok') status='warn'; if(!input.visible) reasons.push('Debe estar en posición visible y accesible (Nota 2).'); }
+        }
+        if(nc==='n1'){
+          if(input.space==='mach_cat_a'){ if(status==='ok') status='warn'; reasons.push('Requiere tipo resistente al fuego aprobado (Nota 1).'); if(sys.key==='bilge') reasons.push('En bilge main (Cat. A): acoplamientos de acero/CuNi o equivalente (Nota 1).'); }
+        }
+        if(nc==='n3'){ if(input.space!=='open_deck'){ if(status==='ok') status='warn'; reasons.push('Requiere tipo resistente al fuego aprobado (Nota 3, no cubierta abierta).'); } }
+        if(nc==='n6' && sys.key==='deck_drains_internal'){ if(status==='ok') status='warn'; if(!input.aboveWLI) reasons.push('Sólo por encima del límite de estanqueidad (Nota 6).'); }
+      }
+    }
+    if(status!=='no' && jt.key.startsWith('slip_')){
+      if(input.space==='cargo_hold'){ status='no'; reasons.push('Slip-on no en bodegas/carga (Regla general 5.10.9).'); }
+      if(input.space==='inside_tank'){ if(status==='ok') status='warn'; if(!input.sameMedium) reasons.push('En tanques: sólo si el medio coincide con el del tanque (5.10.9).'); }
+    }
+    if(status!=='no' && jt.key==='slip_type'){ if(status==='ok') status='warn'; if(!input.axial) reasons.push('Slip type como medio principal: sólo si compensa dilatación axial (5.10.10).'); }
+    items.push({jt,status,reasons});
+  }
+  return items;
+}
+
+/* =========================
+   UI – render
+   ========================= */
+const $ = (s)=>document.querySelector(s);
+const $$= (s)=>Array.from(document.querySelectorAll(s));
+
+const stdSel = $('#stdSel'), groupSel=$('#groupSel'), systemSel=$('#systemSel');
+const classSel=$('#classSel'), odInp=$('#odInp'), spaceSel=$('#spaceSel');
+const chkVisible=$('#chkVisible'), chkSame=$('#chkSameMedium'), chkAxial=$('#chkAxial'), chkWLI=$('#chkAboveWLI');
+const notesChips=$('#notesChips'), fireRow=$('#fireRow'), results=$('#results');
+
+let applied = null; // estado congelado
+
+function loadDataset(){
+  const ds = DATASETS[stdSel.value];
+  // grupos y sistemas
+  groupSel.innerHTML = ds.SYSTEM_GROUPS.map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
+  updateSystems();
+  // espacios
+  spaceSel.innerHTML = ds.SPACES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  // limpiar resultados
+  results.innerHTML = '';
+  notesChips.innerHTML = '';
+  fireRow.textContent = '—';
+}
+function updateSystems(){
+  const ds = DATASETS[stdSel.value];
+  const g = ds.SYSTEM_GROUPS.find(x=>x.key===groupSel.value) || ds.SYSTEM_GROUPS[0];
+  if(g) groupSel.value = g.key;
+  systemSel.innerHTML = g.systems.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  // notas mostradas (vista previa)
+  renderNotes();
+}
+function renderNotes(){
+  const ds = DATASETS[stdSel.value];
+  const g = ds.SYSTEM_GROUPS.find(x=>x.key===groupSel.value);
+  const s = g?.systems.find(x=>x.key===systemSel.value);
+  notesChips.innerHTML = (s?.notes||[]).map(nc=>{
+    const n = ds.NOTES[nc];
+    if(!n) return '';
+    return `<button class="note-chip" title="${n.en.replace(/\"/g,'&quot;')}">Nota ${n.id}</button>`;
+  }).join(' ');
+  fireRow.textContent = s?.fire || '—';
+}
+
+function onEvaluate(){
+  const ds = DATASETS[stdSel.value];
+  const g = ds.SYSTEM_GROUPS.find(x=>x.key===groupSel.value);
+  const s = g?.systems.find(x=>x.key===systemSel.value);
+  if(!s) return;
+
+  applied = {
+    systemKey: s.key,
+    pipeClass: classSel.value,
+    space: spaceSel.value,
+    od: Number(odInp.value||0),
+    visible: chkVisible.checked,
+    sameMedium: chkSame.checked,
+    axial: chkAxial.checked,
+    aboveWLI: chkWLI.checked
+  };
+
+  const items = evaluate(ds, applied, s.key);
+  renderResults(ds, items);
+}
+
+function renderResults(ds, items){
+  // agrupar por categoría
+  const order = Array.from(new Set(ds.JOINT_TYPES.map(j=>j.group)));
+  const byGroup = {};
+  for(const it of items){
+    const jt = ds.JOINT_TYPES.find(x=>x.key===it.jt);
+    const g = jt.group;
+    (byGroup[g] ||= []).push({jt, ...it});
+  }
+  results.innerHTML = order.map(gr=>{
+    const arr = byGroup[gr]||[];
+    if(!arr.length) return '';
+    return `
+      <section class="group mb-3">
+        <div class="g-title">${groupES(gr)}</div>
+        <div class="g-sub">${gr}</div>
+        <div class="grid mt-2">
+          ${arr.map(cardHTML).join('')}
+        </div>
+      </section>`;
+  }).join('');
+  // enlazar botones Ver figura
+  $$('.js-view').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const key = btn.getAttribute('data-key');
+      const src = jointImgPath(key);
+      $('#imgModalSrc').src = src;
+      $('#imgModal').classList.add('open');
+    });
+  });
+}
+function groupES(gr){
+  if(gr==='Pipe unions') return 'Uniones de tubería';
+  if(gr==='Compression couplings') return 'Acoplamientos de compresión';
+  if(gr==='Slip-on joints') return 'Juntas slip-on';
+  return gr;
+}
+function cardHTML({jt,status,reasons}){
+  const badge = status==='ok' ? '<span class="badge b-ok">Permitido</span>'
+              : status==='warn' ? '<span class="badge b-warn">Permitido con condiciones</span>'
+              : '<span class="badge b-bad">Prohibido</span>';
+  const rs = reasons?.length ? `<ul class="reasons">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : `<div class="small mut">Sin observaciones.</div>`;
+  return `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="font-weight:600">${jt.label}</div>
+        ${badge}
+      </div>
+      ${rs}
+      <div class="mt-2"><span class="link js-view" data-key="${jt.key}">Ver figura 1.5.4/1.5.5</span></div>
+    </div>`;
+}
+
+/* =========================
+   Eventos y arranque
+   ========================= */
+stdSel.addEventListener('change', loadDataset);
+groupSel.addEventListener('change', ()=>{ updateSystems(); });
+systemSel.addEventListener('change', renderNotes);
+$('#btnEval').addEventListener('click', onEvaluate);
+
+// inicial
+loadDataset();
+onEvaluate();
+</script>
+</body>
+</html>
