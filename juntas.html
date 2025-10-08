@@ -269,11 +269,11 @@ function buildNaval(){
   });
   const SYSTEM_GROUPS = [
     { key:"flamm_lt60", label:"Fluidos inflamables (fp < 60°C)", systems:[
-      { key:"veh_aircraft_fuel_lt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"veh_aircraft_fuel_lt60", label:"Líneas de combustible (vehículos / aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
       { key:"vent_lt60", label:"Líneas de venteo", allow:allowAll(), notes:["n3"], fire:"30 min dry" }
     ]},
     { key:"flamm_gt60", label:"Fluidos inflamables (fp > 60°C)", systems:[
-      { key:"veh_aircraft_fuel_gt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"veh_aircraft_fuel_gt60", label:"Líneas de combustible (vehículos / aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
       { key:"machinery_fuel", label:"Líneas de combustible – maquinaria de a bordo", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
       { key:"lube_oil", label:"Líneas de aceite lubricante", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
       { key:"hydraulic_oil", label:"Aceite hidráulico", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" }
@@ -284,19 +284,25 @@ function buildNaval(){
       { key:"fire_perm", label:"Contra-incendios (llenado permanente)", allow:allowAll(), notes:["n3"], fire:"30 min wet" },
       { key:"fire_nonperm", label:"Contra-incendios (no permanente) / espuma / drencher", allow:allowAll(), notes:["n3"], fire:"8 dry + 22 wet" },
       { key:"ballast", label:"Lastre", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" },
-      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" }
+      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"tank_cleaning_services", label:"Servicios de limpieza de tanques", allow:allowAll(), notes:[], fire:"Fire endurance test not required" },
+      { key:"non_essential_systems", label:"Sistemas no esenciales", allow:allowAll(), notes:[], fire:"Fire endurance test not required" }
     ]},
     { key:"freshwater", label:"Agua dulce", systems:[
       { key:"cooling_fw", label:"Refrigeración – agua dulce", allow:allowAll(), notes:["n1"], fire:"(no aplica)" },
       { key:"chilled", label:"Agua helada (chilled)", allow:allowAll(), notes:["n1"], fire:"30 min wet" },
       { key:"cond_return", label:"Retorno de condensado", allow:allowAll(), notes:["n1"], fire:"(dry)" },
-      { key:"demin", label:"Agua tratada/desmineralizada", allow:allowAll(), notes:[], fire:"(wet)" },
+      { key:"demin", label:"Agua tratada / desmineralizada", allow:allowAll(), notes:[], fire:"(wet)" },
       { key:"ancillary", label:"Sistemas auxiliares (FW)", allow:allowAll(), notes:[], fire:"(dry)" }
     ]},
     { key:"sanitary", label:"Sanitarios / drenajes / escuppers", systems:[
       { key:"deck_drains_internal", label:"Drenajes de cubierta (internos)", allow:allowAll(), notes:["n6"], fire:"(no aplica)" },
       { key:"sanitary_drains", label:"Drenajes sanitarios", allow:allowAll(), notes:[], fire:"(dry)" },
-      { key:"scuppers_overboard", label:"Scuppers y descarga (sobre costado)", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"(dry)" }
+      { key:"scuppers_overboard", label:"Scuppers y descarga (sobre costado)", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:"(dry)" }
+    ]},
+    { key:"sounding_vent", label:"Sondajes / venteos", systems:[
+      { key:"water_tanks_dry_spaces", label:"Tanques de agua / espacios secos", allow:allowAll(), notes:[], fire:"Fire endurance test not required" },
+      { key:"oil_tanks_fp_gt60", label:"Tanques de aceite (fp > 60°C)", allow:allowAll(), notes:["n2","n3"], fire:"Fire endurance test not required" }
     ]},
     { key:"misc", label:"Misceláneos / gases / vapor", systems:[
       { key:"air_hp", label:"Aire alta presión (HP)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
@@ -304,8 +310,8 @@ function buildNaval(){
       { key:"air_lp", label:"Aire baja presión (LP)", allow:allowAll(), notes:["n1"], fire:"(no aplica)" },
       { key:"service_air", label:"Aire de servicio (no esencial)", allow:allowAll(), notes:[], fire:"(no aplica)" },
       { key:"brine", label:"Salmuera (brine)", allow:allowAll(), notes:[], fire:"(wet)" },
-      { key:"co2", label:"CO₂ (fuera del espacio protegido)", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:["n1"], fire:"30 min dry" },
-      { key:"nitrogen", label:"Nitrógeno", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"30 min dry" },
+      { key:"co2_outside", label:"CO₂ (fuera del espacio protegido)", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:["n1"], fire:"30 min dry" },
+      { key:"co2_inside", label:"CO₂ (dentro del espacio protegido)", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:"(dry)" },
       { key:"steam", label:"Vapor", allow:{pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:false,slip_grip:false,slip_type:true}, notes:["n5"], fire:"(no aplica)" }
     ]}
   ];
@@ -563,23 +569,18 @@ const DATASETS = {
 
 // === Mapeo imagen por tipo de junta (usa tus archivos en assets/joints) ===
 const JOINT_IMAGES = {
-  pipe_union_welded_brazed: ['welded_brazed.png','pipe_welded_brazed.jpg'],
-  comp_swage: ['compression_swage.png','compression_swage.jpg'],
-  comp_bite: ['compression_bite.png','compression_bite.jpg'],
-  comp_typical: ['compression_typical.png','compression_typical.jpg'],
-  comp_flared: ['compression_flared.png','compression_flared.jpg'],
-  comp_press: ['compression_press.png','compression_press.jpg'],
-  slip_mgrooved: ['slip_machine_grooved.png','slip_machine_grooved.jpg'],
-  slip_grip: ['slip_grip.png','slip_grip.jpg'],
-  slip_type: ['slip_slip.png','slip_slip.jpg']
+  pipe_union_welded_brazed: 'welded_brazed.png',
+  comp_swage: 'compression_swage.png',
+  comp_bite: 'compression_bite.png',
+  comp_typical: 'compression_typical.png',
+  comp_flared: 'compression_flared.png',
+  comp_press: 'compression_press.png',
+  slip_mgrooved: 'slip_machine_grooved.png',
+  slip_grip: 'slip_grip.png',
+  slip_type: 'slip_slip.png'
 };
 function jointImgPath(key){
-  const cands = JOINT_IMAGES[key] || [];
-  for(const f of cands){
-    // ruta final:
-    return 'assets/joints/'+f; // (simple: tomamos el primero)
-  }
-  return 'assets/joints/not-found.jpg';
+  return 'assets/joints/' + (JOINT_IMAGES[key] || 'not-found.jpg');
 }
 
 /* =========================
@@ -977,10 +978,10 @@ function renderResults(ds, items){
   const order = Array.from(new Set(ds.JOINT_TYPES.map(j=>j.group)));
   const byGroup = {};
   for(const it of items){
-    const jt = ds.JOINT_TYPES.find(x=>x.key===it.jt);
-    if(!jt) continue;
-    const g = jt.group;
-    (byGroup[g] ||= []).push({jt, ...it});
+    const joint = ds.JOINT_TYPES.find(x=>x.key===it.jt);
+    if(!joint) continue;
+    const g = joint.group;
+    (byGroup[g] ||= []).push({joint, ...it});
   }
   results.innerHTML = order.map(gr=>{
     const arr = byGroup[gr]||[];
@@ -996,10 +997,8 @@ function renderResults(ds, items){
   }).join('');
   $$('.js-view').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const key = btn.getAttribute('data-key');
-      const src = jointImgPath(key);
-      $('#imgModalSrc').src = src;
-      $('#imgModal').classList.add('open');
+      const key = btn.getAttribute('data-key') || '';
+      window.open(jointImgPath(key), '_blank');
     });
   });
 }
@@ -1011,7 +1010,9 @@ function groupES(gr){
   return gr;
 }
 
-function cardHTML(ds, {jt,status,reasons}){
+function cardHTML(ds, {joint,jt,status,reasons}){
+  const jtObj = joint || ds.JOINT_TYPES.find(x=>x.key===jt);
+  if(!jtObj) return '';
   const badge = status==='ok' ? '<span class="badge b-ok">Permitido</span>'
               : status==='warn' ? '<span class="badge b-warn">Permitido con condiciones</span>'
               : '<span class="badge b-bad">Prohibido</span>';
@@ -1020,11 +1021,11 @@ function cardHTML(ds, {jt,status,reasons}){
   return `
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="font-weight:600">${jt.label}</div>
+        <div style="font-weight:600">${jtObj.label}</div>
         ${badge}
       </div>
       ${rs}
-      <div class="mt-2"><span class="link js-view" data-key="${jt.key}">${figLabel}</span></div>
+      <div class="mt-2"><button type="button" class="link js-view" data-key="${jtObj.key}" style="background:none;border:0;padding:0;">${figLabel}</button></div>
     </div>`;
 }
 
