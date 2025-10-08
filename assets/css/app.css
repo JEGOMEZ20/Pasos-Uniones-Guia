@@ -111,9 +111,11 @@ small,
   margin: 12px 0 16px;
 }
 
-.page-header .left {
+.page-header .logo-wrapper {
+  margin-left: auto;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
 }
 

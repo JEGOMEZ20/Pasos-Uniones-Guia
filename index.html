@@ -23,29 +23,54 @@
       font-family: Inter,system-ui,-apple-system,"Segoe UI","Helvetica Neue",sans-serif;
     }
     main {
-      width: min(680px, 92vw);
-      padding: 42px 32px 46px;
-      border-radius: 28px;
+      width: min(720px, 92vw);
+      padding: 44px 34px 50px;
+      border-radius: 30px;
       border: 1px solid var(--border);
-      background: rgba(15,23,42,.78);
+      background: rgba(15,23,42,.82);
       box-shadow: 0 28px 60px rgba(2,6,23,.55);
+      backdrop-filter: blur(18px);
+    }
+    .main-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 26px;
+    }
+    .titles {
+      display: grid;
+      gap: 14px;
     }
     h1 {
-      margin: 0 0 18px;
-      font-size: clamp(26px, 4vw, 36px);
+      margin: 0;
+      font-size: clamp(28px, 4vw, 38px);
     }
-    p {
-      margin: 0 0 24px;
+    .titles p {
+      margin: 0;
       color: var(--mut);
-      line-height: 1.6;
+      line-height: 1.7;
       font-size: 15px;
+    }
+    .logo-wrapper {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+    .brand-logo {
+      width: 120px;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(2,6,23,.55);
     }
     ul {
       list-style: none;
       margin: 0;
       padding: 0;
       display: grid;
-      gap: 16px;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
     a.card {
       display: flex;
@@ -73,6 +98,15 @@
       background: rgba(30,41,59,.85);
       outline: none;
     }
+    @media (max-width: 640px) {
+      .main-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .logo-wrapper {
+        justify-content: flex-start;
+      }
+    }
     footer {
       margin-top: 26px;
       font-size: 13px;
@@ -83,11 +117,15 @@
 </head>
 <body>
   <main>
-    <h1>Herramientas de compatibilidad LR</h1>
-    <div class="branding">
-      <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
-    </div>
-    <p>Selecciona la herramienta que desees consultar. Ambas páginas funcionan con rutas relativas, por lo que se pueden abrir directamente desde GitHub Pages o de forma local sin configuración adicional.</p>
+    <header class="main-head">
+      <div class="titles">
+        <h1>Herramientas de compatibilidad LR</h1>
+        <p>Selecciona la herramienta que desees consultar. Ambas páginas funcionan con rutas relativas, por lo que se pueden abrir directamente desde GitHub Pages o de forma local sin configuración adicional.</p>
+      </div>
+      <div class="logo-wrapper">
+        <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
+      </div>
+    </header>
     <ul>
       <li>
         <a class="card" href="juntas.html">
