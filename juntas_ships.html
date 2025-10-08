@@ -6,93 +6,440 @@
 <title>Evaluador de juntas · LR Ships</title>
 <link rel="stylesheet" href="assets/css/app.css">
 <style>
-  :root{--card:#fff;--border:#e2e8f0;--ok:#10b981;--warn:#f59e0b;--bad:#f43f5e}
-  body{background:#0b1220;color:#e5e7eb}
-  .wrap{max-width:1200px;margin:0 auto;padding:16px}
-  .h1{font-size:20px;font-weight:700;margin:0 0 12px}
-  .card{background:var(--card);color:#0f172a;border:1px solid var(--border);border-radius:16px;padding:14px}
-  .lbl{display:block;font-size:12px;color:#475569;margin:0 0 6px}
-  select,input[type="number"]{width:100%;border:1px solid var(--border);border-radius:12px;padding:8px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-  .group{background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:12px}
-  .g-title{font-weight:700;font-size:14px}.g-sub{font-size:12px;color:#64748b;margin-top:2px}
-  .btn{background:#0f172a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
-  .badge{font-size:12px;border-radius:999px;border:1px solid;padding:2px 8px;font-weight:700}
-  .b-ok{color:#065f46;border-color:#34d399;background:#d1fae5}
-  .b-warn{color:#7c2d12;border-color:#fbbf24;background:#fef3c7}
-  .b-bad{color:#7f1d1d;border-color:#fda4af;background:#ffe4e6}
-  .note-chip,.rule-chip{font-size:11px;border-radius:999px;border:1px solid #93c5fd;background:#dbeafe;color:#1e3a8a;padding:2px 8px;cursor:pointer}
-  .mut{color:#64748b}.small{font-size:12px}
-  .reasons{margin:6px 0 0 16px;font-size:12px}
-  .link{font-size:12px;text-decoration:underline;cursor:pointer}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px}
-  .modal.open{display:flex}.modal .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px}
-  .modal img{max-width:90vw;max-height:80vh;display:block}
+  :root {
+    --ink: #eef2f8;
+    --mut: rgba(203, 213, 225, 0.78);
+    --card: linear-gradient(160deg, rgba(27, 40, 66, 0.95), rgba(12, 19, 34, 0.88));
+    --border: rgba(148, 163, 184, 0.34);
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --group: rgba(22, 34, 54, 0.72);
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1b2d4f 0%, #0f1c33 55%, #040915 100%);
+    color: var(--ink);
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  }
+  body.modal-open {
+    overflow: hidden;
+  }
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px 60px;
+    background: linear-gradient(160deg, rgba(19, 31, 52, 0.94), rgba(8, 15, 30, 0.88));
+    border-radius: 34px;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    box-shadow: 0 40px 110px rgba(3, 9, 22, 0.6);
+    backdrop-filter: blur(24px);
+  }
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 12px 0 24px;
+  }
+  .back-link {
+    color: var(--mut);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .back-link:hover {
+    color: #bae6fd;
+  }
+  .page-header .logo-wrapper {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .page-header .brand-logo {
+    width: 120px;
+    height: auto;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.55);
+  }
+  .h1 {
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 700;
+    margin: 0 0 24px;
+  }
+  .card {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px 26px;
+    box-shadow: 0 28px 70px rgba(4, 11, 28, 0.55);
+    backdrop-filter: blur(18px);
+  }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-3 { margin-bottom: 12px; }
+  .mb-4 { margin-bottom: 16px; }
+  .mt-1 { margin-top: 4px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .mt-4 { margin-top: 16px; }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .context-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .context-field {
+    display: grid;
+    gap: 10px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(23, 35, 57, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(10, 16, 28, 0.36);
+  }
+  .context-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .lbl {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mut);
+    margin: 0 0 6px;
+  }
+  select,
+  input[type="number"] {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 16px;
+    padding: 12px 14px;
+    background: rgba(23, 35, 57, 0.78);
+    color: var(--ink);
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  select:focus,
+  input[type="number"]:focus {
+    border-color: rgba(125, 211, 252, 0.85);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.28);
+    background: rgba(31, 48, 78, 0.9);
+    outline: none;
+  }
+  .btn {
+    background: #0ea5e9;
+    color: #041628;
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.32);
+  }
+  .btn:hover {
+    background: #38bdf8;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 34px rgba(14, 165, 233, 0.34);
+  }
+  #notesChips,
+  .rule-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .note-chip,
+  .rule-chip {
+    font-size: 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(30, 41, 59, 0.85);
+    color: var(--ink);
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    align-items: stretch;
+  }
+  .group {
+    background: var(--group);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.22);
+  }
+  .g-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .g-sub {
+    font-size: 12px;
+    color: var(--mut);
+    margin-top: 4px;
+  }
+  .card.result-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+  }
+  .badge {
+    font-size: 12px;
+    border-radius: 999px;
+    border: 1px solid;
+    padding: 3px 10px;
+    font-weight: 700;
+  }
+  .b-ok {
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(21, 128, 61, 0.35);
+  }
+  .b-warn {
+    color: #facc15;
+    border-color: rgba(250, 204, 21, 0.55);
+    background: rgba(120, 53, 15, 0.35);
+  }
+  .b-bad {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.55);
+    background: rgba(127, 29, 29, 0.35);
+  }
+  .small { font-size: 12px; }
+  .mut { color: var(--mut); }
+  .reasons {
+    margin: 6px 0 0 18px;
+    font-size: 12px;
+    color: var(--mut);
+  }
+  .view-action {
+    margin-top: auto;
+    padding-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 10px 24px;
+    border-radius: 999px;
+    border: 0;
+    background: #0ea5e9;
+    color: #041628;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 14px 28px rgba(14, 165, 233, 0.3);
+  }
+  .view-btn:hover {
+    background: #38bdf8;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 34px rgba(14, 165, 233, 0.34);
+  }
+  .view-btn:active {
+    transform: translateY(0);
+  }
+  .site-footer {
+    margin: 60px 0 38px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(203, 213, 225, 0.74);
+  }
+  .site-footer .footer-wrap {
+    display: inline-grid;
+    gap: 6px;
+  }
+  .site-footer a {
+    color: inherit;
+    text-decoration: underline;
+  }
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 20;
+  }
+  .modal.open {
+    display: flex;
+  }
+  .modal .box {
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(51, 65, 85, 0.8);
+    border-radius: 14px;
+    padding: 18px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    box-shadow: 0 24px 40px rgba(2, 6, 23, 0.6);
+  }
+  .modal img {
+    max-width: 90vw;
+    max-height: 70vh;
+    display: block;
+    border-radius: 12px;
+  }
+  .modal .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: 0;
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .modal .close-btn:hover {
+    color: #e2e8f0;
+  }
+  .modal-caption {
+    font-size: 14px;
+    color: rgba(203, 213, 225, 0.85);
+    text-align: center;
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="h1">Evaluador de juntas – LR Ships</div>
+  <div class="wrap">
+    <header class="page-header">
+      <a href="index.html" class="back-link">← Volver al inicio</a>
+      <div class="logo-wrapper">
+        <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
+      </div>
+    </header>
+    <div class="h1">Evaluador de juntas – LR Ships</div>
 
-  <!-- Controles -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="grid">
-      <div>
-        <label class="lbl">Grupo de sistema</label>
-        <select id="groupSel"></select>
+    <!-- Controles -->
+    <div class="card mb-3">
+      <div class="controls">
+        <div>
+          <label class="lbl">Grupo de sistema</label>
+          <select id="groupSel"></select>
+        </div>
+        <div>
+          <label class="lbl">Sistema</label>
+          <select id="systemSel"></select>
+        </div>
+        <div>
+          <label class="lbl">Clase de tubería</label>
+          <select id="classSel">
+            <option value="I">Clase I</option>
+            <option value="II">Clase II</option>
+            <option value="III">Clase III</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Diámetro exterior (OD) [mm]</label>
+          <input id="odInp" type="number" value="25"/>
+        </div>
+        <div>
+          <label class="lbl">Espacio</label>
+          <select id="spaceSel"></select>
+        </div>
       </div>
-      <div>
-        <label class="lbl">Sistema</label>
-        <select id="systemSel"></select>
+      <div class="context-grid">
+        <div id="chkVisibleWrap" class="context-field" style="display:none">
+          <div class="context-label">Posición visible y accesible</div>
+          <select id="visibleSel">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </div>
+        <div id="chkSameWrap" class="context-field" style="display:none">
+          <div class="context-label">(Si está en tanque) Medio del tubo coincide con el del tanque</div>
+          <select id="sameMediumSel">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </div>
+        <div class="context-field">
+          <div class="context-label">(Slip type) Requiere compensación axial</div>
+          <select id="axialSel">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </div>
+        <div id="chkAboveWrap" class="context-field" style="display:none">
+          <div class="context-label">(Nota 5) Por encima de cubierta (pax: mamparo / carga: francobordo)</div>
+          <select id="aboveDecksSel">
+            <option value="no" selected>No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label class="lbl">Clase de tubería</label>
-        <select id="classSel">
-          <option value="I">Clase I</option>
-          <option value="II">Clase II</option>
-          <option value="III">Clase III</option>
-        </select>
-      </div>
-      <div>
-        <label class="lbl">Diámetro exterior (OD) [mm]</label>
-        <input id="odInp" type="number" value="25"/>
-      </div>
-      <div>
-        <label class="lbl">Espacio</label>
-        <select id="spaceSel"></select>
+      <div class="actions">
+        <button class="btn" id="btnEval">Evaluar</button>
       </div>
     </div>
-    <div class="grid" style="margin-top:8px">
-      <div id="chkVisibleWrap" style="display:none"><label><input type="checkbox" id="chkVisible"> Posición visible y accesible</label></div>
-      <div id="chkSameWrap" style="display:none"><label><input type="checkbox" id="chkSameMedium"> (Si está en tanque) Medio del tubo coincide con el del tanque</label></div>
-      <div><label><input type="checkbox" id="chkAxial"> (Slip type) Requiere compensación axial</label></div>
-      <div id="chkAboveWrap" style="display:none"><label><input type="checkbox" id="chkAboveDecks"> (Nota 5) Por encima de cubierta (pax: mamparo / carga: francobordo)</label></div>
+
+    <!-- Notas -->
+    <div class="card mb-3">
+      <div class="small">
+        <div class="mb-2"><strong>Notas aplicables</strong></div>
+        <div id="notesChips"></div>
+        <div class="small mut mt-2">Ensayo fuego (fila): <span id="fireRow">—</span> – (ver Nota 7 para equivalencias y especificación).</div>
+        <div class="rule-row mt-3">
+          <span class="rule-chip">Regla 2.12.8</span>
+          <span class="rule-chip">Regla 2.12.9</span>
+          <span class="rule-chip">Regla 2.12.10</span>
+        </div>
+      </div>
     </div>
-    <div style="margin-top:12px"><button class="btn" id="btnEval">Evaluar</button></div>
+
+    <!-- Resultados -->
+    <div id="results"></div>
   </div>
 
-  <!-- Notas -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="small">
-      <div style="margin-bottom:8px"><strong>Notas aplicables</strong></div>
-      <div id="notesChips"></div>
-      <div class="small mut" style="margin-top:8px">Ensayo fuego (fila): <span id="fireRow">—</span> – (ver Nota 7 para equivalencias y especificación).</div>
-      <div style="margin-top:10px">
-        <span class="rule-chip">Regla 2.12.8</span>
-        <span class="rule-chip">Regla 2.12.9</span>
-        <span class="rule-chip">Regla 2.12.10</span>
-      </div>
+  <!-- Modal -->
+  <div id="imgModal" class="modal">
+    <div class="box">
+      <button type="button" class="close-btn" id="imgModalClose" aria-label="Cerrar">×</button>
+      <img id="imgModalSrc" alt="Figura" />
+      <div class="modal-caption" id="imgModalCaption"></div>
     </div>
   </div>
 
-  <!-- Resultados -->
-  <div id="results"></div>
-</div>
-
-<!-- Modal -->
-<div id="imgModal" class="modal" onclick="this.classList.remove('open')">
-  <div class="box" onclick="event.stopPropagation()"><img id="imgModalSrc" alt="Figura"/></div>
-</div>
+  <footer class="site-footer">
+    <div class="footer-wrap">
+      <div>Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN</div>
+      <div>Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
+    </div>
+  </footer>
 
 <script>
 /* ========= IMÁGENES por tipo ========= */
@@ -238,9 +585,13 @@ const $ = s => document.querySelector(s);
 const std = buildShips(); // solo Ships en esta página
 
 const groupSel=$('#groupSel'), systemSel=$('#systemSel'), classSel=$('#classSel'), odInp=$('#odInp'), spaceSel=$('#spaceSel');
-const chkVisible=$('#chkVisible'), chkSame=$('#chkSameMedium'), chkAxial=$('#chkAxial'), chkAbove=$('#chkAboveDecks');
+const visibleSel=$('#visibleSel'), sameSel=$('#sameMediumSel'), axialSel=$('#axialSel'), aboveSel=$('#aboveDecksSel');
 const chkVisibleWrap=$('#chkVisibleWrap'), chkSameWrap=$('#chkSameWrap'), chkAboveWrap=$('#chkAboveWrap');
 const notesChips=$('#notesChips'), fireRow=$('#fireRow'), results=$('#results');
+const bodyEl=document.body;
+const imgModal=$('#imgModal'), imgModalSrc=$('#imgModalSrc'), imgModalCaption=$('#imgModalCaption'), imgModalClose=$('#imgModalClose');
+const FIGURE_CODE='12.2.4/12.2.5';
+const escapeAttr = s => (s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 function load(){
   groupSel.innerHTML = std.SYSTEM_GROUPS.map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
@@ -268,11 +619,17 @@ function showContextualChecks(){
   const g = std.SYSTEM_GROUPS.find(x=>x.key===groupSel.value);
   const s = g?.systems.find(x=>x.key===systemSel.value);
   // Visible solo si Nota 2 y espacio = otros de máquinas/servicio
-  chkVisibleWrap.style.display = (s?.notes?.includes('n2') && spaceSel.value==='other_mach_service') ? '' : 'none';
+  const showVisible = (s?.notes?.includes('n2') && spaceSel.value==='other_mach_service');
+  chkVisibleWrap.style.display = showVisible ? '' : 'none';
+  if(!showVisible) visibleSel.value = 'no';
   // Tanque: medio coincide
-  chkSameWrap.style.display = (spaceSel.value==='inside_tank') ? '' : 'none';
+  const showSame = spaceSel.value==='inside_tank';
+  chkSameWrap.style.display = showSame ? '' : 'none';
+  if(!showSame) sameSel.value = 'no';
   // Nota 5: solo deck drains (internos)
-  chkAboveWrap.style.display = (s?.key==='deck_drains_internal') ? '' : 'none';
+  const showAbove = s?.key==='deck_drains_internal';
+  chkAboveWrap.style.display = showAbove ? '' : 'none';
+  if(!showAbove) aboveSel.value = 'no';
 }
 
 function evaluate(){
@@ -282,8 +639,11 @@ function evaluate(){
 
   const a = {
     systemKey:s.key, pipeClass:classSel.value, space:spaceSel.value,
-    od:Number(odInp.value||0), visible:chkVisible.checked, sameMedium:chkSame.checked,
-    axial:chkAxial.checked, aboveDecks:chkAbove.checked
+    od:Number(odInp.value||0),
+    visible:visibleSel.value==='yes',
+    sameMedium:sameSel.value==='yes',
+    axial:axialSel.value==='yes',
+    aboveDecks:aboveSel.value==='yes'
   };
   const items = [];
 
@@ -361,6 +721,38 @@ function evaluate(){
   render(items);
 }
 
+function openJointModal(key, label){
+  if(!imgModal || !key) return;
+  const src = jointImgPath(key);
+  if(imgModalSrc){
+    imgModalSrc.src = src;
+    imgModalSrc.alt = label ? `Figura de ${label}` : 'Figura de junta';
+  }
+  if(imgModalCaption){
+    const parts = [`Figura ${FIGURE_CODE}`];
+    if(label) parts.push(label);
+    imgModalCaption.textContent = parts.join(' · ');
+    imgModalCaption.style.display = parts.length ? '' : 'none';
+  }
+  imgModal.classList.add('open');
+  bodyEl?.classList.add('modal-open');
+}
+
+function closeJointModal(){
+  if(imgModal){
+    imgModal.classList.remove('open');
+  }
+  if(imgModalSrc){
+    imgModalSrc.removeAttribute('src');
+    imgModalSrc.alt = 'Figura de junta';
+  }
+  if(imgModalCaption){
+    imgModalCaption.textContent = '';
+    imgModalCaption.style.display = 'none';
+  }
+  bodyEl?.classList.remove('modal-open');
+}
+
 function render(items){
   const order = Array.from(new Set(std.JOINT_TYPES.map(j=>j.group)));
   const labels = {'Pipe unions':'Uniones de tubería','Compression couplings':'Acoplamientos de compresión','Slip-on joints':'Juntas slip-on'};
@@ -374,10 +766,11 @@ function render(items){
         ${arr.map(({jt,status,reasons})=>{
           const badge = status==='ok' ? '<span class="badge b-ok">Permitido</span>' : status==='warn' ? '<span class="badge b-warn">Permitido con condiciones</span>' : '<span class="badge b-bad">Prohibido</span>';
           const rs = reasons?.length ? `<ul class="reasons">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : `<div class="small mut">Sin observaciones.</div>`;
-          return `<div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:600">${jt.label}</div>${badge}</div>
+          const labelEsc = escapeAttr(jt.label);
+          return `<div class="card result-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:600">${labelEsc}</div>${badge}</div>
             ${rs}
-            <div style="margin-top:8px"><span class="link js-view" data-key="${jt.key}">Ver figura 12.2.4/12.2.5</span></div>
+            <div class="view-action"><button type="button" class="view-btn js-view" data-key="${jt.key}" data-label="${labelEsc}" data-figure="${FIGURE_CODE}">VER</button></div>
           </div>`;
         }).join('')}
       </div>
@@ -386,9 +779,8 @@ function render(items){
   // enlazar modales
   document.querySelectorAll('.js-view').forEach(b=>{
     b.addEventListener('click', ()=>{
-      const src = jointImgPath(b.getAttribute('data-key'));
-      document.querySelector('#imgModalSrc').src = src;
-      document.querySelector('#imgModal').classList.add('open');
+      const { key, label } = b.dataset;
+      openJointModal(key, label);
     });
   });
 }
@@ -398,6 +790,20 @@ groupSel.addEventListener('change', ()=>{updateSystems(); showContextualChecks()
 systemSel.addEventListener('change', ()=>{renderNotes(); showContextualChecks();});
 spaceSel.addEventListener('change', showContextualChecks);
 document.querySelector('#btnEval').addEventListener('click', evaluate);
+
+if(imgModal){
+  imgModal.addEventListener('click', e=>{
+    if(e.target === imgModal) closeJointModal();
+  });
+}
+if(imgModalClose){
+  imgModalClose.addEventListener('click', closeJointModal);
+}
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    closeJointModal();
+  }
+});
 
 /* init */
 load();
