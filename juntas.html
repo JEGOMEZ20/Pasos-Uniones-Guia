@@ -429,15 +429,21 @@
       </div>
       <div class="checks">
         <div class="check-item">
-          <input type="checkbox" id="chkVisible" checked>
           <div class="check-text">
-            <label for="chkVisible">Posición visible y accesible</label>
+            <label for="visibleSelect">Posición visible y accesible</label>
+            <select id="visibleSelect">
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+            </select>
           </div>
         </div>
         <div class="check-item">
-          <input type="checkbox" id="chkSameMedium">
           <div class="check-text">
-            <label for="chkSameMedium">(Si está en tanque) Medio del tubo coincide con el del tanque</label>
+            <label for="sameMediumSelect">(Si está en tanque) Medio del tubo coincide con el del tanque</label>
+            <select id="sameMediumSelect">
+              <option value="no">No coincide</option>
+              <option value="yes">Sí coincide</option>
+            </select>
           </div>
         </div>
         <div class="check-item axial-control">
@@ -1165,8 +1171,8 @@ const systemSel = $('#systemSel');
 const classSel = $('#classSel');
 const odInp = $('#odInp');
 const spaceSel = $('#spaceSel');
-const chkVisible = $('#chkVisible');
-const chkSame = $('#chkSameMedium');
+const visibleSel = $('#visibleSelect');
+const sameSel = $('#sameMediumSelect');
 const axialSel = $('#axialSelect');
 const chkWLI = $('#chkAboveWLI');
 const notesBox = $('#notesChips');
@@ -1263,21 +1269,27 @@ function showContextualChecks(dataset){
   const space = spaceSel.value;
   const pipeClass = classSel.value;
 
-  const visibleWrap = chkVisible?.closest('.check-item');
-  const sameWrap = chkSame?.closest('.check-item');
+  const visibleWrap = visibleSel?.closest('.check-item');
+  const sameWrap = sameSel?.closest('.check-item');
   const axialWrap = axialSel?.closest('.check-item');
   const aboveWrap = chkWLI?.closest('.check-item');
 
   const needsVisible = Boolean(sys?.notes?.includes('n2') && dataset.EXTRA?.n2_visibleOnlySpaces?.includes(space));
   if(visibleWrap){
     visibleWrap.style.display = needsVisible ? '' : 'none';
-    if(!needsVisible) chkVisible.checked = true;
+    if(visibleSel){
+      visibleSel.disabled = !needsVisible;
+      if(!needsVisible) visibleSel.value = 'yes';
+    }
   }
 
   const needsSameMedium = space === 'inside_tank';
   if(sameWrap){
     sameWrap.style.display = needsSameMedium ? '' : 'none';
-    if(!needsSameMedium) chkSame.checked = false;
+    if(sameSel){
+      sameSel.disabled = !needsSameMedium;
+      if(!needsSameMedium) sameSel.value = 'no';
+    }
   }
 
   const showAbove = sys?.key === 'deck_drains_internal';
@@ -1327,8 +1339,8 @@ function onEvaluate(){
     pipeClass: classSel.value,
     space: spaceSel.value,
     od: Number(odInp.value||0),
-    visible: chkVisible.checked,
-    sameMedium: chkSame.checked,
+    visible: visibleSel?.value === 'yes',
+    sameMedium: sameSel?.value === 'yes',
     axial: axialSel?.value === 'yes',
     aboveWLI: chkWLI.checked
   };
