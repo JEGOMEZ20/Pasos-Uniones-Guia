@@ -147,6 +147,12 @@
   .check-item .mut {
     line-height: 1.4;
   }
+  .axial-control .check-text {
+    gap: 10px;
+  }
+  .axial-control select {
+    margin-top: 4px;
+  }
   .btn {
     background: #0ea5e9;
     color: #041628;
@@ -434,10 +440,13 @@
             <label for="chkSameMedium">(Si está en tanque) Medio del tubo coincide con el del tanque</label>
           </div>
         </div>
-        <div class="check-item">
-          <input type="checkbox" id="chkAxial">
+        <div class="check-item axial-control">
           <div class="check-text">
-            <label for="chkAxial">(Slip type) Requiere compensación axial</label>
+            <label for="axialSelect">(Slip type) Requiere compensación axial</label>
+            <select id="axialSelect">
+              <option value="no">No requiere compensación</option>
+              <option value="yes">Sí requiere compensación</option>
+            </select>
           </div>
         </div>
         <div class="check-item">
@@ -1158,7 +1167,7 @@ const odInp = $('#odInp');
 const spaceSel = $('#spaceSel');
 const chkVisible = $('#chkVisible');
 const chkSame = $('#chkSameMedium');
-const chkAxial = $('#chkAxial');
+const axialSel = $('#axialSelect');
 const chkWLI = $('#chkAboveWLI');
 const notesBox = $('#notesChips');
 const generalBox = $('#generalChips');
@@ -1256,7 +1265,7 @@ function showContextualChecks(dataset){
 
   const visibleWrap = chkVisible?.closest('.check-item');
   const sameWrap = chkSame?.closest('.check-item');
-  const axialWrap = chkAxial?.closest('.check-item');
+  const axialWrap = axialSel?.closest('.check-item');
   const aboveWrap = chkWLI?.closest('.check-item');
 
   const needsVisible = Boolean(sys?.notes?.includes('n2') && dataset.EXTRA?.n2_visibleOnlySpaces?.includes(space));
@@ -1292,7 +1301,10 @@ function showContextualChecks(dataset){
   const needsAxial = (systemAllowsSlipType && classAllowsSlipType) || sys?.key === 'steam';
   if(axialWrap){
     axialWrap.style.display = needsAxial ? '' : 'none';
-    if(!needsAxial) chkAxial.checked = false;
+    if(axialSel){
+      axialSel.disabled = !needsAxial;
+      if(!needsAxial) axialSel.value = 'no';
+    }
   }
 }
 
@@ -1317,7 +1329,7 @@ function onEvaluate(){
     od: Number(odInp.value||0),
     visible: chkVisible.checked,
     sameMedium: chkSame.checked,
-    axial: chkAxial.checked,
+    axial: axialSel?.value === 'yes',
     aboveWLI: chkWLI.checked
   };
 
