@@ -302,7 +302,9 @@ function buildNaval(){
     ]},
     { key:"sounding_vent", label:"Sondajes / venteos", systems:[
       { key:"water_tanks_dry_spaces", label:"Tanques de agua / espacios secos", allow:allowAll(), notes:[], fire:"Fire endurance test not required" },
-      { key:"oil_tanks_fp_gt60", label:"Tanques de aceite (fp > 60°C)", allow:allowAll(), notes:["n2","n3"], fire:"Fire endurance test not required" }
+      { key:"oil_tanks_fp_gt60", label:"Tanques de aceite (fp > 60°C)", allow:allowAll(), notes:["n2","n3"], fire:"Fire endurance test not required" },
+      { key:"gas_turbine_intakes_uptakes", label:"Tomas y descargas de turbina de gas", allow:allowAll(), notes:["n7"], fire:"Fire endurance test not required" },
+      { key:"hvac_trunking", label:"Conductos HVAC", allow:allowAll(), notes:["n7"], fire:"Fire endurance test not required" }
     ]},
     { key:"misc", label:"Misceláneos / gases / vapor", systems:[
       { key:"air_hp", label:"Aire alta presión (HP)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
