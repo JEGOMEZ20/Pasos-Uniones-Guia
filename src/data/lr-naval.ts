@@ -74,6 +74,10 @@ function allowFrom(keys: string[]): Record<JointKey, boolean> {
   return allow;
 }
 
+const allTrue = (): Record<JointKey, boolean> => (
+  Object.fromEntries(JOINT_KEYS.map(k => [k, true])) as Record<JointKey, boolean>
+);
+
 const CLASS_RULES = {
   pipe_union_welded_brazed: {
     I:   { allowed: true, odLE: 60.3 },
@@ -124,54 +128,278 @@ const CLASS_RULES = {
 
 const SYSTEM_GROUPS = [
   {
-    key:'flamm_lt60',
-    label:'Fluidos inflamables (fp < 60°C)',
-    systems:[
+    key: 'flamm_lt60',
+    label: 'Fluidos inflamables (fp < 60°C)',
+    systems: [
       {
-        key:'cargo_oil_lt60',
-        label:'Cargo oil lines (fp < 60°C)',
-        allow: allowFrom(['pipe_union','compression','slip_on.machine_grooved','slip_on.grip','slip_on.slip']),
-        notes:[],
-        fire:'30 min dry',
+        key: 'veh_aircraft_fuel_lt60',
+        label: 'Líneas de combustible (vehículos / aeronaves)',
+        allow: allTrue(),
+        notes: ['n2', 'n4'],
+        fire: '30 min dry',
+      },
+      {
+        key: 'vent_lt60',
+        label: 'Líneas de venteo',
+        allow: allTrue(),
+        notes: ['n3'],
+        fire: '30 min dry',
       },
     ],
   },
   {
-    key:'inert_gas',
-    label:'Gas inerte',
-    systems:[
+    key: 'flamm_gt60',
+    label: 'Fluidos inflamables (fp > 60°C)',
+    systems: [
       {
-        key:'inert_main_lines',
-        label:'Líneas principales',
-        allow: allowFrom(['pipe_union','compression','slip_on.machine_grooved','slip_on.grip','slip_on.slip']),
-        notes:[],
-        fire:'30 min dry',
+        key: 'veh_aircraft_fuel_gt60',
+        label: 'Líneas de combustible (vehículos / aeronaves)',
+        allow: allTrue(),
+        notes: ['n2', 'n4'],
+        fire: '30 min dry',
+      },
+      {
+        key: 'machinery_fuel',
+        label: 'Líneas de combustible – maquinaria de a bordo',
+        allow: allTrue(),
+        notes: ['n2', 'n3'],
+        fire: '30 min wet',
+      },
+      {
+        key: 'lube_oil',
+        label: 'Líneas de aceite lubricante',
+        allow: allTrue(),
+        notes: ['n2', 'n3'],
+        fire: '30 min wet',
+      },
+      {
+        key: 'hydraulic_oil',
+        label: 'Aceite hidráulico',
+        allow: allTrue(),
+        notes: ['n2', 'n3'],
+        fire: '30 min wet',
       },
     ],
   },
   {
-    key:'machinery',
-    label:'Maquinaria del buque',
-    systems:[
+    key: 'seawater',
+    label: 'Agua de mar',
+    systems: [
       {
-        key:'fuel_oil_lines',
-        label:'Fuel oil lines',
-        allow: allowFrom(['pipe_union','compression','slip_on.machine_grooved','slip_on.grip','slip_on.slip']),
-        notes:['n2','n3'],
-        fire:'30 min wet',
+        key: 'bilge',
+        label: 'Líneas de achique (bilge)',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '8 dry + 22 wet',
+      },
+      {
+        key: 'hp_seawater',
+        label: 'Agua de mar HP / spray (no llenado permanente)',
+        allow: allTrue(),
+        notes: [],
+        fire: '8 dry + 22 wet',
+      },
+      {
+        key: 'fire_perm',
+        label: 'Contra-incendios (llenado permanente)',
+        allow: allTrue(),
+        notes: ['n3'],
+        fire: '30 min wet',
+      },
+      {
+        key: 'fire_nonperm',
+        label: 'Contra-incendios (no permanente) / espuma / drencher',
+        allow: allTrue(),
+        notes: ['n3'],
+        fire: '8 dry + 22 wet',
+      },
+      {
+        key: 'ballast',
+        label: 'Lastre',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '8 dry + 22 wet',
+      },
+      {
+        key: 'cooling_sw',
+        label: 'Refrigeración – agua de mar',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '8 dry + 22 wet',
+      },
+      {
+        key: 'tank_cleaning_services',
+        label: 'Servicios de limpieza de tanques',
+        allow: allTrue(),
+        notes: [],
+        fire: 'Fire endurance test not required',
+      },
+      {
+        key: 'non_essential_systems',
+        label: 'Sistemas no esenciales',
+        allow: allTrue(),
+        notes: [],
+        fire: 'Fire endurance test not required',
       },
     ],
   },
   {
-    key:'sanitary',
-    label:'Sanitarios / drenajes',
-    systems:[
+    key: 'freshwater',
+    label: 'Agua dulce',
+    systems: [
       {
-        key:'deck_drains_internal',
-        label:'Drenajes de cubierta (internos)',
-        allow: allowFrom(['pipe_union','compression','slip_on.machine_grooved']),
-        notes:['n6'],
-        fire:'No requerido',
+        key: 'cooling_fw',
+        label: 'Refrigeración – agua dulce',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '(no aplica)',
+      },
+      {
+        key: 'chilled',
+        label: 'Agua helada (chilled)',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '30 min wet',
+      },
+      {
+        key: 'cond_return',
+        label: 'Retorno de condensado',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '(dry)',
+      },
+      {
+        key: 'demin',
+        label: 'Agua tratada / desmineralizada',
+        allow: allTrue(),
+        notes: [],
+        fire: '(wet)',
+      },
+      {
+        key: 'ancillary',
+        label: 'Sistemas auxiliares (FW)',
+        allow: allTrue(),
+        notes: [],
+        fire: '(dry)',
+      },
+    ],
+  },
+  {
+    key: 'sanitary',
+    label: 'Sanitarios / drenajes / escuppers',
+    systems: [
+      {
+        key: 'deck_drains_internal',
+        label: 'Drenajes de cubierta (internos)',
+        allow: allTrue(),
+        notes: ['n6'],
+        fire: '(no aplica)',
+      },
+      {
+        key: 'sanitary_drains',
+        label: 'Drenajes sanitarios',
+        allow: allTrue(),
+        notes: [],
+        fire: '(dry)',
+      },
+      {
+        key: 'scuppers_overboard',
+        label: 'Scuppers y descarga (sobre costado)',
+        allow: { ...allTrue(), slip_mgrooved: false, slip_grip: false, slip_type: false },
+        notes: [],
+        fire: '(dry)',
+      },
+    ],
+  },
+  {
+    key: 'sounding_vent',
+    label: 'Sondajes / venteos',
+    systems: [
+      {
+        key: 'water_tanks_dry_spaces',
+        label: 'Tanques de agua / espacios secos',
+        allow: allTrue(),
+        notes: [],
+        fire: 'Fire endurance test not required',
+      },
+      {
+        key: 'oil_tanks_fp_gt60',
+        label: 'Tanques de aceite (fp > 60°C)',
+        allow: allTrue(),
+        notes: ['n2', 'n3'],
+        fire: 'Fire endurance test not required',
+      },
+    ],
+  },
+  {
+    key: 'misc',
+    label: 'Misceláneos / gases / vapor',
+    systems: [
+      {
+        key: 'air_hp',
+        label: 'Aire alta presión (HP)',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '30 min dry',
+      },
+      {
+        key: 'air_mp',
+        label: 'Aire media presión (MP)',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '30 min dry',
+      },
+      {
+        key: 'air_lp',
+        label: 'Aire baja presión (LP)',
+        allow: allTrue(),
+        notes: ['n1'],
+        fire: '(no aplica)',
+      },
+      {
+        key: 'service_air',
+        label: 'Aire de servicio (no esencial)',
+        allow: allTrue(),
+        notes: [],
+        fire: '(no aplica)',
+      },
+      {
+        key: 'brine',
+        label: 'Salmuera (brine)',
+        allow: allTrue(),
+        notes: [],
+        fire: '(wet)',
+      },
+      {
+        key: 'co2_outside',
+        label: 'CO₂ (fuera del espacio protegido)',
+        allow: { ...allTrue(), slip_mgrooved: false, slip_grip: false, slip_type: false },
+        notes: ['n1'],
+        fire: '30 min dry',
+      },
+      {
+        key: 'co2_inside',
+        label: 'CO₂ (dentro del espacio protegido)',
+        allow: { ...allTrue(), slip_mgrooved: false, slip_grip: false, slip_type: false },
+        notes: [],
+        fire: '(dry)',
+      },
+      {
+        key: 'steam',
+        label: 'Vapor',
+        allow: {
+          pipe_union_welded_brazed: true,
+          comp_swage: true,
+          comp_bite: true,
+          comp_typical: true,
+          comp_flared: true,
+          comp_press: true,
+          slip_mgrooved: false,
+          slip_grip: false,
+          slip_type: true,
+        },
+        notes: ['n5'],
+        fire: '(no aplica)',
       },
     ],
   },
