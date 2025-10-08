@@ -31,6 +31,7 @@
   .group{background:var(--group); border:1px solid #e2e8f0; border-radius:18px; padding:12px}
   .g-title{font-weight:700;font-size:14px}
   .g-sub{font-size:12px;color:#64748b;margin-top:2px}
+  #notesChips,#generalChips{display:flex;flex-wrap:wrap;gap:8px}
   .chip,.note-chip,.rule-chip{font-size:11px;border-radius:999px;border:1px solid #93c5fd;background:#dbeafe;color:#1e3a8a;padding:2px 8px;cursor:pointer}
   .mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}
   .mut{color:#64748b}.small{font-size:12px}
@@ -117,7 +118,10 @@
         <div class="mb-2"><strong>Notas aplicables</strong></div>
         <div id="notesChips"></div>
         <div class="mt-2 mut small">Ensayo fuego (fila): <span id="fireRow">—</span> – ver Nota 7 para especificación.</div>
-        <div class="mt-3"><span class="rule-chip" data-rule="5.10.9">Regla 5.10.9</span> <span class="rule-chip" data-rule="5.10.10">Regla 5.10.10</span></div>
+        <div class="mt-3">
+          <div class="mb-2"><strong>Reglas generales</strong></div>
+          <div id="generalChips"></div>
+        </div>
       </div>
     </div>
 
@@ -163,66 +167,84 @@ function buildNaval(){
     { key: "comp_press", group: "Compression couplings", label: "Compresión tipo press" },
     { key: "slip_mgrooved", group: "Slip-on joints", label: "Slip-on ranurado a máquina" },
     { key: "slip_grip", group: "Slip-on joints", label: "Slip-on tipo grip" },
-    { key: "slip_type", group: "Slip-on joints", label: "Slip-on tipo slip" },
+    { key: "slip_type", group: "Slip-on joints", label: "Slip-on tipo slip" }
   ];
   const SPACES = [
     { key: "mach_cat_a", label: "Espacio de máquinas Cat. A" },
     { key: "accommodation", label: "Acomodaciones" },
-    { key: "munitions", label: "Paños de municiones" },
+    { key: "munitions", label: "Pañoles de municiones" },
     { key: "other_mach_service", label: "Otros esp. de máquinas/servicio" },
     { key: "open_deck", label: "Cubierta abierta" },
     { key: "cargo_hold", label: "Bodega de carga" },
-    { key: "inside_tank", label: "Dentro de tanque" },
+    { key: "inside_tank", label: "Dentro de tanque" }
   ];
-  const NOTES = [
-    {
-      id:'n1', tag:'N1', titleES:'Tipo resistente al fuego en Cat. A',
-      es:'Las juntas mecánicas con componentes que se deterioran con el fuego deben ser de tipo resistente al fuego cuando se instalen en espacios de máquinas Cat. A. En bilge main en Cat. A: acoplamientos de acero/CuNi o equivalente.',
-      en:'Mechanical joints that include components which readily deteriorate in case of fire are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings on the bilge main in Category A are to be of steel, CuNi or equivalent.'
+  const NOTES = {
+    n1: {
+      id: "n1",
+      tag: "N1",
+      titleES: "Tipo resistente al fuego en Cat. A",
+      es: "Las juntas mecánicas con componentes que se deterioran con el fuego deben ser de tipo resistente al fuego cuando se instalen en espacios de máquinas Cat. A. En bilge main en Cat. A: acoplamientos de acero/CuNi o equivalente.",
+      en: "Mechanical joints that include components which readily deteriorate in case of fire are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings on the bilge main in Category A are to be of steel, CuNi or equivalent."
     },
-    {
-      id:'n2', tag:'N2', titleES:'Restricciones a slip-on por espacio',
-      es:'Los slip-on no se aceptan en espacios de máquinas Cat. A, pañoles de municiones o acomodaciones. En otros espacios de máquinas/servicio: solo si están en posiciones visibles y accesibles.',
-      en:'Slip-on joints are not accepted inside machinery spaces of Category A, munition stores, or accommodation spaces. Accepted in other machinery/service spaces only where joints are in easily visible and accessible positions.'
+    n2: {
+      id: "n2",
+      tag: "N2",
+      titleES: "Restricciones a slip-on por espacio",
+      es: "Los slip-on no se aceptan en espacios de máquinas Cat. A, pañoles de municiones o acomodaciones. En otros espacios de máquinas/servicio: solo si están en posiciones visibles y accesibles.",
+      en: "Slip-on joints are not accepted inside machinery spaces of Category A, munition stores, or accommodation spaces. Accepted in other machinery/service spaces only where joints are in easily visible and accessible positions."
     },
-    {
-      id:'n3', tag:'N3', titleES:'Tipo resistente al fuego salvo en cubierta abierta',
-      es:'Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, excepto cuando estén en cubiertas abiertas con poco o nulo riesgo de incendio.',
-      en:'Mechanical joints are to be of an approved fire-resistant type, except when fitted on open decks with little or no fire risk.'
+    n3: {
+      id: "n3",
+      tag: "N3",
+      titleES: "Tipo resistente al fuego salvo en cubierta abierta",
+      es: "Las juntas mecánicas deben ser de tipo resistente al fuego aprobado, excepto cuando estén en cubiertas abiertas con poco o nulo riesgo de incendio.",
+      en: "Mechanical joints are to be of an approved fire-resistant type, except when fitted on open decks with little or no fire risk."
     },
-    {
-      id:'n4', tag:'N4', titleES:'Ensayo de resistencia al fuego',
-      es:'Las juntas mecánicas deben ser de tipo resistente al fuego (ensayo requerido en ubicaciones indicadas).',
-      en:'Mechanical joints are to be of an approved fire-resistant type (fire endurance test required at indicated locations).'
+    n4: {
+      id: "n4",
+      tag: "N4",
+      titleES: "Ensayo de resistencia al fuego",
+      es: "Las juntas mecánicas deben ser de tipo resistente al fuego (ensayo requerido en ubicaciones indicadas).",
+      en: "Mechanical joints are to be of an approved fire-resistant type (fire endurance test required at indicated locations)."
     },
-    {
-      id:'n5', tag:'N5', titleES:'Slip type como medio principal',
-      es:'Slip type no permitido como medio principal; solo si compensa deformación axial.',
-      en:'Slip type not permitted as main means except where compensation of axial deformation is necessary.'
+    n5: {
+      id: "n5",
+      tag: "N5",
+      titleES: "Slip type como medio principal",
+      es: "Slip type no permitido como medio principal; solo si compensa deformación axial.",
+      en: "Slip type not permitted as main means except where compensation of axial deformation is necessary."
     },
-    {
-      id:'n6', tag:'N6', titleES:'Por encima del límite de estanqueidad',
-      es:'Solo por encima del límite de estanqueidad al agua.',
-      en:'Only permitted above the limit of watertight integrity.'
+    n6: {
+      id: "n6",
+      tag: "N6",
+      titleES: "Por encima del límite de estanqueidad",
+      es: "Solo por encima del límite de estanqueidad al agua.",
+      en: "Only permitted above the limit of watertight integrity."
     },
-    {
-      id:'n7', tag:'N7', titleES:'Condición de ensayo de fuego',
-      es:'Condición de ensayo (30 dry / 8+22 / 30 wet) según aplique.',
-      en:'Fire endurance test condition (30 dry / 8+22 / 30 wet) as applicable.'
+    n7: {
+      id: "n7",
+      tag: "N7",
+      titleES: "Condición de ensayo de fuego",
+      es: "Condición de ensayo (30 dry / 8+22 / 30 wet) según aplique.",
+      en: "Fire endurance test condition (30 dry / 8+22 / 30 wet) as applicable."
     }
-  ];
-  const GENERAL = [
-    {
-      id:'g1', tag:'Regla 5.10.9',
-      es:'Slip-on generalmente no en bodegas/tanques; en tanques solo si el medio coincide.',
-      en:'Slip-on generally not to be used in cargo holds/tanks; inside tanks only where the medium is the same.'
+  };
+  const GENERAL = {
+    g_slip_on: {
+      id: "g_slip_on",
+      tag: "Regla 5.10.9",
+      titleES: "Slip-on en bodegas/tanques",
+      es: "Slip-on generalmente no en bodegas/tanques; en tanques solo si el medio coincide.",
+      en: "Slip-on joints generally not to be used in cargo holds/tanks; inside tanks only where the medium is the same."
     },
-    {
-      id:'g2', tag:'Regla 5.10.10',
-      es:'Slip type no como medio principal salvo para compensar dilatación axial.',
-      en:'Slip type not as main means except for axial deformation compensation.'
+    g_slip_type: {
+      id: "g_slip_type",
+      tag: "Regla 5.10.10",
+      titleES: "Slip type como medio principal",
+      es: "Slip type no como medio principal salvo para compensar dilatación axial.",
+      en: "Slip type not as main means except for compensating axial deformation."
     }
-  ];
+  };
   const CLASS_RULES = {
     pipe_union_welded_brazed: { I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
     comp_swage: { I:{allowed:false}, II:{allowed:false}, III:{allowed:true} },
@@ -232,145 +254,179 @@ function buildNaval(){
     comp_press:  { I:{allowed:false}, II:{allowed:false}, III:{allowed:true} },
     slip_mgrooved:{ I:{allowed:true}, II:{allowed:true}, III:{allowed:true} },
     slip_grip:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
-    slip_type:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
+    slip_type:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} }
   };
-  function allTrue(){
-    return {pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:true,slip_grip:true,slip_type:true};
-  }
+  const allowAll = () => ({
+    pipe_union_welded_brazed:true,
+    comp_swage:true,
+    comp_bite:true,
+    comp_typical:true,
+    comp_flared:true,
+    comp_press:true,
+    slip_mgrooved:true,
+    slip_grip:true,
+    slip_type:true
+  });
   const SYSTEM_GROUPS = [
     { key:"flamm_lt60", label:"Fluidos inflamables (fp < 60°C)", systems:[
-      { key:"veh_aircraft_fuel_lt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allTrue(), notes:["n2","n4"], fire:"30 min dry" },
-      { key:"vent_lt60", label:"Líneas de venteo", allow:allTrue(), notes:["n3"], fire:"30 min dry" },
+      { key:"veh_aircraft_fuel_lt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"vent_lt60", label:"Líneas de venteo", allow:allowAll(), notes:["n3"], fire:"30 min dry" }
     ]},
     { key:"flamm_gt60", label:"Fluidos inflamables (fp > 60°C)", systems:[
-      { key:"veh_aircraft_fuel_gt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allTrue(), notes:["n2","n4"], fire:"30 min dry" },
-      { key:"machinery_fuel", label:"Líneas de combustible – maquinaria de a bordo", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
-      { key:"lube_oil", label:"Líneas de aceite lubricante", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
-      { key:"hydraulic_oil", label:"Aceite hidráulico", allow:allTrue(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"veh_aircraft_fuel_gt60", label:"Líneas de combustible (vehículos/aeronaves)", allow:allowAll(), notes:["n2","n4"], fire:"30 min dry" },
+      { key:"machinery_fuel", label:"Líneas de combustible – maquinaria de a bordo", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"lube_oil", label:"Líneas de aceite lubricante", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"hydraulic_oil", label:"Aceite hidráulico", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" }
     ]},
     { key:"seawater", label:"Agua de mar", systems:[
-      { key:"bilge", label:"Líneas de achique (bilge)", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
-      { key:"hp_seawater", label:"Agua de mar HP / spray (no llenado permanente)", allow:allTrue(), notes:[], fire:"8 dry + 22 wet" },
-      { key:"fire_perm", label:"Contra-incendios (llenado permanente)", allow:allTrue(), notes:["n3"], fire:"30 min wet" },
-      { key:"fire_nonperm", label:"Contra-incendios (no permanente) / espuma / drencher", allow:allTrue(), notes:["n3"], fire:"8 dry + 22 wet" },
-      { key:"ballast", label:"Lastre", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
-      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allTrue(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"bilge", label:"Líneas de achique (bilge)", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"hp_seawater", label:"Agua de mar HP / spray (no llenado permanente)", allow:allowAll(), notes:[], fire:"8 dry + 22 wet" },
+      { key:"fire_perm", label:"Contra-incendios (llenado permanente)", allow:allowAll(), notes:["n3"], fire:"30 min wet" },
+      { key:"fire_nonperm", label:"Contra-incendios (no permanente) / espuma / drencher", allow:allowAll(), notes:["n3"], fire:"8 dry + 22 wet" },
+      { key:"ballast", label:"Lastre", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" },
+      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allowAll(), notes:["n1"], fire:"8 dry + 22 wet" }
     ]},
     { key:"freshwater", label:"Agua dulce", systems:[
-      { key:"cooling_fw", label:"Refrigeración – agua dulce", allow:allTrue(), notes:["n1"], fire:"(no aplica)" },
-      { key:"chilled", label:"Agua helada (chilled)", allow:allTrue(), notes:["n1"], fire:"30 min wet" },
-      { key:"cond_return", label:"Retorno de condensado", allow:allTrue(), notes:["n1"], fire:"(dry)" },
-      { key:"demin", label:"Agua tratada/desmineralizada", allow:allTrue(), notes:[], fire:"(wet)" },
-      { key:"ancillary", label:"Sistemas auxiliares (FW)", allow:allTrue(), notes:[], fire:"(dry)" },
+      { key:"cooling_fw", label:"Refrigeración – agua dulce", allow:allowAll(), notes:["n1"], fire:"(no aplica)" },
+      { key:"chilled", label:"Agua helada (chilled)", allow:allowAll(), notes:["n1"], fire:"30 min wet" },
+      { key:"cond_return", label:"Retorno de condensado", allow:allowAll(), notes:["n1"], fire:"(dry)" },
+      { key:"demin", label:"Agua tratada/desmineralizada", allow:allowAll(), notes:[], fire:"(wet)" },
+      { key:"ancillary", label:"Sistemas auxiliares (FW)", allow:allowAll(), notes:[], fire:"(dry)" }
     ]},
     { key:"sanitary", label:"Sanitarios / drenajes / escuppers", systems:[
-      { key:"deck_drains_internal", label:"Drenajes de cubierta (internos)", allow:allTrue(), notes:["n6"], fire:"(no aplica)" },
-      { key:"sanitary_drains", label:"Drenajes sanitarios", allow:allTrue(), notes:[], fire:"(dry)" },
-      { key:"scuppers_overboard", label:"Scuppers y descarga (sobre costado)", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"(dry)" },
+      { key:"deck_drains_internal", label:"Drenajes de cubierta (internos)", allow:allowAll(), notes:["n6"], fire:"(no aplica)" },
+      { key:"sanitary_drains", label:"Drenajes sanitarios", allow:allowAll(), notes:[], fire:"(dry)" },
+      { key:"scuppers_overboard", label:"Scuppers y descarga (sobre costado)", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"(dry)" }
     ]},
     { key:"misc", label:"Misceláneos / gases / vapor", systems:[
-      { key:"air_hp", label:"Aire alta presión (HP)", allow:allTrue(), notes:["n1"], fire:"30 min dry" },
-      { key:"air_mp", label:"Aire media presión (MP)", allow:allTrue(), notes:["n1"], fire:"30 min dry" },
-      { key:"air_lp", label:"Aire baja presión (LP)", allow:allTrue(), notes:["n1"], fire:"(no aplica)" },
-      { key:"service_air", label:"Aire de servicio (no esencial)", allow:allTrue(), notes:[], fire:"(no aplica)" },
-      { key:"brine", label:"Salmuera (brine)", allow:allTrue(), notes:[], fire:"(wet)" },
-      { key:"co2", label:"CO₂ (fuera del espacio protegido)", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:["n1"], fire:"30 min dry" },
-      { key:"nitrogen", label:"Nitrógeno", allow:{...allTrue(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"30 min dry" },
-      { key:"steam", label:"Vapor", allow:{pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:false,slip_grip:false,slip_type:false}, notes:["n5"], fire:"(no aplica)" },
-    ]},
+      { key:"air_hp", label:"Aire alta presión (HP)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
+      { key:"air_mp", label:"Aire media presión (MP)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
+      { key:"air_lp", label:"Aire baja presión (LP)", allow:allowAll(), notes:["n1"], fire:"(no aplica)" },
+      { key:"service_air", label:"Aire de servicio (no esencial)", allow:allowAll(), notes:[], fire:"(no aplica)" },
+      { key:"brine", label:"Salmuera (brine)", allow:allowAll(), notes:[], fire:"(wet)" },
+      { key:"co2", label:"CO₂ (fuera del espacio protegido)", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:["n1"], fire:"30 min dry" },
+      { key:"nitrogen", label:"Nitrógeno", allow:{...allowAll(), slip_type:false, slip_grip:false, slip_mgrooved:false}, notes:[], fire:"30 min dry" },
+      { key:"steam", label:"Vapor", allow:{pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:false,slip_grip:false,slip_type:true}, notes:["n5"], fire:"(no aplica)" }
+    ]}
   ];
   return {
-    id:'naval', title:'LR Naval',
-    JOINT_TYPES, SPACES, NOTES, GENERAL,
-    CLASS_RULES, SYSTEM_GROUPS,
-    EXTRA:{
-      n2_forbiddenSpaces:['mach_cat_a','accommodation','munitions'],
-      n2_visibleOnlySpaces:['other_mach_service'],
-      deckNoteKey:'n6'
+    id: "naval",
+    title: "LR Naval",
+    JOINT_TYPES,
+    SPACES,
+    NOTES,
+    GENERAL,
+    CLASS_RULES,
+    SYSTEM_GROUPS,
+    EXTRA: {
+      n2_forbiddenSpaces: ["mach_cat_a","accommodation","munitions"],
+      n2_visibleOnlySpaces: ["other_mach_service"]
     }
   };
 }
 
 function buildShips(){
   const JOINT_TYPES = [
-    { key:'pipe_union_welded_brazed', group:'Pipe unions', label:'Unión roscada soldada/soldadura fuerte' },
-    { key:'comp_swage', group:'Compression couplings', label:'Compresión tipo swage' },
-    { key:'comp_bite', group:'Compression couplings', label:'Compresión tipo bite' },
-    { key:'comp_typical', group:'Compression couplings', label:'Compresión típica' },
-    { key:'comp_flared', group:'Compression couplings', label:'Compresión tipo flare' },
-    { key:'comp_press', group:'Compression couplings', label:'Compresión tipo press' },
-    { key:'slip_mgrooved', group:'Slip-on joints', label:'Slip-on ranurado a máquina' },
-    { key:'slip_grip', group:'Slip-on joints', label:'Slip-on tipo grip' },
-    { key:'slip_type', group:'Slip-on joints', label:'Slip-on tipo slip' },
+    { key: "pipe_union_welded_brazed", group: "Pipe unions", label: "Unión roscada soldada/soldadura fuerte" },
+    { key: "comp_swage", group: "Compression couplings", label: "Compresión tipo swage" },
+    { key: "comp_bite", group: "Compression couplings", label: "Compresión tipo bite" },
+    { key: "comp_typical", group: "Compression couplings", label: "Compresión típica" },
+    { key: "comp_flared", group: "Compression couplings", label: "Compresión tipo flare" },
+    { key: "comp_press", group: "Compression couplings", label: "Compresión tipo press" },
+    { key: "slip_mgrooved", group: "Slip-on joints", label: "Slip-on ranurado a máquina" },
+    { key: "slip_grip", group: "Slip-on joints", label: "Slip-on tipo grip" },
+    { key: "slip_type", group: "Slip-on joints", label: "Slip-on tipo slip" }
   ];
   const SPACES = [
-    { key:'mach_cat_a', label:'Espacio de máquinas Cat. A' },
-    { key:'pump_room', label:'Sala de bombas' },
-    { key:'accommodation', label:'Acomodaciones' },
-    { key:'other_mach_service', label:'Otros esp. de máquinas/servicio' },
-    { key:'open_deck', label:'Cubierta abierta' },
-    { key:'cargo_hold', label:'Bodega de carga' },
-    { key:'inside_tank', label:'Dentro de tanque' },
+    { key: "mach_cat_a", label: "Espacio de máquinas Cat. A" },
+    { key: "pump_room", label: "Sala de bombas" },
+    { key: "accommodation", label: "Acomodaciones" },
+    { key: "other_mach_service", label: "Otros esp. de máquinas/servicio" },
+    { key: "open_deck", label: "Cubierta abierta" },
+    { key: "cargo_hold", label: "Bodega de carga" },
+    { key: "inside_tank", label: "Dentro de tanque" }
   ];
-  const NOTES = [
-    {
-      id:'n1', tag:'N1', titleES:'Tipo resistente al fuego en Cat. A',
-      es:'Las juntas mecánicas con componentes que se deterioran con el fuego deben ser de tipo resistente al fuego cuando se instalen en espacios de máquinas Cat. A. En bilge main en Cat. A: acoplamientos de acero/CuNi o equivalente.',
-      en:'Mechanical joints that include components which readily deteriorate in case of fire are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings on the bilge main in Category A are to be of steel, CuNi or equivalent.'
+  const NOTES = {
+    n1: {
+      id: "n1",
+      tag: "N1",
+      titleES: "Tipo resistente al fuego en Cat. A",
+      es: "Las juntas mecánicas con componentes que se deterioran con el fuego deben ser de tipo resistente al fuego cuando se instalen en espacios de máquinas Cat. A. En bilge main en Cat. A: acoplamientos de acero/CuNi o equivalente.",
+      en: "Mechanical joints that include components which readily deteriorate in case of fire are to be of an approved fire-resistant type when fitted in machinery spaces of Category A. Mechanical couplings on the bilge main in Category A are to be of steel, CuNi or equivalent."
     },
-    {
-      id:'n2', tag:'N2', titleES:'Restricciones a slip-on por espacio',
-      es:'Slip-on no aceptado en espacios de máquinas Cat. A ni en acomodaciones. En otros espacios de máquinas/servicio, solo si la posición es visible y accesible. No usar en bodegas o tanques no accesibles.',
-      en:'Slip-on joints are not accepted inside machinery spaces of Category A nor accommodation spaces. In other machinery/service spaces they are only accepted where the position is visible and accessible. Not to be used in cargo holds or tanks that are not accessible.'
+    n2: {
+      id: "n2",
+      tag: "N2",
+      titleES: "Restricciones a slip-on por espacio",
+      es: "Slip-on no aceptado en espacios de máquinas Cat. A ni en acomodaciones. En otros espacios de máquinas/servicio, solo si la posición es visible y accesible. No usar en bodegas o tanques no accesibles.",
+      en: "Slip-on joints are not accepted inside machinery spaces of Category A nor accommodation spaces. In other machinery/service spaces they are only accepted where the position is visible and accessible. Not to be used in cargo holds or tanks that are not accessible."
     },
-    {
-      id:'n3', tag:'N3', titleES:'Tipo resistente al fuego salvo cubierta abierta',
-      es:'Requiere tipo resistente al fuego aprobado salvo cuando se instale en cubierta abierta.',
-      en:'Requires an approved fire-resistant type except when fitted on open deck.'
+    n3: {
+      id: "n3",
+      tag: "N3",
+      titleES: "Tipo resistente al fuego salvo cubierta abierta",
+      es: "Requiere tipo resistente al fuego aprobado salvo cuando se instale en cubierta abierta.",
+      en: "Requires an approved fire-resistant type except when fitted on open deck."
     },
-    {
-      id:'n4', tag:'N4', titleES:'Tipo resistente al fuego en Cat. A',
-      es:'En espacios de máquinas Cat. A, las juntas deben ser de tipo resistente al fuego con ensayo aprobado.',
-      en:'In machinery spaces of Category A, joints are to be of an approved fire-resistant type with the prescribed fire test.'
+    n4: {
+      id: "n4",
+      tag: "N4",
+      titleES: "Tipo resistente al fuego en Cat. A",
+      es: "En espacios de máquinas Cat. A, las juntas deben ser de tipo resistente al fuego con ensayo aprobado.",
+      en: "In machinery spaces of Category A, joints are to be of an approved fire-resistant type with the prescribed fire test."
     },
-    {
-      id:'n5', tag:'N5', titleES:'Solo sobre cubierta de referencia',
-      es:'Drenajes de cubierta internos: únicamente por encima de la cubierta de mamparos / francobordo.',
-      en:'Internal deck drains: only above the bulkhead deck / freeboard deck.'
+    n5: {
+      id: "n5",
+      tag: "N5",
+      titleES: "Solo sobre cubierta de referencia",
+      es: "Drenajes de cubierta internos: únicamente por encima de la cubierta de mamparos / francobordo.",
+      en: "Internal deck drains: only above the bulkhead deck / freeboard deck."
     },
-    {
-      id:'n6', tag:'N6', titleES:'Slip type en cubierta hasta 10 bar',
-      es:'Slip type en cubierta solo si la presión de diseño es ≤ 10 bar (según clase/medio).',
-      en:'Slip type on deck only where design pressure is ≤ 10 bar (as limited by class/medium).'
+    n6: {
+      id: "n6",
+      tag: "N6",
+      titleES: "Slip type en cubierta hasta 10 bar",
+      es: "Slip type en cubierta solo si la presión de diseño es ≤ 10 bar (según clase/medio).",
+      en: "Slip type on deck only where design pressure is ≤ 10 bar (as limited by class/medium)."
     },
-    {
-      id:'n7', tag:'N7', titleES:'Equivalencias de ensayo de fuego',
-      es:'Equivalencias: 30 dry ≈ (8+22) ≈ 30 wet.',
-      en:'Equivalences: 30 dry ≈ (8+22) ≈ 30 wet.'
+    n7: {
+      id: "n7",
+      tag: "N7",
+      titleES: "Equivalencias de ensayo de fuego",
+      es: "Equivalencias: 30 dry ≈ (8+22) ≈ 30 wet.",
+      en: "Equivalences: 30 dry ≈ (8+22) ≈ 30 wet."
     },
-    {
-      id:'n8', tag:'N8', titleES:'Vapor: slip-on restringida',
-      es:'En vapor, la junta slip-on debe estar restringida para movimiento axial.',
-      en:'For steam, the slip-on joint is to be restrained for axial movement.'
+    n8: {
+      id: "n8",
+      tag: "N8",
+      titleES: "Vapor: slip-on restringida",
+      es: "En vapor, la junta slip-on debe estar restringida para movimiento axial.",
+      en: "For steam, the slip-on joint is to be restrained for axial movement."
     }
-  ];
-  const GENERAL = [
-    {
-      id:'g_slip_on_inaccessible', tag:'Regla 2.12.8',
-      es:'Slip-on no en bodegas/tanques no accesibles; en tanques solo si el medio coincide.',
-      en:'Slip-on not in cargo holds/tanks not easily accessible; inside tanks only if the medium is the same.'
+  };
+  const GENERAL = {
+    g_slip_on: {
+      id: "g_slip_on",
+      tag: "Regla 2.12.8",
+      titleES: "Slip-on en bodegas/tanques",
+      es: "Slip-on no en bodegas/tanques no accesibles; en tanques solo si el medio coincide.",
+      en: "Slip-on not in cargo holds/tanks not easily accessible; inside tanks only if the medium is the same."
     },
-    {
-      id:'g_slip_type_main', tag:'Regla 2.12.9',
-      es:'Slip type como medio principal solo si compensa dilatación axial.',
-      en:'Slip type as main means only where compensating axial deformation.'
+    g_slip_type: {
+      id: "g_slip_type",
+      tag: "Regla 2.12.9",
+      titleES: "Slip type como medio principal",
+      es: "Slip type como medio principal solo si compensa dilatación axial.",
+      en: "Slip type as main means only where compensating axial deformation."
     },
-    {
-      id:'g_steam_restrained', tag:'Regla 2.12.10',
-      es:'En vapor: slip-on restringida para movimiento axial.',
-      en:'For steam systems: slip-on joints are to be restrained for axial movement.'
+    g_steam: {
+      id: "g_steam",
+      tag: "Regla 2.12.10",
+      titleES: "Vapor: restricción axial",
+      es: "En vapor: slip-on restringida para movimiento axial.",
+      en: "For steam systems: slip-on joints are to be restrained for axial movement."
     }
-  ];
+  };
   const CLASS_RULES = {
     pipe_union_welded_brazed: { I:{allowed:true, odLE:60.3}, II:{allowed:true, odLE:60.3}, III:{allowed:true} },
     comp_swage: { I:{allowed:true}, II:{allowed:true}, III:{allowed:true} },
@@ -380,70 +436,122 @@ function buildShips(){
     comp_press:  { I:{allowed:false}, II:{allowed:false}, III:{allowed:true} },
     slip_mgrooved:{ I:{allowed:true}, II:{allowed:true}, III:{allowed:true} },
     slip_grip:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
-    slip_type:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} },
+    slip_type:   { I:{allowed:false}, II:{allowed:true}, III:{allowed:true} }
   };
-  const allowAll = ()=>({pipe_union_welded_brazed:true,comp_swage:true,comp_bite:true,comp_typical:true,comp_flared:true,comp_press:true,slip_mgrooved:true,slip_grip:true,slip_type:true});
+  const allowAll = () => ({
+    pipe_union_welded_brazed:true,
+    comp_swage:true,
+    comp_bite:true,
+    comp_typical:true,
+    comp_flared:true,
+    comp_press:true,
+    slip_mgrooved:true,
+    slip_grip:true,
+    slip_type:true
+  });
   const SYSTEM_GROUPS = [
-    { key:'flamm_lt60', label:'Fluidos inflamables (fp < 60°C)', systems:[
-      { key:'cargo_oil', label:'Líneas de crudo (fp <60°C)', allow:allowAll(), notes:['n1'], fire:'30 min dry' },
-      { key:'cow_lines', label:'Líneas de lavado de crudo (COW)', allow:allowAll(), notes:['n1'], fire:'30 min dry' },
-      { key:'vent_lt60', label:'Líneas de venteo', allow:allowAll(), notes:['n3'], fire:'30 min dry' },
+    { key:"flamm_lt60", label:"Fluidos inflamables (fp < 60°C)", systems:[
+      { key:"cargo_oil", label:"Líneas de crudo (fp <60°C)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
+      { key:"cow_lines", label:"Líneas de lavado de crudo (COW)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
+      { key:"vent_lt60", label:"Líneas de venteo", allow:allowAll(), notes:["n3"], fire:"30 min dry" }
     ]},
-    { key:'inert_gas', label:'Gas inerte', systems:[
-      { key:'water_seal_effluent', label:'Efluentes del sello hidráulico', allow:allowAll(), notes:[], fire:'30 min wet' },
-      { key:'scrubber_effluent', label:'Efluentes del depurador', allow:allowAll(), notes:[], fire:'30 min wet' },
-      { key:'main_lines', label:'Líneas principales', allow:allowAll(), notes:['n1','n2'], fire:'30 min dry' },
-      { key:'distribution', label:'Líneas de distribución', allow:allowAll(), notes:['n1'], fire:'30 min dry' },
+    { key:"inert_gas", label:"Gas inerte", systems:[
+      { key:"water_seal_effluent", label:"Efluentes del sello hidráulico", allow:allowAll(), notes:[], fire:"30 min wet" },
+      { key:"scrubber_effluent", label:"Efluentes del depurador", allow:allowAll(), notes:[], fire:"30 min wet" },
+      { key:"main_lines", label:"Líneas principales", allow:allowAll(), notes:["n1","n2"], fire:"30 min dry" },
+      { key:"distribution", label:"Líneas de distribución", allow:allowAll(), notes:["n1"], fire:"30 min dry" }
     ]},
-    { key:'flamm_gt60', label:'Fluidos inflamables (fp > 60°C)', systems:[
-      { key:'cargo_oil_gt60', label:'Líneas de crudo (fp >60°C)', allow:allowAll(), notes:['n1'], fire:'30 min dry' },
-      { key:'fuel_oil', label:'Líneas de fuel oil', allow:allowAll(), notes:['n2','n3'], fire:'30 min wet' },
-      { key:'lube_oil', label:'Líneas de aceite lubricante', allow:allowAll(), notes:['n2','n3'], fire:'30 min wet' },
-      { key:'hydraulic_oil', label:'Aceite hidráulico', allow:allowAll(), notes:['n2','n3'], fire:'30 min wet' },
-      { key:'thermal_oil', label:'Aceite térmico', allow:allowAll(), notes:['n2','n3'], fire:'30 min wet' },
+    { key:"flamm_gt60", label:"Fluidos inflamables (fp > 60°C)", systems:[
+      { key:"cargo_oil_gt60", label:"Líneas de crudo (fp >60°C)", allow:allowAll(), notes:["n1"], fire:"30 min dry" },
+      { key:"fuel_oil", label:"Líneas de fuel oil", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"lube_oil", label:"Líneas de aceite lubricante", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"hydraulic_oil", label:"Aceite hidráulico", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" },
+      { key:"thermal_oil", label:"Aceite térmico", allow:allowAll(), notes:["n2","n3"], fire:"30 min wet" }
     ]},
-    { key:'seawater', label:'Agua de mar', systems:[
-      { key:'bilge', label:'Líneas de achique (bilge)', allow:allowAll(), notes:['n4'], fire:'8 dry + 22 wet' },
-      { key:'fire_perm', label:'Contra-incendios / rociadores (llenado permanente)', allow:allowAll(), notes:['n3'], fire:'30 min wet' },
-      { key:'fire_nonperm', label:'Extinción (no permanente) / drencher / espuma', allow:allowAll(), notes:['n3'], fire:'8 dry + 22 wet' },
-      { key:'ballast', label:'Sistema de lastre', allow:allowAll(), notes:['n4'], fire:'30 min wet' },
-      { key:'cooling_sw', label:'Refrigeración – agua de mar', allow:allowAll(), notes:['n4'], fire:'30 min wet' },
+    { key:"seawater", label:"Agua de mar", systems:[
+      { key:"bilge", label:"Líneas de achique (bilge)", allow:allowAll(), notes:["n4"], fire:"8 dry + 22 wet" },
+      { key:"fire_perm", label:"Contra-incendios / rociadores (llenado permanente)", allow:allowAll(), notes:["n3"], fire:"30 min wet" },
+      { key:"fire_nonperm", label:"Extinción (no permanente) / drencher / espuma", allow:allowAll(), notes:["n3"], fire:"8 dry + 22 wet" },
+      { key:"ballast", label:"Sistema de lastre", allow:allowAll(), notes:["n4"], fire:"30 min wet" },
+      { key:"cooling_sw", label:"Refrigeración – agua de mar", allow:allowAll(), notes:["n4"], fire:"30 min wet" }
     ]},
-    { key:'freshwater', label:'Agua dulce', systems:[
-      { key:'cooling_fw', label:'Refrigeración – agua dulce', allow:allowAll(), notes:['n4'], fire:'30 min wet' },
-      { key:'cond_return', label:'Retorno de condensado', allow:allowAll(), notes:['n4'], fire:'30 min wet' },
-      { key:'non_essential_fw', label:'Sistema no esencial', allow:allowAll(), notes:[], fire:'(no test)' },
+    { key:"freshwater", label:"Agua dulce", systems:[
+      { key:"cooling_fw", label:"Refrigeración – agua dulce", allow:allowAll(), notes:["n4"], fire:"30 min wet" },
+      { key:"cond_return", label:"Retorno de condensado", allow:allowAll(), notes:["n4"], fire:"30 min wet" },
+      { key:"non_essential_fw", label:"Sistema no esencial", allow:allowAll(), notes:[], fire:"(no test)" }
     ]},
-    { key:'sanitary', label:'Sanitarios / drenajes / escuppers', systems:[
-      { key:'deck_drains_internal', label:'Drenajes de cubierta (internos)', allow:allowAll(), notes:['n5'], fire:'(no test)' },
-      { key:'sanitary_drains', label:'Drenajes sanitarios', allow:allowAll(), notes:[], fire:'(dry)' },
-      { key:'scuppers_overboard', label:'Escuppers y descarga sobre costado', allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:'(dry)' },
+    { key:"sanitary", label:"Sanitarios / drenajes / escuppers", systems:[
+      { key:"deck_drains_internal", label:"Drenajes de cubierta (internos)", allow:allowAll(), notes:["n5"], fire:"(no test)" },
+      { key:"sanitary_drains", label:"Drenajes sanitarios", allow:allowAll(), notes:[], fire:"(dry)" },
+      { key:"scuppers_overboard", label:"Escuppers y descarga sobre costado", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:"(dry)" }
     ]},
-    { key:'sounding_vent', label:'Sondajes / venteos', systems:[
-      { key:'water_tanks_dry_spaces', label:'Tanques de agua / espacios secos', allow:allowAll(), notes:[], fire:'(no test)' },
-      { key:'oil_tanks_fp_gt60', label:'Tanques de aceite (fp > 60°C)', allow:allowAll(), notes:['n2','n3'], fire:'(dry)' },
+    { key:"sounding_vent", label:"Sondajes / venteos", systems:[
+      { key:"water_tanks_dry_spaces", label:"Tanques de agua / espacios secos", allow:allowAll(), notes:[], fire:"(no test)" },
+      { key:"oil_tanks_fp_gt60", label:"Tanques de aceite (fp > 60°C)", allow:allowAll(), notes:["n2","n3"], fire:"(dry)" }
     ]},
-    { key:'misc', label:'Misceláneos / gases / vapor', systems:[
-      { key:'start_control_air', label:'Aire de arranque / control', allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:['n4'], fire:'30 min dry' },
-      { key:'service_air', label:'Aire de servicio (no esencial)', allow:allowAll(), notes:[], fire:'(no test)' },
-      { key:'brine', label:'Salmuera', allow:allowAll(), notes:[], fire:'(wet)' },
-      { key:'co2_outside', label:'CO₂ (fuera del espacio protegido)', allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:'30 min dry' },
-      { key:'co2_inside', label:'CO₂ (dentro del espacio protegido)', allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:'(dry)' },
-      { key:'steam', label:'Vapor', allow:{ pipe_union_welded_brazed:true, comp_swage:true, comp_bite:true, comp_typical:true, comp_flared:true, comp_press:true, slip_mgrooved:false, slip_grip:false, slip_type:false }, notes:['n8'], fire:'(no test)' },
-    ]},
+    { key:"misc", label:"Misceláneos / gases / vapor", systems:[
+      { key:"start_control_air", label:"Aire de arranque / control", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:["n4"], fire:"30 min dry" },
+      { key:"service_air", label:"Aire de servicio (no esencial)", allow:allowAll(), notes:[], fire:"(no test)" },
+      { key:"brine", label:"Salmuera", allow:allowAll(), notes:[], fire:"(wet)" },
+      { key:"co2_outside", label:"CO₂ (fuera del espacio protegido)", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:"30 min dry" },
+      { key:"co2_inside", label:"CO₂ (dentro del espacio protegido)", allow:{...allowAll(), slip_mgrooved:false, slip_grip:false, slip_type:false}, notes:[], fire:"(dry)" },
+      { key:"steam", label:"Vapor", allow:{ pipe_union_welded_brazed:true, comp_swage:true, comp_bite:true, comp_typical:true, comp_flared:true, comp_press:true, slip_mgrooved:false, slip_grip:false, slip_type:true }, notes:["n8"], fire:"(no test)" }
+    ]}
   ];
-
-  const EXTRA = {
-    n2_forbiddenSpaces: ['mach_cat_a','accommodation'],
-    n2_visibleOnlySpaces: ['other_mach_service'],
-    deckNoteKey: 'n5',
-    slipTypeDeckMaxBarBar: 10
+  const CLASS_PRESS_LIMITS = {
+    steam: { II:16, III:7 },
+    thermal: { II:16, III:7 },
+    flammable: { II:16, III:7 },
+    other: { II:40, III:16 }
   };
-
+  const SYSTEM_CATEGORY = {
+    cargo_oil:"flammable",
+    cow_lines:"flammable",
+    vent_lt60:"flammable",
+    water_seal_effluent:"other",
+    scrubber_effluent:"other",
+    main_lines:"other",
+    distribution:"other",
+    cargo_oil_gt60:"flammable",
+    fuel_oil:"flammable",
+    lube_oil:"flammable",
+    hydraulic_oil:"flammable",
+    thermal_oil:"thermal",
+    bilge:"other",
+    fire_perm:"other",
+    fire_nonperm:"other",
+    ballast:"other",
+    cooling_sw:"other",
+    cooling_fw:"other",
+    cond_return:"other",
+    non_essential_fw:"other",
+    deck_drains_internal:"other",
+    sanitary_drains:"other",
+    scuppers_overboard:"other",
+    water_tanks_dry_spaces:"other",
+    oil_tanks_fp_gt60:"flammable",
+    start_control_air:"other",
+    service_air:"other",
+    brine:"other",
+    co2_outside:"other",
+    co2_inside:"other",
+    steam:"steam"
+  };
   return {
-    id:'ships', title:'LR Ships',
-    JOINT_TYPES, SPACES, NOTES, GENERAL,
-    CLASS_RULES, SYSTEM_GROUPS, EXTRA
+    id: "ships",
+    title: "LR Ships",
+    JOINT_TYPES,
+    SPACES,
+    NOTES,
+    GENERAL,
+    CLASS_RULES,
+    SYSTEM_GROUPS,
+    EXTRA: {
+      n2_forbiddenSpaces: ["mach_cat_a","accommodation"],
+      n2_visibleOnlySpaces: ["other_mach_service"],
+      CLASS_PRESS_LIMITS,
+      SYSTEM_CATEGORY
+    }
   };
 }
 
@@ -482,107 +590,213 @@ function evaluate(dataset, input, systemKey){
   const sys = group?.systems.find(s => s.key === systemKey);
   if(!sys) return [];
 
-  const items = [];
+  const results = [];
   for(const jt of dataset.JOINT_TYPES){
-    let status = sys.allow[jt.key] ? 'ok' : 'no';
+    const allowedBySystem = Boolean(sys.allow && sys.allow[jt.key]);
+    let status = allowedBySystem ? 'ok' : 'no';
     const reasons = [];
-    if(status==='no'){
-      items.push({jt:jt.key,status,reasons:['No permitido por Tabla 1.5.3 para este sistema.']});
+
+    if(!allowedBySystem){
+      reasons.push(dataset.id === 'ships'
+        ? 'No permitido para este sistema (Tabla 12.2.3).'
+        : 'No permitido para este sistema (Tabla 1.5.3).');
+      results.push({ jt: jt.key, status, reasons });
       continue;
     }
-    const cr = dataset.CLASS_RULES[jt.key]?.[input.pipeClass];
-    if(cr){
-      if(!cr.allowed){ status='no'; reasons.push(`No permitido para Clase ${input.pipeClass} (Tabla 1.5.4).`); }
-      else if(cr.odLE && Number(input.od) > cr.odLE){ status='no'; reasons.push(`OD > ${cr.odLE} mm no permitido para Clase ${input.pipeClass}.`); }
-    }
-    if(status!=='no' && sys.notes?.length){
-      for(const nc of sys.notes){
 
-        // Nota 2 (ambas normas) – gobierna slip-on + espacios
-        if (nc==='n2' && jt.key.startsWith('slip_')){
-          const ban = dataset.EXTRA?.n2_forbiddenSpaces||[];
-          const vis = dataset.EXTRA?.n2_visibleOnlySpaces||[];
-          if (ban.includes(input.space)){
-            status='no';
-            reasons.push('Slip-on prohibido en este espacio (Nota 2).');
-          } else if (vis.includes(input.space)){
-            if (status==='ok') status='warn';
-            if (!input.visible) reasons.push('Debe estar visible y accesible (Nota 2).');
-          }
-        }
-
-        // Nota 1 – “tipo resistente al fuego” (según tabla del sistema)
-        if (nc==='n1' && input.space==='mach_cat_a'){
-          if (status==='ok') status='warn';
-          reasons.push('Requiere tipo resistente al fuego aprobado (Nota 1).');
-          if (sys.key==='bilge'){
-            reasons.push('En bilge main (Cat. A): acoplamientos de acero/CuNi o equivalente (Nota 1).');
-          }
-        }
-
-        // Nota 3 (Naval) – no cubierta abierta
-        if (nc==='n3' && input.space!=='open_deck'){
-          if (status==='ok') status='warn';
-          reasons.push('Requiere tipo resistente al fuego aprobado (Nota 3, no en cubierta abierta).');
-        }
-
-        // Nota “de cubierta”: Naval usa n6 (límite de estanqueidad);
-        // Ships usa n5 (solo sobre cubierta de mamparos/francobordo)
-        const deckNote = dataset.EXTRA?.deckNoteKey || 'n6';
-        if (nc===deckNote){
-          if (status==='ok') status='warn';
-          if (!input.aboveWLI){
-            reasons.push(
-              dataset.id==='ships'
-                ? 'Solo sobre cubierta de mamparos / francobordo (Nota 5).'
-                : 'Solo por encima del límite de estanqueidad (Nota 6).'
-            );
-          }
-        }
-
-        // Nota 4 (Ships) – tipo resistente al fuego en Cat. A
-        if (dataset.id==='ships' && nc==='n4' && input.space==='mach_cat_a'){
-          if (status==='ok') status='warn';
-          reasons.push('Requiere tipo resistente al fuego aprobado en Cat. A (Nota 4).');
-        }
+    const classRule = dataset.CLASS_RULES[jt.key]?.[input.pipeClass];
+    if(classRule){
+      if(!classRule.allowed){
+        status = 'no';
+        reasons.push(dataset.id === 'ships'
+          ? `No permitido para Clase ${input.pipeClass} (Tabla 12.2.4).`
+          : `No permitido para Clase ${input.pipeClass} (Tabla 1.5.4).`);
+      } else if(classRule.odLE && Number(input.od || 0) > classRule.odLE){
+        status = 'no';
+        reasons.push(dataset.id === 'ships'
+          ? `OD > ${classRule.odLE} mm excede el límite para Clase ${input.pipeClass} (Tabla 12.2.4).`
+          : `OD > ${classRule.odLE} mm no permitido para Clase ${input.pipeClass} (Tabla 1.5.4).`);
       }
     }
 
-    // Reglas generales Slip-on de LR (ambas normas)
-    if (status!=='no' && jt.key.startsWith('slip_')){
-      if (input.space==='cargo_hold'){
-        status='no';
-        reasons.push('Slip-on no en bodegas/carga (Regla general).');
-      }
-      if (input.space==='inside_tank'){
-        if (status==='ok') status='warn';
-        if (!input.sameMedium) reasons.push('En tanques: solo si el medio coincide con el del tanque.');
+    let ctx = { dataset, joint: jt, input, sys, reasons, status };
+    if(ctx.status !== 'no' && sys.notes?.length){
+      for(const code of sys.notes){
+        ctx = applyNote(dataset, code, ctx);
+        if(ctx.status === 'no') break;
       }
     }
 
-    // “Slip type” como medio principal solo si compensa dilatación axial
-    if (status!=='no' && jt.key==='slip_type'){
-      if (status==='ok') status='warn';
-      if (!input.axial) reasons.push('Slip type como medio principal: solo si compensa dilatación axial.');
-      // Ships: adicional ≤10 bar y en cubierta (cuando aplique)
-      if (dataset.id==='ships' && input.designBar!=null){
-        const lim = dataset.EXTRA?.slipTypeDeckMaxBarBar ?? 10;
-        if (input.designBar>lim){
-          status='no';
-          reasons.push(`Slip type > ${lim} bar no permitido en cubierta (LR Ships).`);
-        }
-      }
+    if(ctx.status !== 'no'){
+      ctx = applyGeneralRules(ctx);
     }
 
-    // Nota 8 (Ships) – vapor con slip-on restringida
-    if (status!=='no' && dataset.id==='ships' && sys.notes?.includes('n8') && jt.key==='slip_type' && input.axial){
-      if (status==='ok') status='warn';
-      reasons.push('Vapor: slip-on restringida para movimiento axial (Nota 8).');
-    }
-
-    items.push({jt:jt.key,status,reasons});
+    results.push({ jt: jt.key, status: ctx.status, reasons });
   }
-  return items;
+  return results;
+}
+
+function applyNote(dataset, code, ctx){
+  if(dataset.id === 'naval') return applyNavalNote(code, ctx);
+  if(dataset.id === 'ships') return applyShipsNote(code, ctx);
+  return ctx;
+}
+
+function applyNavalNote(code, ctx){
+  const { dataset, joint, input, sys, reasons } = ctx;
+  let { status } = ctx;
+  switch(code){
+    case 'n1':
+      if(input.space === 'mach_cat_a'){
+        status = escalateWarn(status);
+        reasons.push('Requiere tipo resistente al fuego aprobado (Nota 1).');
+        if(sys.key === 'bilge'){
+          reasons.push('En bilge main (Cat. A): acoplamientos de acero/CuNi o equivalente (Nota 1).');
+        }
+      }
+      break;
+    case 'n2':
+      if(joint.key.startsWith('slip_')){
+        const forbidden = dataset.EXTRA?.n2_forbiddenSpaces || [];
+        const visibleOnly = dataset.EXTRA?.n2_visibleOnlySpaces || [];
+        if(forbidden.includes(input.space)){
+          status = 'no';
+          reasons.push('Slip-on prohibido en este espacio (Nota 2).');
+        } else if(visibleOnly.includes(input.space)){
+          status = escalateWarn(status);
+          if(!input.visible){
+            status = 'no';
+            reasons.push('Debe estar visible y accesible (Nota 2).');
+          } else {
+            reasons.push('Permitido solo si la posición es visible y accesible (Nota 2).');
+          }
+        }
+      }
+      break;
+    case 'n3':
+      if(input.space !== 'open_deck'){
+        status = escalateWarn(status);
+        reasons.push('Requiere tipo resistente al fuego aprobado (Nota 3).');
+      }
+      break;
+    case 'n6':
+      if(!input.aboveWLI){
+        status = escalateWarn(status);
+        reasons.push('Solo por encima del límite de estanqueidad (Nota 6).');
+      }
+      break;
+    default:
+      break;
+  }
+  ctx.status = status;
+  return ctx;
+}
+
+function applyShipsNote(code, ctx){
+  const { dataset, joint, input, sys, reasons } = ctx;
+  let { status } = ctx;
+  switch(code){
+    case 'n1':
+      if(input.space === 'pump_room' || input.space === 'open_deck'){
+        status = escalateWarn(status);
+        reasons.push('Requiere tipo resistente al fuego aprobado (Nota 1).');
+      }
+      break;
+    case 'n2':
+      if(joint.key.startsWith('slip_')){
+        const forbidden = dataset.EXTRA?.n2_forbiddenSpaces || [];
+        const visibleOnly = dataset.EXTRA?.n2_visibleOnlySpaces || [];
+        if(forbidden.includes(input.space)){
+          status = 'no';
+          reasons.push('Slip-on prohibido en este espacio (Nota 2).');
+        } else if(visibleOnly.includes(input.space)){
+          status = escalateWarn(status);
+          if(!input.visible){
+            status = 'no';
+            reasons.push('Debe estar visible y accesible (Nota 2).');
+          } else {
+            reasons.push('Permitido solo si la posición es visible y accesible (Nota 2).');
+          }
+        }
+      }
+      break;
+    case 'n3':
+      if(input.space !== 'open_deck' || sys.key === 'fuel_oil'){
+        status = escalateWarn(status);
+        reasons.push('Requiere tipo resistente al fuego aprobado (Nota 3).');
+      }
+      break;
+    case 'n4':
+      if(input.space === 'mach_cat_a'){
+        status = escalateWarn(status);
+        reasons.push('Requiere tipo resistente al fuego aprobado en Cat. A (Nota 4).');
+      }
+      break;
+    case 'n5':
+      if(!input.aboveWLI){
+        status = escalateWarn(status);
+        reasons.push('Solo por encima de la cubierta de mamparos / francobordo (Nota 5).');
+      }
+      break;
+    case 'n6':
+      if(joint.key === 'slip_type' && input.space === 'open_deck'){
+        const category = dataset.EXTRA?.SYSTEM_CATEGORY?.[sys.key] || 'other';
+        const limit = dataset.EXTRA?.CLASS_PRESS_LIMITS?.[category]?.[input.pipeClass];
+        if(limit != null){
+          if(limit <= 10){
+            status = escalateWarn(status);
+            reasons.push(`Slip type en cubierta solo si la presión de diseño es ≤ ${limit} bar (Nota 6).`);
+          } else {
+            status = 'no';
+            reasons.push(`Slip type en cubierta no permitido; límite aplicable ${limit} bar > 10 bar (Nota 6).`);
+          }
+        }
+      }
+      break;
+    default:
+      break;
+  }
+  ctx.status = status;
+  return ctx;
+}
+
+function applyGeneralRules(ctx){
+  const { dataset, joint, input, sys, reasons } = ctx;
+  let { status } = ctx;
+  const slipRule = dataset.id === 'ships' ? 'Regla 2.12.8' : 'Regla 5.10.9';
+  if(joint.key.startsWith('slip_')){
+    if(input.space === 'cargo_hold'){
+      status = 'no';
+      reasons.push(`Slip-on prohibido en bodegas de carga (${slipRule}).`);
+    } else if(input.space === 'inside_tank'){
+      status = escalateWarn(status);
+      if(input.sameMedium){
+        reasons.push(`Condición: el medio del tubo debe coincidir con el del tanque (${slipRule}).`);
+      } else {
+        reasons.push(`En tanques: solo si el medio coincide con el del tanque (${slipRule}).`);
+      }
+    }
+  }
+
+  if(joint.key === 'slip_type'){
+    status = escalateWarn(status);
+    const slipTypeRule = dataset.id === 'ships' ? 'Regla 2.12.9' : 'Regla 5.10.10';
+    if(input.axial){
+      reasons.push(`Condición: slip type solo como medio principal si compensa deformación axial (${slipTypeRule}).`);
+    } else {
+      reasons.push(`Slip type como medio principal: solo si compensa deformación axial (${slipTypeRule}).`);
+    }
+    if(dataset.id === 'ships' && sys.notes?.includes('n8') && input.axial){
+      reasons.push('Vapor: slip-on restringida para movimiento axial (Nota 8 / Regla 2.12.10).');
+    }
+  }
+
+  ctx.status = status;
+  return ctx;
+}
+
+function escalateWarn(status){
+  return status === 'ok' ? 'warn' : status;
 }
 /* =========================
    UI – render
@@ -601,6 +815,7 @@ const chkSame = $('#chkSameMedium');
 const chkAxial = $('#chkAxial');
 const chkWLI = $('#chkAboveWLI');
 const notesBox = $('#notesChips');
+const generalBox = $('#generalChips');
 const fireRow = $('#fireRow');
 const results = $('#results');
 
@@ -630,46 +845,110 @@ function renderNotesLegend(ds){
   const group = ds.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
   const sys = group?.systems.find(s=>s.key===sysKey);
   notesBox.innerHTML = '';
+  if(generalBox) generalBox.innerHTML = '';
   if(!sys){
     fireRow.textContent = '—';
+    renderGeneralLegend(ds);
     return;
   }
   fireRow.textContent = sys.fire || '—';
-  if(!sys.notes?.length) return;
 
-  for(const code of sys.notes){
-    const note = ds.NOTES.find(n=>n.id===code);
-    if(!note) continue;
+  if(sys.notes?.length){
+    for(const code of sys.notes){
+      const note = ds.NOTES?.[code];
+      if(!note) continue;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = note.tag || code.toUpperCase();
+      chip.addEventListener('click', ()=>{
+        showNoteModal({
+          title: `${note.tag || code.toUpperCase()} · ${note.titleES || ''}`.trim(),
+          es: note.es || '',
+          en: note.en || ''
+        });
+      });
+      notesBox.appendChild(chip);
+    }
+  }
+
+  renderGeneralLegend(ds);
+}
+
+function renderGeneralLegend(ds){
+  if(!generalBox) return;
+  generalBox.innerHTML = '';
+  const items = ds.GENERAL ? Object.values(ds.GENERAL) : [];
+  if(!items.length) return;
+  for(const rule of items){
     const chip = document.createElement('button');
     chip.type = 'button';
-    chip.className = 'chip';
-    chip.textContent = note.tag || code.toUpperCase();
+    chip.className = 'rule-chip';
+    chip.textContent = rule.tag || (rule.id || '').toUpperCase();
     chip.addEventListener('click', ()=>{
       showNoteModal({
-        title: `${note.tag || code.toUpperCase()} · ${note.titleES || ''}`.trim(),
-        es: note.es || note.textES || '',
-        en: note.en || note.textEN || ''
+        title: `${rule.tag || rule.id || ''} · ${rule.titleES || ''}`.trim(),
+        es: rule.es || '',
+        en: rule.en || ''
       });
     });
-    notesBox.appendChild(chip);
+    generalBox.appendChild(chip);
   }
 }
 
 function showContextualChecks(dataset){
   const lblAbove = document.querySelector('label[for="chkAboveWLI"]');
-  if(!lblAbove) return;
-  if(dataset.id==='ships'){
-    lblAbove.textContent = 'Ubicado sobre cubierta de mamparos / francobordo';
-    document.getElementById('helpWLI').textContent =
-      'Requisito de la Nota 5 en LR Ships para ciertas líneas (p.ej. drenes de cubierta internos).';
-  } else {
-    lblAbove.textContent = 'Ubicado por encima del límite de estanqueidad';
-    document.getElementById('helpWLI').textContent =
-      'Requisito de la Nota 6 en LR Naval para drenes de cubierta internos.';
+  const helpAbove = document.getElementById('helpWLI');
+  const sysKey = systemSel.value;
+  const group = dataset.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
+  const sys = group?.systems.find(s=>s.key===sysKey);
+  const space = spaceSel.value;
+  const pipeClass = classSel.value;
+
+  const visibleWrap = chkVisible?.closest('.check-item');
+  const sameWrap = chkSame?.closest('.check-item');
+  const axialWrap = chkAxial?.closest('.check-item');
+  const aboveWrap = chkWLI?.closest('.check-item');
+
+  const needsVisible = Boolean(sys?.notes?.includes('n2') && dataset.EXTRA?.n2_visibleOnlySpaces?.includes(space));
+  if(visibleWrap){
+    visibleWrap.style.display = needsVisible ? '' : 'none';
+    if(!needsVisible) chkVisible.checked = true;
+  }
+
+  const needsSameMedium = space === 'inside_tank';
+  if(sameWrap){
+    sameWrap.style.display = needsSameMedium ? '' : 'none';
+    if(!needsSameMedium) chkSame.checked = false;
+  }
+
+  const showAbove = sys?.key === 'deck_drains_internal';
+  if(aboveWrap){
+    aboveWrap.style.display = showAbove ? '' : 'none';
+    if(!showAbove) chkWLI.checked = true;
+  }
+
+  if(lblAbove && helpAbove){
+    if(dataset.id==='ships'){
+      lblAbove.textContent = 'Ubicado sobre cubierta de mamparos / francobordo';
+      helpAbove.textContent = 'Requisito de la Nota 5 en LR Ships para drenes de cubierta internos.';
+    } else {
+      lblAbove.textContent = 'Ubicado por encima del límite de estanqueidad';
+      helpAbove.textContent = 'Requisito de la Nota 6 en LR Naval para drenes de cubierta internos.';
+    }
+  }
+
+  const systemAllowsSlipType = Boolean(sys?.allow?.slip_type);
+  const classAllowsSlipType = dataset.CLASS_RULES?.slip_type?.[pipeClass]?.allowed !== false;
+  const needsAxial = (systemAllowsSlipType && classAllowsSlipType) || sys?.key === 'steam';
+  if(axialWrap){
+    axialWrap.style.display = needsAxial ? '' : 'none';
+    if(!needsAxial) chkAxial.checked = false;
   }
 }
 
 function clearResultsAndHints(){
+  applied = null;
   results.innerHTML = '';
 }
 
@@ -687,8 +966,7 @@ function onEvaluate(){
     visible: chkVisible.checked,
     sameMedium: chkSame.checked,
     axial: chkAxial.checked,
-    aboveWLI: chkWLI.checked,
-    designBar: null
+    aboveWLI: chkWLI.checked
   };
 
   const items = evaluate(ds, applied, sys.key);
@@ -786,7 +1064,11 @@ systemSel.addEventListener('change', ()=>{
 });
 
 [spaceSel, classSel].forEach(el=>{
-  el.addEventListener('change', clearResultsAndHints);
+  el.addEventListener('change', ()=>{
+    const ds = DATASETS[stdSel.value || 'naval'];
+    showContextualChecks(ds);
+    clearResultsAndHints();
+  });
 });
 odInp.addEventListener('input', clearResultsAndHints);
 
