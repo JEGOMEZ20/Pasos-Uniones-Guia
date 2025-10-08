@@ -329,6 +329,20 @@ const SYSTEM_GROUPS = [
         notes: ['n2', 'n3'],
         fire: 'Fire endurance test not required',
       },
+      {
+        key: 'gas_turbine_intakes_uptakes',
+        label: 'Tomas y descargas de turbina de gas',
+        allow: allTrue(),
+        notes: ['n7'],
+        fire: 'Fire endurance test not required',
+      },
+      {
+        key: 'hvac_trunking',
+        label: 'Conductos HVAC',
+        allow: allTrue(),
+        notes: ['n7'],
+        fire: 'Fire endurance test not required',
+      },
     ],
   },
   {
