@@ -3,15 +3,15 @@ import type { Dataset, ClassName, System, JointKey } from '../core/types';
 import { evaluate, type EvalItem } from '../core/evaluator';
 
 const JOINT_IMAGES: Record<string, string> = {
-  pipe_union_welded_brazed: 'welded_brazed.png',
-  comp_swage: 'compression_swage.png',
-  comp_bite: 'compression_bite.png',
-  comp_typical: 'compression_typical.png',
-  comp_flared: 'compression_flared.png',
-  comp_press: 'compression_press.png',
-  slip_mgrooved: 'slip_machine_grooved.png',
-  slip_grip: 'slip_grip.png',
-  slip_type: 'slip_slip.png',
+  pipe_union_welded_brazed: 'welded_brazed.jpg',
+  comp_swage: 'compression_swage.jpg',
+  comp_bite: 'compression_bite.jpg',
+  comp_typical: 'compression_typical.jpg',
+  comp_flared: 'compression_flared.jpg',
+  comp_press: 'compression_press.jpg',
+  slip_mgrooved: 'slip_machine_grooved.jpg',
+  slip_grip: 'slip_grip.jpg',
+  slip_type: 'slip_slip.jpg',
 };
 
 const jointImgPath = (k: string) => `assets/joints/${JOINT_IMAGES[k] ?? 'not-found.jpg'}`;
