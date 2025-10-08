@@ -8,9 +8,10 @@
   <style>
     :root {
       --ink: #e2e8f0;
-      --mut: rgba(148,163,184,.76);
-      --border: rgba(148,163,184,.18);
-      --bg: radial-gradient(circle at top,#1e293b 0%,#0f172a 55%,#020617 100%);
+      --mut: rgba(203,213,225,.82);
+      --border: rgba(148,163,184,.32);
+      --panel: linear-gradient(160deg, rgba(21,32,52,.97), rgba(9,15,29,.9));
+      --bg: radial-gradient(circle at top,#1b2d4f 0%,#0f1c33 55%,#040915 100%);
     }
     body {
       margin: 0;
@@ -23,13 +24,13 @@
       font-family: Inter,system-ui,-apple-system,"Segoe UI","Helvetica Neue",sans-serif;
     }
     main {
-      width: min(720px, 92vw);
-      padding: 44px 34px 50px;
-      border-radius: 30px;
+      width: min(860px, 94vw);
+      padding: 56px 48px 64px;
+      border-radius: 34px;
       border: 1px solid var(--border);
-      background: rgba(15,23,42,.82);
-      box-shadow: 0 28px 60px rgba(2,6,23,.55);
-      backdrop-filter: blur(18px);
+      background: var(--panel);
+      box-shadow: 0 36px 90px rgba(3,9,22,.6);
+      backdrop-filter: blur(26px);
     }
     .main-head {
       display: flex;
@@ -44,13 +45,14 @@
     }
     h1 {
       margin: 0;
-      font-size: clamp(28px, 4vw, 38px);
+      font-size: clamp(34px, 4.6vw, 46px);
+      letter-spacing: -.01em;
     }
     .titles p {
       margin: 0;
       color: var(--mut);
-      line-height: 1.7;
-      font-size: 15px;
+      line-height: 1.8;
+      font-size: clamp(16px, 1.6vw, 18px);
     }
     .logo-wrapper {
       flex-shrink: 0;
@@ -59,7 +61,7 @@
       justify-content: flex-end;
     }
     .brand-logo {
-      width: 120px;
+      width: clamp(130px, 16vw, 160px);
       height: auto;
       border-radius: 14px;
       box-shadow: 0 10px 30px rgba(2,6,23,.55);
@@ -69,34 +71,50 @@
       margin: 0;
       padding: 0;
       display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
     a.card {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 18px 20px;
-      border-radius: 20px;
-      border: 1px solid rgba(148,163,184,.25);
-      background: rgba(2,6,23,.55);
+      gap: 10px;
+      padding: 28px 30px;
+      border-radius: 24px;
+      border: 1px solid rgba(148,163,184,.38);
+      background: linear-gradient(140deg, rgba(30,41,59,.92), rgba(15,23,42,.82));
       color: inherit;
       text-decoration: none;
       transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
+    a.card.card-evaluator {
+      background: linear-gradient(145deg, rgba(47,72,118,.95), rgba(22,34,58,.88));
+      box-shadow: 0 18px 36px rgba(11,19,38,.55);
+    }
+    a.card.card-compat {
+      background: linear-gradient(145deg, rgba(40,66,94,.95), rgba(16,30,48,.88));
+      box-shadow: 0 18px 36px rgba(8,16,32,.5);
+    }
     a.card strong {
-      font-size: 17px;
+      font-size: clamp(20px, 2.2vw, 24px);
     }
     a.card span {
       color: var(--mut);
-      font-size: 14px;
+      font-size: clamp(15px, 1.6vw, 17px);
+      line-height: 1.8;
     }
     a.card:hover,
     a.card:focus-visible {
-      transform: translateY(-3px);
-      border-color: rgba(56,189,248,.65);
-      background: rgba(30,41,59,.85);
+      transform: translateY(-4px);
+      border-color: rgba(129,212,250,.8);
       outline: none;
+    }
+    a.card.card-evaluator:hover,
+    a.card.card-evaluator:focus-visible {
+      background: linear-gradient(150deg, rgba(64,97,158,.98), rgba(20,31,52,.9));
+    }
+    a.card.card-compat:hover,
+    a.card.card-compat:focus-visible {
+      background: linear-gradient(150deg, rgba(58,90,124,.98), rgba(18,28,46,.9));
     }
     @media (max-width: 640px) {
       .main-head {
@@ -107,11 +125,19 @@
         justify-content: flex-start;
       }
     }
-    footer {
-      margin-top: 26px;
+    .site-footer {
+      margin-top: 46px;
       font-size: 13px;
-      color: rgba(148,163,184,.65);
+      color: rgba(203,213,225,.74);
       text-align: center;
+    }
+    .site-footer .footer-wrap {
+      display: inline-grid;
+      gap: 6px;
+    }
+    .site-footer a {
+      color: inherit;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -128,19 +154,24 @@
     </header>
     <ul>
       <li>
-        <a class="card" href="juntas.html">
+        <a class="card card-evaluator" href="juntas.html">
           <strong>Evaluador de juntas LR</strong>
           <span>Evalúa rápidamente la aceptación de juntas mecánicas por norma, sistema y espacio.</span>
         </a>
       </li>
       <li>
-        <a class="card" href="compatibilidad.html">
+        <a class="card card-compat" href="compatibilidad.html">
           <strong>Compatibilidad de tuberías</strong>
           <span>Explora combinaciones de materiales y obtén notas de compatibilidad.</span>
         </a>
       </li>
     </ul>
-    <footer>© Lloyd's Register · Referencia interna de compatibilidad de tuberías.</footer>
+    <footer class="site-footer">
+      <div class="footer-wrap">
+        <div>Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN</div>
+        <div>Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
+      </div>
+    </footer>
   </main>
 </body>
 </html>
