@@ -57,11 +57,9 @@ export default function Evaluator({ dataset }: Props) {
   const [evaluated, setEvaluated] = useState<boolean>(false);
 
   useEffect(() => {
-    const firstGroup = dataset.SYSTEM_GROUPS[0];
-    const firstSystem = firstGroup?.systems[0];
-    setSystemKey(firstSystem?.key ?? '');
+    setSystemKey('');
     setPipeClass(null);
-    setSpace(dataset.SPACES[0]?.key ?? '');
+    setSpace('');
     setOd('');
     setVisible(false);
     setSameMedium(true);
@@ -102,7 +100,7 @@ export default function Evaluator({ dataset }: Props) {
   const generalNotes = useMemo(() => Object.values(dataset.GENERAL), [dataset.GENERAL]);
 
   const handleEvaluate = () => {
-    if (!systemKey || !pipeClass) return;
+    if (!systemKey || !pipeClass || !space) return;
     const numericOd = od.trim() === '' ? NaN : Number(od);
     const evalResults = evaluate(
       dataset,
@@ -135,6 +133,7 @@ export default function Evaluator({ dataset }: Props) {
           <div className="form-field">
             <label>Sistema / línea</label>
             <select value={systemKey} onChange={e => setSystemKey(e.target.value)}>
+              <option value="" disabled hidden={systemKey !== ''}>Selecciona sistema</option>
               {dataset.SYSTEM_GROUPS.map(group => (
                 <optgroup key={group.key} label={group.label}>
                   {group.systems.map(system => (
@@ -162,6 +161,7 @@ export default function Evaluator({ dataset }: Props) {
           <div className="form-field">
             <label>Espacio / ubicación</label>
             <select value={space} onChange={e => setSpace(e.target.value)}>
+              <option value="" disabled hidden={space !== ''}>Selecciona espacio</option>
               {dataset.SPACES.map(sp => (
                 <option key={sp.key} value={sp.key}>{sp.label}</option>
               ))}
