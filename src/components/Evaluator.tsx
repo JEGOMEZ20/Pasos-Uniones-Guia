@@ -47,7 +47,7 @@ interface Props { dataset: Dataset }
 
 export default function Evaluator({ dataset }: Props) {
   const [systemKey, setSystemKey] = useState<string>('');
-  const [pipeClass, setPipeClass] = useState<ClassName>('I');
+  const [pipeClass, setPipeClass] = useState<ClassName | ''>('');
   const [space, setSpace] = useState<string>('');
   const [od, setOd] = useState<string>('');
   const [visible, setVisible] = useState<boolean>(false);
@@ -61,7 +61,7 @@ export default function Evaluator({ dataset }: Props) {
     const firstGroup = dataset.SYSTEM_GROUPS[0];
     const firstSystem = firstGroup?.systems[0];
     setSystemKey(firstSystem?.key ?? '');
-    setPipeClass('I');
+    setPipeClass('');
     setSpace(dataset.SPACES[0]?.key ?? '');
     setOd('');
     setVisible(false);
@@ -92,7 +92,7 @@ export default function Evaluator({ dataset }: Props) {
   const selectedSystem = selected?.system;
   const normaLabel = dataset.id === 'naval' ? 'LR Naval' : 'LR Ships';
   const grupoLabelForCard = selected ? `${selected.group} ${selected.system.label}` : null;
-  const claseLabelForCard = CLASS_LABEL_MAP[pipeClass];
+  const claseLabelForCard = pipeClass ? CLASS_LABEL_MAP[pipeClass] : null;
 
   const selectedNotes = useMemo(() => {
     if (!selectedSystem) return [];
@@ -104,7 +104,7 @@ export default function Evaluator({ dataset }: Props) {
   const generalNotes = useMemo(() => Object.values(dataset.GENERAL), [dataset.GENERAL]);
 
   const handleEvaluate = () => {
-    if (!systemKey) return;
+    if (!systemKey || !pipeClass) return;
     const numericOd = od.trim() === '' ? NaN : Number(od);
     const evalResults = evaluate(
       dataset,
@@ -148,7 +148,11 @@ export default function Evaluator({ dataset }: Props) {
           </div>
           <div className="form-field">
             <label>Clase de tubería</label>
-            <select value={pipeClass} onChange={e => setPipeClass(e.target.value as ClassName)}>
+            <select
+              value={pipeClass}
+              onChange={e => setPipeClass(e.target.value as ClassName | '')}
+            >
+              <option value="" disabled>Selecciona clase</option>
               {CLASS_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -167,11 +171,13 @@ export default function Evaluator({ dataset }: Props) {
             <input value={od} onChange={e => setOd(e.target.value)} placeholder="Ej. 76" type="number" min="0" step="0.1" />
           </div>
         </div>
-        <ClaseLimitsCard
-          norma={normaLabel}
-          grupoDeSistemaLabel={grupoLabelForCard}
-          clase={claseLabelForCard}
-        />
+        {pipeClass && (
+          <ClaseLimitsCard
+            norma={normaLabel}
+            grupoDeSistemaLabel={grupoLabelForCard}
+            clase={claseLabelForCard}
+          />
+        )}
         <div className="form-grid toggle-grid">
           <div className="form-field">
             <label htmlFor="visible-select">Visible y accesible</label>
