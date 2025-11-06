@@ -9,7 +9,6 @@ export interface EvalInput {
   od: number;
   visible: boolean;      // “visible y accesible”
   sameMedium: boolean;   // dentro de tanque, ¿mismo medio?
-  axial: boolean;        // slip type: ¿compensación axial?
   aboveWLI: boolean;     // drenajes internos: por encima del L.E.
 }
 
@@ -101,7 +100,7 @@ export function evaluate(dataset: Dataset, input: EvalInput, systemKey: string):
     }
     if (status !== 'no' && jt.key === 'slip_type') {
       status = status === 'ok' ? 'warn' : status;
-      if (!input.axial) reasons.push('Slip type como medio principal: sólo si compensa dilatación axial.');
+      reasons.push('Slip type como medio principal: sólo si compensa dilatación axial.');
     }
 
     items.push({ jt: jt.key, status, reasons });
