@@ -177,12 +177,6 @@
   .check-item .mut {
     line-height: 1.4;
   }
-  .axial-control .check-text {
-    gap: 10px;
-  }
-  .axial-control select {
-    margin-top: 4px;
-  }
   .btn {
     background: #0ea5e9;
     color: #041628;
@@ -443,6 +437,7 @@
         <div>
           <label class="lbl">Clase de tubería</label>
           <select id="classSel">
+            <option value="" disabled selected>Selecciona clase</option>
             <option value="I">Clase I</option>
             <option value="II">Clase II</option>
             <option value="III">Clase III</option>
@@ -473,15 +468,6 @@
             <select id="sameMediumSelect">
               <option value="no">No coincide</option>
               <option value="yes">Sí coincide</option>
-            </select>
-          </div>
-        </div>
-        <div class="check-item axial-control">
-          <div class="check-text">
-            <label for="axialSelect">(Slip type) Requiere compensación axial</label>
-            <select id="axialSelect">
-              <option value="no">No requiere compensación</option>
-              <option value="yes">Sí requiere compensación</option>
             </select>
           </div>
         </div>
@@ -1297,12 +1283,8 @@ function applyGeneralRules(ctx){
   if(joint.key === 'slip_type'){
     status = escalateWarn(status);
     const slipTypeRule = dataset.id === 'ships' ? 'Regla 2.12.9' : 'Regla 5.10.10';
-    if(input.axial){
-      reasons.push(`Condición: slip type solo como medio principal si compensa deformación axial (${slipTypeRule}).`);
-    } else {
-      reasons.push(`Slip type como medio principal: solo si compensa deformación axial (${slipTypeRule}).`);
-    }
-    if(dataset.id === 'ships' && sys.notes?.includes('n8') && input.axial){
+    reasons.push(`Slip type como medio principal: solo si compensa deformación axial (${slipTypeRule}).`);
+    if(dataset.id === 'ships' && sys.notes?.includes('n8')){
       reasons.push('Vapor: slip-on restringida para movimiento axial (Nota 8 / Regla 2.12.10).');
     }
   }
@@ -1328,7 +1310,6 @@ const odInp = $('#odInp');
 const spaceSel = $('#spaceSel');
 const visibleSel = $('#visibleSelect');
 const sameSel = $('#sameMediumSelect');
-const axialSel = $('#axialSelect');
 const chkWLI = $('#chkAboveWLI');
 const notesBox = $('#notesChips');
 const generalBox = $('#generalChips');
@@ -1347,6 +1328,9 @@ function loadDataset(){
   groupSel.value = groupSel.options.length ? '0' : '';
   fillSystemsFromGroup(ds);
   spaceSel.innerHTML = ds.SPACES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  if(classSel){
+    classSel.value = '';
+  }
   renderNotesLegend(ds);
   showContextualChecks(ds);
   clearResultsAndHints();
@@ -1426,11 +1410,8 @@ function showContextualChecks(dataset){
   const group = dataset.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
   const sys = group?.systems.find(s=>s.key===sysKey);
   const space = spaceSel.value;
-  const pipeClass = classSel.value;
-
   const visibleWrap = visibleSel?.closest('.check-item');
   const sameWrap = sameSel?.closest('.check-item');
-  const axialWrap = axialSel?.closest('.check-item');
   const aboveWrap = chkWLI?.closest('.check-item');
 
   const needsVisible = Boolean(sys?.notes?.includes('n2') && dataset.EXTRA?.n2_visibleOnlySpaces?.includes(space));
@@ -1467,17 +1448,6 @@ function showContextualChecks(dataset){
     }
   }
 
-  const systemAllowsSlipType = Boolean(sys?.allow?.slip_type);
-  const classAllowsSlipType = dataset.CLASS_RULES?.slip_type?.[pipeClass]?.allowed !== false;
-  const needsAxial = (systemAllowsSlipType && classAllowsSlipType) || sys?.key === 'steam';
-  if(axialWrap){
-    axialWrap.style.display = needsAxial ? '' : 'none';
-    if(axialSel){
-      axialSel.disabled = !needsAxial;
-      if(!needsAxial) axialSel.value = 'no';
-    }
-  }
-
   renderClassInfoCard(dataset);
 }
 
@@ -1494,6 +1464,10 @@ function onEvaluate(){
   const group = ds.SYSTEM_GROUPS[Number(groupSel.value)||0];
   const sys = group?.systems.find(s=>s.key===systemSel.value);
   if(!sys) return;
+  if(!classSel.value){
+    classSel.focus();
+    return;
+  }
 
   applied = {
     systemKey: sys.key,
@@ -1502,7 +1476,6 @@ function onEvaluate(){
     od: Number(odInp.value||0),
     visible: visibleSel?.value === 'yes',
     sameMedium: sameSel?.value === 'yes',
-    axial: axialSel?.value === 'yes',
     aboveWLI: chkWLI.checked
   };
 
@@ -1658,8 +1631,8 @@ systemSel.addEventListener('change', ()=>{
 });
 odInp.addEventListener('input', clearResultsAndHints);
 
-document.querySelectorAll('.check-item input').forEach(inp=>{
-  inp.addEventListener('change', clearResultsAndHints);
+document.querySelectorAll('.check-item input, .check-item select').forEach(el=>{
+  el.addEventListener('change', clearResultsAndHints);
 });
 
 $('#btnEval').addEventListener('click', onEvaluate);

@@ -113,7 +113,6 @@ export default function Evaluator({ dataset }: Props) {
         od: Number.isFinite(numericOd) ? numericOd : NaN,
         visible,
         sameMedium,
-        axial: false,
         aboveWLI,
       },
       systemKey,
