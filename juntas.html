@@ -117,6 +117,36 @@
     gap: 16px;
     margin-top: 16px;
   }
+  #classInfoCard {
+    margin-top: 18px;
+  }
+  .info-card {
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(15, 23, 42, 0.55);
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.35);
+    padding: 16px 18px;
+    display: grid;
+    gap: 8px;
+  }
+  .info-card-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(226, 232, 240, 0.72);
+  }
+  .info-card-body {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: inherit;
+    white-space: pre-wrap;
+    color: rgba(226, 232, 240, 0.9);
+  }
+  .info-card-hint {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.75);
+  }
   .check-item {
     display: flex;
     align-items: flex-start;
@@ -463,6 +493,7 @@
           </div>
         </div>
       </div>
+      <div id="classInfoCard" style="display:none"></div>
       <div class="mt-3">
         <button id="btnEval" class="btn">Evaluar</button>
       </div>
@@ -943,6 +974,130 @@ function jointImgPath(key){
   return 'assets/joints/' + (JOINT_IMAGES[key] || 'not-found.jpg');
 }
 
+const CLASS_CARD_LIMITS = {
+  Steam:             { P2_bar:16, T2_C:300, P1_bar:7,  T1_C:170 },
+  'Thermal oil':     { P2_bar:16, T2_C:300, P1_bar:7,  T1_C:150 },
+  'Flammable liquids': { P2_bar:16, T2_C:150, P1_bar:7,  T1_C:60  },
+  'Other media':     { P2_bar:40, T2_C:300, P1_bar:16, T1_C:200 },
+  'Cargo oil':       { P2_bar:40, T2_C:300, P1_bar:16, T1_C:200, shipsOnly:true },
+};
+
+const toMPa = (bar)=>+(bar/10).toFixed(2);
+const escapeHtml = (s)=>(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function detectMediumLabel(groupLabel, systemLabel){
+  const raw = `${groupLabel || ''} ${systemLabel || ''}`.trim();
+  if(!raw) return null;
+  const normalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(normalized.includes('vapor') || normalized.includes('steam')) return 'Steam';
+  if(normalized.includes('termico') || normalized.includes('thermal')) return 'Thermal oil';
+  if(
+    normalized.includes('cargo') ||
+    normalized.includes('crudo') ||
+    normalized.includes('derivado') ||
+    normalized.includes('lavado') ||
+    normalized.includes('washing')
+  ){
+    return 'Cargo oil';
+  }
+  if(
+    normalized.includes('inflamable') ||
+    normalized.includes('combustible') ||
+    normalized.includes('fuel') ||
+    normalized.includes('aceite') ||
+    normalized.includes('oil')
+  ){
+    return 'Flammable liquids';
+  }
+  return 'Other media';
+}
+
+function infoCardHtml({ title, body, hint }){
+  return `<div class="info-card">
+    <div class="info-card-title">${escapeHtml(title)}</div>
+    <pre class="info-card-body">${escapeHtml(body)}</pre>
+    ${hint ? `<div class="info-card-hint">${escapeHtml(hint)}</div>` : ''}
+  </div>`;
+}
+
+function renderClassInfoCard(dataset){
+  const card = classInfoCard;
+  if(!card) return;
+
+  const groupIdx = Number(groupSel?.value ?? 0) || 0;
+  const fallbackGroup = dataset.SYSTEM_GROUPS[groupIdx];
+  const sysKey = systemSel?.value;
+  const group = dataset.SYSTEM_GROUPS.find(g=>g.systems.some(s=>s.key===sysKey)) || fallbackGroup;
+  const system = group?.systems.find(s=>s.key===sysKey) || group?.systems[0];
+  const pipeClass = classSel?.value;
+
+  if(!group || !system || !pipeClass){
+    card.innerHTML='';
+    card.style.display='none';
+    return;
+  }
+
+  const medio = detectMediumLabel(group.label, system.label);
+  if(!medio){
+    card.innerHTML='';
+    card.style.display='none';
+    return;
+  }
+
+  const lim = CLASS_CARD_LIMITS[medio];
+  if(!lim){
+    card.innerHTML='';
+    card.style.display='none';
+    return;
+  }
+
+  const norma = dataset.title || (dataset.id === 'ships' ? 'LR Ships' : 'LR Naval');
+  if(norma === 'LR Naval' && lim.shipsOnly){
+    card.innerHTML = infoCardHtml({
+      title:'Límites por clase',
+      body:'El servicio seleccionado no aplica en LR Naval (no hay límites tabulados para este medio).\n\nSelecciona otro grupo de sistema.',
+    });
+    card.style.display='';
+    return;
+  }
+
+  const p2 = toMPa(lim.P2_bar);
+  const p1 = toMPa(lim.P1_bar);
+  let html = '';
+  if(pipeClass === 'I'){
+    html = infoCardHtml({
+      title:'Límites por clase – Clase I',
+      body:
+        'Clase I no tiene límite tabulado de P/T. Se selecciona cuando P > P₂ o T > T₂ del medio seleccionado.\n\n' +
+        'Umbrales (Clase II) para este medio:\n' +
+        `• P₂ = ${lim.P2_bar} bar (${p2} MPa)\n` +
+        `• T₂ = ${lim.T2_C} °C`,
+      hint:`Norma: ${norma}`,
+    });
+  } else if(pipeClass === 'II'){
+    html = infoCardHtml({
+      title:'Límites por clase – Clase II',
+      body:
+        'Máximos permitidos para el medio seleccionado:\n' +
+        `• P₂ = ${lim.P2_bar} bar (${p2} MPa)\n` +
+        `• T₂ = ${lim.T2_C} °C`,
+      hint:`Norma: ${norma}`,
+    });
+  } else {
+    html = infoCardHtml({
+      title:'Límites por clase – Clase III',
+      body:
+        'Máximos permitidos para el medio seleccionado:\n' +
+        `• P₁ = ${lim.P1_bar} bar (${p1} MPa)\n` +
+        `• T₁ = ${lim.T1_C} °C`,
+      hint:`Norma: ${norma}`,
+    });
+  }
+
+  card.innerHTML = html;
+  card.style.display = html ? '' : 'none';
+}
+
 /* =========================
    MOTOR DE EVALUACIÓN (JS puro)
    ========================= */
@@ -1182,6 +1337,7 @@ const results = $('#results');
 const imgModal = $('#imgModal');
 const imgModalSrc = $('#imgModalSrc');
 const imgModalCaption = $('#imgModalCaption');
+const classInfoCard = document.getElementById('classInfoCard');
 
 let applied = null; // estado congelado
 
@@ -1202,6 +1358,9 @@ function fillSystemsFromGroup(ds){
   const effectiveIdx = ds.SYSTEM_GROUPS.indexOf(group);
   if(effectiveIdx>=0) groupSel.value = String(effectiveIdx);
   systemSel.innerHTML = group ? group.systems.map(s=>`<option value="${s.key}">${s.label}</option>`).join('') : '';
+  if(group && group.systems.length){
+    systemSel.value = group.systems[0].key;
+  }
 }
 
 function renderNotesLegend(ds){
@@ -1318,6 +1477,8 @@ function showContextualChecks(dataset){
       if(!needsAxial) axialSel.value = 'no';
     }
   }
+
+  renderClassInfoCard(dataset);
 }
 
 function clearResultsAndHints(){
