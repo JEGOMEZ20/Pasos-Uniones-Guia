@@ -47,12 +47,11 @@ interface Props { dataset: Dataset }
 
 export default function Evaluator({ dataset }: Props) {
   const [systemKey, setSystemKey] = useState<string>('');
-  const [pipeClass, setPipeClass] = useState<ClassName | ''>('');
+  const [pipeClass, setPipeClass] = useState<ClassName | null>(null);
   const [space, setSpace] = useState<string>('');
   const [od, setOd] = useState<string>('');
   const [visible, setVisible] = useState<boolean>(false);
   const [sameMedium, setSameMedium] = useState<boolean>(true);
-  const [axial, setAxial] = useState<boolean>(false);
   const [aboveWLI, setAboveWLI] = useState<boolean>(false);
   const [results, setResults] = useState<EvalItem[]>([]);
   const [evaluated, setEvaluated] = useState<boolean>(false);
@@ -61,12 +60,11 @@ export default function Evaluator({ dataset }: Props) {
     const firstGroup = dataset.SYSTEM_GROUPS[0];
     const firstSystem = firstGroup?.systems[0];
     setSystemKey(firstSystem?.key ?? '');
-    setPipeClass('');
+    setPipeClass(null);
     setSpace(dataset.SPACES[0]?.key ?? '');
     setOd('');
     setVisible(false);
     setSameMedium(true);
-    setAxial(false);
     setAboveWLI(false);
     setResults([]);
     setEvaluated(false);
@@ -115,7 +113,7 @@ export default function Evaluator({ dataset }: Props) {
         od: Number.isFinite(numericOd) ? numericOd : NaN,
         visible,
         sameMedium,
-        axial,
+        axial: false,
         aboveWLI,
       },
       systemKey,
@@ -149,10 +147,13 @@ export default function Evaluator({ dataset }: Props) {
           <div className="form-field">
             <label>Clase de tubería</label>
             <select
-              value={pipeClass}
-              onChange={e => setPipeClass(e.target.value as ClassName | '')}
+              value={pipeClass ?? ''}
+              onChange={e => {
+                const value = e.target.value as ClassName | '';
+                setPipeClass(value === '' ? null : value);
+              }}
             >
-              <option value="" disabled>Selecciona clase</option>
+              <option value="" disabled hidden={pipeClass !== null}>Selecciona clase</option>
               {CLASS_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -196,17 +197,6 @@ export default function Evaluator({ dataset }: Props) {
               id="same-medium-select"
               value={sameMedium ? 'yes' : 'no'}
               onChange={e => setSameMedium(e.target.value === 'yes')}
-            >
-              <option value="yes">SI</option>
-              <option value="no">NO</option>
-            </select>
-          </div>
-          <div className="form-field">
-            <label htmlFor="axial-select">Compensa dilatación axial (slip type)</label>
-            <select
-              id="axial-select"
-              value={axial ? 'yes' : 'no'}
-              onChange={e => setAxial(e.target.value === 'yes')}
             >
               <option value="yes">SI</option>
               <option value="no">NO</option>
