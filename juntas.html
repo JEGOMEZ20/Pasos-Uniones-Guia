@@ -476,7 +476,7 @@
             </select>
           </div>
         </div>
-        <div class="check-item axial-control">
+        <div class="check-item axial-control" style="display:none;">
           <div class="check-text">
             <label for="axialSelect">(Slip type) Requiere compensación axial</label>
             <select id="axialSelect">
@@ -1467,9 +1467,7 @@ function showContextualChecks(dataset){
     }
   }
 
-  const systemAllowsSlipType = Boolean(sys?.allow?.slip_type);
-  const classAllowsSlipType = dataset.CLASS_RULES?.slip_type?.[pipeClass]?.allowed !== false;
-  const needsAxial = (systemAllowsSlipType && classAllowsSlipType) || sys?.key === 'steam';
+  const needsAxial = false;
   if(axialWrap){
     axialWrap.style.display = needsAxial ? '' : 'none';
     if(axialSel){
