@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { Dataset, ClassName, System, JointKey } from '../core/types';
 import { evaluate, type EvalItem } from '../core/evaluator';
+import { ClaseLimitsCard } from './ClaseLimitsCard';
 
 const JOINT_IMAGES: Record<string, string> = {
   pipe_union_welded_brazed: 'welded_brazed.jpg',
@@ -35,6 +36,12 @@ const CLASS_OPTIONS: { value: ClassName; label: string }[] = [
   { value: 'II', label: 'Clase II' },
   { value: 'III', label: 'Clase III' },
 ];
+
+const CLASS_LABEL_MAP: Record<ClassName, 'Clase I' | 'Clase II' | 'Clase III'> = {
+  I: 'Clase I',
+  II: 'Clase II',
+  III: 'Clase III',
+};
 
 interface Props { dataset: Dataset }
 
@@ -83,6 +90,9 @@ export default function Evaluator({ dataset }: Props) {
 
   const selected = systemMap.get(systemKey);
   const selectedSystem = selected?.system;
+  const normaLabel = dataset.id === 'naval' ? 'LR Naval' : 'LR Ships';
+  const grupoLabelForCard = selected ? `${selected.group} ${selected.system.label}` : null;
+  const claseLabelForCard = CLASS_LABEL_MAP[pipeClass];
 
   const selectedNotes = useMemo(() => {
     if (!selectedSystem) return [];
@@ -157,6 +167,11 @@ export default function Evaluator({ dataset }: Props) {
             <input value={od} onChange={e => setOd(e.target.value)} placeholder="Ej. 76" type="number" min="0" step="0.1" />
           </div>
         </div>
+        <ClaseLimitsCard
+          norma={normaLabel}
+          grupoDeSistemaLabel={grupoLabelForCard}
+          clase={claseLabelForCard}
+        />
         <div className="form-grid toggle-grid">
           <div className="form-field">
             <label htmlFor="visible-select">Visible y accesible</label>
