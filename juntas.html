@@ -428,21 +428,27 @@
         <div>
           <label class="lbl">Norma</label>
           <select id="stdSel">
+            <option value="" selected disabled>Selecciona norma</option>
             <option value="naval">LR Naval</option>
             <option value="ships">LR Ships</option>
           </select>
         </div>
         <div>
           <label class="lbl">Grupo de sistema</label>
-          <select id="groupSel"></select>
+          <select id="groupSel" disabled>
+            <option value="">Selecciona grupo de sistema</option>
+          </select>
         </div>
         <div>
           <label class="lbl">Sistema</label>
-          <select id="systemSel"></select>
+          <select id="systemSel" disabled>
+            <option value="">Selecciona sistema</option>
+          </select>
         </div>
         <div>
           <label class="lbl">Clase de tubería</label>
-          <select id="classSel">
+          <select id="classSel" disabled>
+            <option value="">Selecciona clase</option>
             <option value="I">Clase I</option>
             <option value="II">Clase II</option>
             <option value="III">Clase III</option>
@@ -454,7 +460,9 @@
         </div>
         <div>
           <label class="lbl">Espacio</label>
-          <select id="spaceSel"></select>
+          <select id="spaceSel" disabled>
+            <option value="">Selecciona espacio</option>
+          </select>
         </div>
       </div>
       <div class="checks">
@@ -1024,11 +1032,19 @@ function renderClassInfoCard(dataset){
   const card = classInfoCard;
   if(!card) return;
 
-  const groupIdx = Number(groupSel?.value ?? 0) || 0;
-  const fallbackGroup = dataset.SYSTEM_GROUPS[groupIdx];
+  if(!dataset){
+    card.innerHTML = '';
+    card.style.display = 'none';
+    return;
+  }
+
   const sysKey = systemSel?.value;
-  const group = dataset.SYSTEM_GROUPS.find(g=>g.systems.some(s=>s.key===sysKey)) || fallbackGroup;
-  const system = group?.systems.find(s=>s.key===sysKey) || group?.systems[0];
+  const rawGroup = groupSel?.value ?? '';
+  const groupIdx = rawGroup === '' ? NaN : Number(rawGroup);
+  const hasGroupSelection = !Number.isNaN(groupIdx) && groupIdx >= 0;
+  const selectedGroup = hasGroupSelection ? dataset.SYSTEM_GROUPS[groupIdx] : undefined;
+  const group = dataset.SYSTEM_GROUPS.find(g=>g.systems.some(s=>s.key===sysKey)) || selectedGroup;
+  const system = group?.systems.find(s=>s.key===sysKey);
   const pipeClass = classSel?.value;
 
   if(!group || !system || !pipeClass){
@@ -1342,35 +1358,72 @@ const classInfoCard = document.getElementById('classInfoCard');
 let applied = null; // estado congelado
 
 function loadDataset(){
-  const ds = DATASETS[stdSel.value || 'naval'];
-  groupSel.innerHTML = ds.SYSTEM_GROUPS.map((g,i)=>`<option value="${i}">${g.label}</option>`).join('');
-  groupSel.value = groupSel.options.length ? '0' : '';
-  fillSystemsFromGroup(ds);
-  spaceSel.innerHTML = ds.SPACES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  const key = stdSel.value;
+  const ds = key ? DATASETS[key] : null;
+
+  groupSel.innerHTML = '<option value="">Selecciona grupo de sistema</option>';
+  groupSel.value = '';
+  groupSel.disabled = !ds || !ds.SYSTEM_GROUPS.length;
+
+  systemSel.innerHTML = '<option value="">Selecciona sistema</option>';
+  systemSel.value = '';
+  systemSel.disabled = true;
+
+  if(classSel){
+    classSel.value = '';
+    classSel.disabled = !ds;
+  }
+
+  spaceSel.innerHTML = '<option value="">Selecciona espacio</option>';
+  spaceSel.value = '';
+  spaceSel.disabled = !ds || !ds.SPACES.length;
+
+  if(ds){
+    groupSel.innerHTML += ds.SYSTEM_GROUPS.map((g,i)=>`<option value="${i}">${g.label}</option>`).join('');
+    spaceSel.innerHTML += ds.SPACES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  }
+
   renderNotesLegend(ds);
   showContextualChecks(ds);
   clearResultsAndHints();
 }
 
 function fillSystemsFromGroup(ds){
-  const idx = Number(groupSel.value) || 0;
-  const group = ds.SYSTEM_GROUPS[idx] || ds.SYSTEM_GROUPS[0];
-  const effectiveIdx = ds.SYSTEM_GROUPS.indexOf(group);
-  if(effectiveIdx>=0) groupSel.value = String(effectiveIdx);
-  systemSel.innerHTML = group ? group.systems.map(s=>`<option value="${s.key}">${s.label}</option>`).join('') : '';
-  if(group && group.systems.length){
-    systemSel.value = group.systems[0].key;
+  systemSel.innerHTML = '<option value="">Selecciona sistema</option>';
+  systemSel.value = '';
+  systemSel.disabled = true;
+  if(!ds) return;
+
+  const rawIdx = groupSel.value;
+  if(!rawIdx){
+    return;
   }
+
+  const idx = Number(rawIdx);
+  if(Number.isNaN(idx) || idx < 0){
+    return;
+  }
+
+  const group = ds.SYSTEM_GROUPS[idx];
+  if(!group){
+    return;
+  }
+
+  systemSel.innerHTML += group.systems.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  systemSel.disabled = !group.systems.length;
 }
 
 function renderNotesLegend(ds){
+  notesBox.innerHTML = '';
+  if(generalBox) generalBox.innerHTML = '';
+  fireRow.textContent = '—';
+  if(!ds){
+    return;
+  }
   const sysKey = systemSel.value;
   const group = ds.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
   const sys = group?.systems.find(s=>s.key===sysKey);
-  notesBox.innerHTML = '';
-  if(generalBox) generalBox.innerHTML = '';
   if(!sys){
-    fireRow.textContent = '—';
     renderGeneralLegend(ds);
     return;
   }
@@ -1401,6 +1454,7 @@ function renderNotesLegend(ds){
 function renderGeneralLegend(ds){
   if(!generalBox) return;
   generalBox.innerHTML = '';
+  if(!ds) return;
   const items = ds.GENERAL ? Object.values(ds.GENERAL) : [];
   if(!items.length) return;
   for(const rule of items){
@@ -1423,7 +1477,7 @@ function showContextualChecks(dataset){
   const lblAbove = document.querySelector('label[for="chkAboveWLI"]');
   const helpAbove = document.getElementById('helpWLI');
   const sysKey = systemSel.value;
-  const group = dataset.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
+  const group = dataset?.SYSTEM_GROUPS.find(g => g.systems.some(s=>s.key===sysKey));
   const sys = group?.systems.find(s=>s.key===sysKey);
   const space = spaceSel.value;
   const pipeClass = classSel.value;
@@ -1432,6 +1486,40 @@ function showContextualChecks(dataset){
   const sameWrap = sameSel?.closest('.check-item');
   const axialWrap = axialSel?.closest('.check-item');
   const aboveWrap = chkWLI?.closest('.check-item');
+
+  if(!dataset){
+    if(visibleWrap){
+      visibleWrap.style.display = 'none';
+      if(visibleSel){
+        visibleSel.disabled = true;
+        visibleSel.value = 'yes';
+      }
+    }
+    if(sameWrap){
+      sameWrap.style.display = 'none';
+      if(sameSel){
+        sameSel.disabled = true;
+        sameSel.value = 'no';
+      }
+    }
+    if(axialWrap){
+      axialWrap.style.display = 'none';
+      if(axialSel){
+        axialSel.disabled = true;
+        axialSel.value = 'no';
+      }
+    }
+    if(aboveWrap){
+      aboveWrap.style.display = 'none';
+      if(chkWLI) chkWLI.checked = true;
+    }
+    if(lblAbove && helpAbove){
+      lblAbove.textContent = '(Drenajes) Ubicado por encima del límite de estanqueidad';
+      helpAbove.textContent = 'Requisito de la Nota 6 en LR Naval para drenes de cubierta internos.';
+    }
+    renderClassInfoCard(null);
+    return;
+  }
 
   const needsVisible = Boolean(sys?.notes?.includes('n2') && dataset.EXTRA?.n2_visibleOnlySpaces?.includes(space));
   if(visibleWrap){
@@ -1488,15 +1576,30 @@ function clearResultsAndHints(){
 }
 
 function onEvaluate(){
-  const ds = DATASETS[stdSel.value || 'naval'];
-  const group = ds.SYSTEM_GROUPS[Number(groupSel.value)||0];
-  const sys = group?.systems.find(s=>s.key===systemSel.value);
+  const key = stdSel.value;
+  if(!key) return;
+  const ds = DATASETS[key];
+  if(!ds) return;
+
+  if(!groupSel.value) return;
+  const groupIdx = Number(groupSel.value);
+  if(Number.isNaN(groupIdx)) return;
+  const group = ds.SYSTEM_GROUPS[groupIdx];
+  if(!group) return;
+
+  const sysKey = systemSel.value;
+  if(!sysKey) return;
+  const sys = group.systems.find(s=>s.key===sysKey);
   if(!sys) return;
+
+  const pipeClass = classSel.value;
+  const space = spaceSel.value;
+  if(!pipeClass || !space) return;
 
   applied = {
     systemKey: sys.key,
-    pipeClass: classSel.value,
-    space: spaceSel.value,
+    pipeClass,
+    space,
     od: Number(odInp.value||0),
     visible: visibleSel?.value === 'yes',
     sameMedium: sameSel?.value === 'yes',
@@ -1633,7 +1736,8 @@ stdSel.addEventListener('change', ()=>{
 });
 
 groupSel.addEventListener('change', ()=>{
-  const ds = DATASETS[stdSel.value || 'naval'];
+  const key = stdSel.value;
+  const ds = key ? DATASETS[key] : null;
   fillSystemsFromGroup(ds);
   renderNotesLegend(ds);
   showContextualChecks(ds);
@@ -1641,7 +1745,8 @@ groupSel.addEventListener('change', ()=>{
 });
 
 systemSel.addEventListener('change', ()=>{
-  const ds = DATASETS[stdSel.value || 'naval'];
+  const key = stdSel.value;
+  const ds = key ? DATASETS[key] : null;
   renderNotesLegend(ds);
   showContextualChecks(ds);
   clearResultsAndHints();
@@ -1649,7 +1754,8 @@ systemSel.addEventListener('change', ()=>{
 
 [spaceSel, classSel].forEach(el=>{
   el.addEventListener('change', ()=>{
-    const ds = DATASETS[stdSel.value || 'naval'];
+    const key = stdSel.value;
+    const ds = key ? DATASETS[key] : null;
     showContextualChecks(ds);
     clearResultsAndHints();
   });
@@ -1680,10 +1786,6 @@ if (urlStd && DATASETS[urlStd]) {
 }
 
 loadDataset();
-const initialDataset = DATASETS[stdSel.value || 'naval'];
-renderNotesLegend(initialDataset);
-showContextualChecks(initialDataset);
-clearResultsAndHints();
 </script>
   <footer class="site-footer">
     <div class="footer-wrap">
