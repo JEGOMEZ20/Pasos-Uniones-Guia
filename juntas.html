@@ -512,7 +512,7 @@
       <div class="small" id="notesWrap">
         <div class="mb-2"><strong>Notas aplicables</strong></div>
         <div id="notesChips"></div>
-        <div class="mt-2 mut small">Ensayo fuego (fila): <span id="fireRow">—</span> – ver Nota 7 para especificación.</div>
+        <div class="mt-2 mut small">Ensayo fuego (fila): <span id="fireRow">Seleccionar datos de acuerdo a requerimiento</span> – ver Nota 7 para especificación.</div>
         <div class="mt-3">
           <div class="mb-2"><strong>Reglas generales</strong></div>
           <div id="generalChips"></div>
@@ -1354,6 +1354,7 @@ const imgModal = $('#imgModal');
 const imgModalSrc = $('#imgModalSrc');
 const imgModalCaption = $('#imgModalCaption');
 const classInfoCard = document.getElementById('classInfoCard');
+const FIRE_ROW_EMPTY = 'Seleccionar datos de acuerdo a requerimiento';
 
 let applied = null; // estado congelado
 
@@ -1416,7 +1417,7 @@ function fillSystemsFromGroup(ds){
 function renderNotesLegend(ds){
   notesBox.innerHTML = '';
   if(generalBox) generalBox.innerHTML = '';
-  fireRow.textContent = '—';
+  fireRow.textContent = FIRE_ROW_EMPTY;
   if(!ds){
     return;
   }
@@ -1427,7 +1428,7 @@ function renderNotesLegend(ds){
     renderGeneralLegend(ds);
     return;
   }
-  fireRow.textContent = sys.fire || '—';
+  fireRow.textContent = sys.fire || FIRE_ROW_EMPTY;
 
   if(sys.notes?.length){
     for(const code of sys.notes){
