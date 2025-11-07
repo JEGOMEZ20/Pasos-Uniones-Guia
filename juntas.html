@@ -508,7 +508,7 @@
     </div>
 
     <!-- Notas -->
-    <div class="card mb-3">
+    <div class="card mb-3" id="notesCard" hidden>
       <div class="small" id="notesWrap">
         <div class="mb-2"><strong>Notas aplicables</strong></div>
         <div id="notesChips"></div>
@@ -1346,6 +1346,7 @@ const visibleSel = $('#visibleSelect');
 const sameSel = $('#sameMediumSelect');
 const axialSel = $('#axialSelect');
 const chkWLI = $('#chkAboveWLI');
+const notesCard = document.getElementById('notesCard');
 const notesBox = $('#notesChips');
 const generalBox = $('#generalChips');
 const fireRow = $('#fireRow');
@@ -1573,6 +1574,9 @@ function clearResultsAndHints(){
   if(results){
     results.innerHTML = '<div class="empty-state">Haz clic en <strong>Evaluar</strong> para ver las juntas permitidas.</div>';
   }
+  if(notesCard){
+    notesCard.hidden = true;
+  }
   hideImageModal();
 }
 
@@ -1613,6 +1617,9 @@ function onEvaluate(){
 }
 
 function renderResults(ds, items){
+  if(notesCard){
+    notesCard.hidden = false;
+  }
   const order = Array.from(new Set(ds.JOINT_TYPES.map(j=>j.group)));
   const byGroup = {};
   for(const it of items){
