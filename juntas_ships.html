@@ -443,7 +443,7 @@
       <div class="small">
         <div class="mb-2"><strong>Notas aplicables</strong></div>
         <div id="notesChips"></div>
-        <div class="small mut mt-2">Ensayo fuego (fila): <span id="fireRow">—</span> – (ver Nota 7 para equivalencias y especificación).</div>
+        <div class="small mut mt-2">Ensayo fuego (fila): <span id="fireRow">Seleccionar datos de acuerdo a requerimiento</span> – (ver Nota 7 para equivalencias y especificación).</div>
         <div class="rule-row mt-3">
           <span class="rule-chip">Regla 2.12.8</span>
           <span class="rule-chip">Regla 2.12.9</span>
@@ -623,6 +623,7 @@ const classInfoCard=document.getElementById('classInfoCard');
 const bodyEl=document.body;
 const imgModal=$('#imgModal'), imgModalSrc=$('#imgModalSrc'), imgModalCaption=$('#imgModalCaption'), imgModalClose=$('#imgModalClose');
 const FIGURE_CODE='12.2.4/12.2.5';
+const FIRE_ROW_EMPTY='Seleccionar datos de acuerdo a requerimiento';
 const escapeAttr = s => (s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 const CLASS_CARD_LIMITS = {
@@ -763,7 +764,7 @@ function renderNotes(){
     const n = std.NOTES[nc];
     return n ? `<button class="note-chip" title="${n.en.replace(/"/g,'&quot;')}">Nota ${n.id}</button>` : '';
   }).join(' ');
-  fireRow.textContent = s?.fire || '—';
+  fireRow.textContent = s?.fire || FIRE_ROW_EMPTY;
   renderClassInfoCard();
 }
 function showContextualChecks(){
