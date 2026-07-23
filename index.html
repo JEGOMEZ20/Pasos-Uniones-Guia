@@ -3,180 +3,54 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guía de pasos – LR Ships / LR Naval</title>
-  <link rel="stylesheet" href="assets/css/app.css">
-  <style>
-    :root {
-      --ink: #e2e8f0;
-      --mut: rgba(203,213,225,.82);
-      --border: rgba(148,163,184,.32);
-      --panel: linear-gradient(160deg, rgba(21,32,52,.97), rgba(9,15,29,.9));
-      --bg: radial-gradient(circle at top,#1b2d4f 0%,#0f1c33 55%,#040915 100%);
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Inter,system-ui,-apple-system,"Segoe UI","Helvetica Neue",sans-serif;
-    }
-    main {
-      width: min(860px, 94vw);
-      padding: 56px 48px 64px;
-      border-radius: 34px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      box-shadow: 0 36px 90px rgba(3,9,22,.6);
-      backdrop-filter: blur(26px);
-    }
-    .main-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 24px;
-      margin-bottom: 26px;
-    }
-    .titles {
-      display: grid;
-      gap: 14px;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(34px, 4.6vw, 46px);
-      letter-spacing: -.01em;
-    }
-    .titles p {
-      margin: 0;
-      color: var(--mut);
-      line-height: 1.8;
-      font-size: clamp(16px, 1.6vw, 18px);
-    }
-    .logo-wrapper {
-      flex-shrink: 0;
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-end;
-    }
-    .brand-logo {
-      width: clamp(130px, 16vw, 160px);
-      height: auto;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(2,6,23,.55);
-    }
-    ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 24px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      grid-auto-rows: 1fr;
-      align-items: stretch;
-    }
-    li {
-      display: flex;
-      height: 100%;
-    }
-    a.card {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 28px 30px;
-      border-radius: 24px;
-      border: 1px solid rgba(148,163,184,.38);
-      background: linear-gradient(140deg, rgba(30,41,59,.92), rgba(15,23,42,.82));
-      color: inherit;
-      text-decoration: none;
-      transition: transform .18s ease, border-color .18s ease, background .18s ease;
-      height: 100%;
-    }
-    a.card.card-evaluator {
-      background: linear-gradient(145deg, rgba(47,72,118,.95), rgba(22,34,58,.88));
-      box-shadow: 0 18px 36px rgba(11,19,38,.55);
-    }
-    a.card.card-compat {
-      background: linear-gradient(145deg, rgba(40,66,94,.95), rgba(16,30,48,.88));
-      box-shadow: 0 18px 36px rgba(8,16,32,.5);
-    }
-    a.card strong {
-      font-size: clamp(20px, 2.2vw, 24px);
-    }
-    a.card span {
-      color: var(--mut);
-      font-size: clamp(15px, 1.6vw, 17px);
-      line-height: 1.8;
-    }
-    a.card:hover,
-    a.card:focus-visible {
-      transform: translateY(-4px);
-      border-color: rgba(129,212,250,.8);
-      outline: none;
-    }
-    a.card.card-evaluator:hover,
-    a.card.card-evaluator:focus-visible {
-      background: linear-gradient(150deg, rgba(64,97,158,.98), rgba(20,31,52,.9));
-    }
-    a.card.card-compat:hover,
-    a.card.card-compat:focus-visible {
-      background: linear-gradient(150deg, rgba(58,90,124,.98), rgba(18,28,46,.9));
-    }
-    @media (max-width: 640px) {
-      .main-head {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .logo-wrapper {
-        justify-content: flex-start;
-      }
-    }
-    .site-footer {
-      margin-top: 46px;
-      font-size: 13px;
-      color: rgba(203,213,225,.74);
-      text-align: center;
-    }
-    .site-footer .footer-wrap {
-      display: inline-grid;
-      gap: 6px;
-    }
-    .site-footer a {
-      color: inherit;
-      text-decoration: underline;
-    }
-  </style>
+  <meta name="description" content="Herramientas de ingeniería para evaluar juntas y compatibilidad de pasos de tubería." />
+  <title>Juntas y pasos de tubería · COTECMAR</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="stylesheet" href="assets/css/theme.css" />
 </head>
-<body>
-  <main>
-    <header class="main-head">
-      <div class="titles">
-        <h1>Herramientas de compatibilidad Juntas Y Pasos</h1>
-        <p>Selecciona la herramienta que desees consultar. Ambas páginas funcionan con rutas relativas, por lo que se pueden abrir directamente desde GitHub Pages o de forma local sin configuración adicional.</p>
+<body class="landing-page">
+  <main class="landing-shell">
+    <header class="landing-header">
+      <div>
+        <p class="landing-eyebrow">Ingeniería de sistemas de tuberías</p>
+        <h1 class="landing-title">Juntas y pasos de tubería</h1>
+        <p class="landing-lead">
+          Herramientas técnicas para consultar criterios de aceptación de juntas mecánicas
+          y compatibilidad de rutas de tuberías.
+        </p>
       </div>
-      <div class="logo-wrapper">
-        <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="brand-logo">
-      </div>
+      <img src="assets/joints/cotec.jpg" alt="COTECMAR" class="landing-logo" />
     </header>
-    <ul>
+
+    <ul class="tool-list" aria-label="Herramientas disponibles">
       <li>
-        <a class="card card-evaluator" href="juntas.html">
-          <strong>Evaluador de juntas LR</strong>
-          <span>Evalúa rápidamente la aceptación de juntas mecánicas por norma, sistema y espacio.</span>
+        <a class="tool-card tool-card--evaluator" href="juntas.html">
+          <span class="tool-index" aria-hidden="true">01</span>
+          <h2>Evaluador de juntas LR</h2>
+          <p>
+            Evalúa la aceptación de juntas mecánicas por norma, sistema, clase de tubería,
+            espacio y condiciones de instalación.
+          </p>
+          <span class="tool-action">Abrir evaluador</span>
         </a>
       </li>
       <li>
-        <a class="card card-compat" href="compatibilidad.html">
-          <strong>Compatibilidad de tuberías</strong>
-          <span>Explora combinaciones de materiales y obtén notas de compatibilidad.</span>
+        <a class="tool-card tool-card--compat" href="compatibilidad.html">
+          <span class="tool-index" aria-hidden="true">02</span>
+          <h2>Compatibilidad de tuberías</h2>
+          <p>
+            Consulta combinaciones de materiales y espacios, con criterios de diámetro,
+            espesor y notas de compatibilidad.
+          </p>
+          <span class="tool-action">Abrir herramienta</span>
         </a>
       </li>
     </ul>
-    <footer class="site-footer">
+
+    <footer class="landing-footer">
       <div class="footer-wrap">
-        <div>Por <strong>Jhon Eric Gomez</strong> – DVMPR-GEDIN</div>
-        <div>Para consultas contactar a: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
+        <div>Por <strong>Jhon Eric Gomez</strong> · DVMPR-GEDIN</div>
+        <div>Consultas: <a href="mailto:jegomez@cotecmar.com">jegomez@cotecmar.com</a></div>
       </div>
     </footer>
   </main>
