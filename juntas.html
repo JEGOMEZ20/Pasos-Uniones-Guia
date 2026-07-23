@@ -1682,13 +1682,13 @@ function cardHTML(ds, {joint,jt,status,reasons}){
   const rs = reasons?.length ? `<ul class="reasons">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : `<div class="small mut">Sin observaciones.</div>`;
   const figureCode = ds.id==='ships' ? '12.2.4/12.2.5' : '1.5.4/1.5.5';
   return `
-    <div class="card result-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="font-weight:600">${jtObj.label}</div>
+    <div class="card result-card status-${status}">
+      <div class="result-card-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div class="result-card-name" style="font-weight:600">${jtObj.label}</div>
         ${badge}
       </div>
       ${rs}
-      <div class="view-action"><button type="button" class="view-btn js-view" data-key="${jtObj.key}" data-figure="${figureCode}">VER</button></div>
+      <div class="view-action"><button type="button" class="view-btn js-view" data-key="${jtObj.key}" data-figure="${figureCode}">Ver figura</button></div>
     </div>`;
 }
 

@@ -920,10 +920,10 @@ function render(items){
           const badge = status==='ok' ? '<span class="badge b-ok">Permitido</span>' : status==='warn' ? '<span class="badge b-warn">Permitido con condiciones</span>' : '<span class="badge b-bad">Prohibido</span>';
           const rs = reasons?.length ? `<ul class="reasons">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : `<div class="small mut">Sin observaciones.</div>`;
           const labelEsc = escapeAttr(jt.label);
-          return `<div class="card result-card">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:600">${labelEsc}</div>${badge}</div>
+          return `<div class="card result-card status-${status}">
+            <div class="result-card-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="result-card-name" style="font-weight:600">${labelEsc}</div>${badge}</div>
             ${rs}
-            <div class="view-action"><button type="button" class="view-btn js-view" data-key="${jt.key}" data-label="${labelEsc}" data-figure="${FIGURE_CODE}">VER</button></div>
+            <div class="view-action"><button type="button" class="view-btn js-view" data-key="${jt.key}" data-label="${labelEsc}" data-figure="${FIGURE_CODE}">Ver figura</button></div>
           </div>`;
         }).join('')}
       </div>

@@ -410,7 +410,7 @@
   </header>
   <section class="relative hero-pr max-w-6xl mx-auto px-6">
     <h1 class="hero-title font-extrabold">
-      Compatibilidad De Paso para Tuberías
+      Compatibilidad para pasar tuberías
     </h1>
     <p id="pageSublead" class="sublead block-subtitle mt-3 text-slate-300 max-w-3xl">
       Basado en norma GL para compatibilidad de rutas de tuberías; para agua potable se
@@ -938,23 +938,18 @@ function drawViz({status,place,system,s}){
   const svg=document.getElementById('viz');
   const w=svg.clientWidth||560;
   const h=svg.clientHeight||420;
-  const pad=28;
+  const pad=Math.max(34,Math.min(48,w*0.085));
   const tankX=pad,tankY=pad,tankW=w-pad*2,tankH=h-pad*2;
-  const pipeH=Math.max(32,tankH*0.2);
-  const pipeY=tankY+tankH/2;
-  const availableLeft=Math.max(0,tankX-6);
-  const availableRight=Math.max(0,w-(tankX+tankW)-6);
-  const maxExtension=Math.max(0,Math.min(availableLeft,availableRight));
-  const pipeExtension=Math.min(Math.max(18,tankW*0.06),maxExtension);
-  const pipeX=tankX-pipeExtension;
-  const pipeW=Math.max(0,tankW+pipeExtension*2);
+  const pipeH=Math.max(38,Math.min(66,tankH*0.18));
+  const pipeY=tankY+tankH*0.52;
+  const pipeX=14;
+  const pipeW=w-28;
   const color=status==='ok'?'var(--ok)':status==='warn'?'var(--warn)':'var(--bad)';
-  const tankTop=status==='bad'?'#40202b':status==='warn'?'#3a2c15':'#1f2937';
-  const tankBottom=status==='bad'?'#1a0c12':status==='warn'?'#17100a':'#0b1120';
+  const roomTop=status==='bad'?'#fff8f9':status==='warn'?'#fffaf0':'#f8fcfe';
+  const roomBottom=status==='bad'?'#f6e7e9':status==='warn'?'#f7edd8':'#e4eef4';
   const icon=status==='ok'?'✔':status==='warn'?'!':'✖';
   const note=status==='warn'?MSG_AGREEMENT:status==='bad'?'Paso bloqueado':'Paso permitido';
-  const pipeStroke=status==='warn'?'stroke-dasharray="20 12" stroke-width="4"':'stroke-width="2.4"';
-  const filterId=status==='bad'?'glowBad':status==='warn'?'glowWarn':'glowOk';
+  const statusText=status==='warn'?'REQUIERE VALIDACIÓN':status==='bad'?'PASO NO PERMITIDO':'PASO COMPATIBLE';
   const placeES = SPACES_LABELS[place] || place;
   const systemES = SYSTEMS_LABELS[system] || system;
   svg.innerHTML=`
@@ -962,34 +957,71 @@ function drawViz({status,place,system,s}){
     <div class="viz-check" aria-hidden="true"></div>
     <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${systemES} → ${placeES}">
     <defs>
-      <linearGradient id="tankGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${tankTop}" />
-        <stop offset="100%" stop-color="${tankBottom}" />
+      <linearGradient id="roomGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${roomTop}" />
+        <stop offset="100%" stop-color="${roomBottom}" />
       </linearGradient>
-      <linearGradient id="pipeGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.55" />
-        <stop offset="50%" stop-color="${color}" stop-opacity="1" />
-        <stop offset="100%" stop-color="${color}" stop-opacity="0.55" />
+      <linearGradient id="pipeGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#344b60" />
+        <stop offset="18%" stop-color="#7890a1" />
+        <stop offset="43%" stop-color="#eaf0f3" />
+        <stop offset="62%" stop-color="#a7b8c3" />
+        <stop offset="100%" stop-color="#31475a" />
       </linearGradient>
-      <filter id="glowOk" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#22c55e" flood-opacity="0.65"/>
+      <linearGradient id="collarGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#263a4d" />
+        <stop offset="50%" stop-color="#d9e3e8" />
+        <stop offset="100%" stop-color="#3d5365" />
+      </linearGradient>
+      <pattern id="techGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#8ba6b8" stroke-width="0.7" opacity="0.18"/>
+      </pattern>
+      <filter id="pipeShadow" x="-20%" y="-70%" width="140%" height="240%">
+        <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#071a2f" flood-opacity="0.24"/>
       </filter>
-      <filter id="glowWarn" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#f59e0b" flood-opacity="0.6"/>
-      </filter>
-      <filter id="glowBad" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#f43f5e" flood-opacity="0.7"/>
+      <filter id="statusGlow" x="-100%" y="-100%" width="300%" height="300%">
+        <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="${color}" flood-opacity="0.42"/>
       </filter>
     </defs>
-    <rect x="${tankX}" y="${tankY}" rx="28" ry="28" width="${tankW}" height="${tankH}" fill="url(#tankGrad)" stroke="rgba(148,163,184,0.35)" stroke-width="2.2"/>
-    <g filter="url(#${filterId})">
-      <rect x="${pipeX}" y="${pipeY-pipeH/2}" width="${pipeW}" height="${pipeH}" rx="0" ry="0" fill="url(#pipeGrad)" stroke="${color}" ${pipeStroke} opacity="0.95"/>
+
+    <!-- Recinto técnico con profundidad -->
+    <rect x="${tankX}" y="${tankY}" rx="24" width="${tankW}" height="${tankH}" fill="url(#roomGrad)" stroke="#9eb4c3" stroke-width="2"/>
+    <rect x="${tankX}" y="${tankY}" rx="24" width="${tankW}" height="${tankH}" fill="url(#techGrid)"/>
+    <path d="M ${tankX+1} ${tankY+tankH*0.24} L ${tankX+tankW*0.12} ${tankY+tankH*0.12} L ${tankX+tankW*0.88} ${tankY+tankH*0.12} L ${tankX+tankW-1} ${tankY+tankH*0.24}" fill="#ffffff" opacity="0.52"/>
+    <path d="M ${tankX+tankW*0.12} ${tankY+tankH*0.12} L ${tankX+tankW*0.12} ${tankY+tankH*0.88}" stroke="#8ba6b8" stroke-width="1.2" opacity="0.35"/>
+    <path d="M ${tankX+tankW*0.88} ${tankY+tankH*0.12} L ${tankX+tankW*0.88} ${tankY+tankH*0.88}" stroke="#8ba6b8" stroke-width="1.2" opacity="0.35"/>
+
+    <!-- Sombra y cuerpo cilíndrico de la tubería -->
+    <rect x="${pipeX+8}" y="${pipeY-pipeH/2+8}" width="${pipeW-16}" height="${pipeH}" rx="${pipeH/2}" fill="#071a2f" opacity="0.14"/>
+    <g filter="url(#pipeShadow)">
+      <rect x="${pipeX}" y="${pipeY-pipeH/2}" width="${pipeW}" height="${pipeH}" rx="${pipeH/2}" fill="url(#pipeGrad)" stroke="#263e52" stroke-width="2"/>
+      <path d="M ${pipeX+pipeH/2} ${pipeY-pipeH*0.2} H ${pipeX+pipeW-pipeH/2}" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.58"/>
+      <ellipse cx="${pipeX+pipeH/2}" cy="${pipeY}" rx="${pipeH*0.15}" ry="${pipeH*0.42}" fill="#1f3548" opacity="0.7"/>
+      <ellipse cx="${pipeX+pipeW-pipeH/2}" cy="${pipeY}" rx="${pipeH*0.15}" ry="${pipeH*0.42}" fill="#d7e1e7" stroke="#40576a" stroke-width="1.5"/>
     </g>
-    <text x="${tankX+tankW/2}" y="${pipeY-pipeH/2-16}" text-anchor="middle" font-size="13" fill="rgba(226,232,240,0.78)">${systemES}</text>
-    <text x="${tankX+tankW/2}" y="${tankY+tankH-24}" text-anchor="middle" font-size="12" fill="rgba(226,232,240,0.64)">${note}</text>
-    ${status==='bad'?`<line x1="${tankX+18}" y1="${tankY+18}" x2="${tankX+tankW-18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
-    ${status==='bad'?`<line x1="${tankX+tankW-18}" y1="${tankY+18}" x2="${tankX+18}" y2="${tankY+tankH-18}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.72"/>`:''}
-  </svg>`;
+
+    <!-- Collares de penetración en los límites del espacio -->
+    <g filter="url(#statusGlow)">
+      <ellipse cx="${tankX}" cy="${pipeY}" rx="10" ry="${pipeH*0.7}" fill="url(#collarGrad)" stroke="${color}" stroke-width="4"/>
+      <ellipse cx="${tankX+tankW}" cy="${pipeY}" rx="10" ry="${pipeH*0.7}" fill="url(#collarGrad)" stroke="${color}" stroke-width="4"/>
+    </g>
+
+    <!-- Dirección del paso -->
+    <g fill="none" stroke="#1478b8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+      <path d="M ${w*0.43} ${pipeY} H ${w*0.57}"/>
+      <path d="M ${w*0.54} ${pipeY-8} L ${w*0.57} ${pipeY} L ${w*0.54} ${pipeY+8}"/>
+    </g>
+
+    <!-- Identificación y estado -->
+    <rect x="${w*0.22}" y="${pipeY-pipeH/2-46}" width="${w*0.56}" height="28" rx="14" fill="#ffffff" stroke="#c4d3dd"/>
+    <text x="${w/2}" y="${pipeY-pipeH/2-27}" text-anchor="middle" font-size="12" font-weight="700" fill="#29445e">${systemES}</text>
+    <rect x="${w*0.3}" y="${tankY+tankH-50}" width="${w*0.4}" height="28" rx="14" fill="#ffffff" stroke="${color}" stroke-width="1.5"/>
+    <circle cx="${w*0.3+16}" cy="${tankY+tankH-36}" r="5" fill="${color}"/>
+    <text x="${w/2+8}" y="${tankY+tankH-32}" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="0.7" fill="#071a2f">${statusText}</text>
+
+    ${status==='bad'?`<g transform="translate(${w/2} ${pipeY})" filter="url(#statusGlow)"><circle r="30" fill="#fff0f2" stroke="${color}" stroke-width="4"/><path d="M -11 -11 L 11 11 M 11 -11 L -11 11" stroke="${color}" stroke-width="6" stroke-linecap="round"/></g>`:''}
+    </svg>`;
+  svg.dataset.status=status;
   const titleNode=svg.querySelector('.viz-title');
   if(titleNode){
     titleNode.textContent=placeES;
