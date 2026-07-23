@@ -439,8 +439,42 @@ small {
 }
 
 /* Evaluadores HTML */
+.joints-page .wrap,
+.ships-page .wrap {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
 .tool-page .h1 {
   margin-bottom: 30px;
+}
+
+.tool-page select,
+.tool-page input[type="number"] {
+  border-color: var(--border-strong);
+  background: #fff;
+  color: var(--ink);
+}
+
+.tool-page select:focus,
+.tool-page input[type="number"]:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(20, 120, 184, 0.1);
+}
+
+.tool-page select:disabled,
+.tool-page input[type="number"]:disabled {
+  background: #edf2f5;
+  color: #73879a;
+}
+
+.tool-page input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--accent);
 }
 
 .tool-page .controls,
